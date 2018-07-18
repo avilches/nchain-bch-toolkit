@@ -114,6 +114,7 @@ open class VersionedChecksummedBytes : Serializable, Cloneable, Comparable<Versi
 
 }
 
+// TODO: extract to a tools
 private val PureJavaComparator = object : Comparator<ByteArray> {
     override fun compare(left: ByteArray, right: ByteArray): Int {
         val minLength = Math.min(left.size, right.size)

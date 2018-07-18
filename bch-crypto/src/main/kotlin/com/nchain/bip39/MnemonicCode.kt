@@ -173,7 +173,7 @@ private constructor(val wordList:List<String>) {
         /**
          * Convert mnemonic word list to seed.
          */
-        fun toSeed(words: List<String>, passphrase: String): ByteArray {
+        @JvmStatic fun toSeed(words: List<String>, passphrase: String): ByteArray {
 
             // To create binary seed from mnemonic, we use PBKDF2 function
             // with mnemonic sentence (in UTF-8) used as a password and

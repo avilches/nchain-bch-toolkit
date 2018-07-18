@@ -10,6 +10,7 @@ import java.util.logging.Logger
 
 fun <T> loggerFor(clazz: Class<T>) = KLog(Logger.getLogger(clazz.toString()))
 
+// TOODO: use ls4j
 class KLog(val logger:Logger) {
     fun error(s: String, e: NullPointerException) {
         logger.severe("$e: $s")

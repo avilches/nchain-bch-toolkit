@@ -199,7 +199,7 @@ object CashAddressHelper {
         return ret
     }
 
-    fun encodeCashAddress(prefix: String, payload: ByteArray): String {
+    @JvmStatic fun encodeCashAddress(prefix: String, payload: ByteArray): String {
         val checksum = createChecksum(prefix, payload)
         val combined = concatenateByteArrays(payload, checksum)
         val ret = StringBuilder("$prefix:")
@@ -212,7 +212,7 @@ object CashAddressHelper {
         return ret.toString()
     }
 
-    fun decodeCashAddress(str: String, defaultPrefix: String): Pair {
+    @JvmStatic fun decodeCashAddress(str: String, defaultPrefix: String): Pair {
         // Go over the string and do some sanity checks.
         var lower = false
         var upper = false
@@ -290,7 +290,7 @@ object CashAddressHelper {
         return Pair(prefix.toString(), result)
     }
 
-    fun packAddressData(payload: ByteArray, type: Byte): ByteArray {
+    @JvmStatic fun packAddressData(payload: ByteArray, type: Byte): ByteArray {
         var version_byte = (type.toInt() shl 3).toByte()
         val size = payload.size
         var encoded_size: Byte = 0

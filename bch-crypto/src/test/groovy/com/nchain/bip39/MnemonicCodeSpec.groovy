@@ -1,32 +1,18 @@
-/*
- * Copyright 2013 Ken Sedgwick
- * Copyright 2014 Andreas Schildbach
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.nchain.bip39
 
 import com.nchain.tools.HEX
-import org.junit.Test
+import spock.lang.Shared
+import spock.lang.Specification
 
-import java.util.Arrays
 
-import org.junit.Assert.assertEquals
+/*
+ * @author Alberto Vilches
+ * @date 18/07/2018
+ */
 
-class MnemonicCodeTest {
+class MnemonicCodeSpec extends Specification {
     // These vectors are from https://github.com/trezor/python-mnemonic/blob/master/vectors.json
-    var vectors = arrayOf(
+    static def vectorsConfig = [
             "00000000000000000000000000000000",
             "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
             "c55257c360c07c72029aebc1b53c05ed0362ada38ead3e3e9efa3708e53495531f09a6987599d18264c1e1c92f2cf141630c7a3c4ab7c81b2f001698e7463b04",
@@ -144,73 +130,94 @@ class MnemonicCodeTest {
             "15da872c95a13dd738fbf50e427583ad61f18fd99f628c417a61cf8343c90419",
             "beyond stage sleep clip because twist token leaf atom beauty genius food business side grid unable middle armed observe pair crouch tonight away coconut",
             "b15509eaa2d09d3efd3e006ef42151b30367dc6e3aa5e44caba3fe4d3e352e65101fbdb86a96776b91946ff06f8eac594dc6ee1d3e82a42dfe1b40fef6bcc3fd"
-    )
+    ]
 
-    private val mc: MnemonicCode = MnemonicCode.ENGLISH
+    @Shared MnemonicCode mc = MnemonicCode.ENGLISH
+    @Shared List<VectorTuple> vectors = loadVectorTuples()
 
-    @Test
-    @Throws(Exception::class)
-    fun testVectors() {
-        var ii = 0
-        while (ii < vectors.size) {
-            val vecData = vectors[ii]
-            val vecCode = vectors[ii + 1]
-            val vecSeed = vectors[ii + 2]
+    static class VectorTuple {
+        String vecData
+        String vecCode
+        String vecSeed
+    }
 
-            val code = mc.toMnemonic(HEX.hexToBytes(vecData))
-            val seed = MnemonicCode.toSeed(code, "TREZOR")
-            val entropy = mc.toEntropy(split(vecCode))
-
-            assertEquals(vecData, HEX.bytesToHex(entropy))
-            assertEquals(vecCode, code.joinToString(" "))
-            assertEquals(vecSeed, HEX.bytesToHex(seed))
+    private List<VectorTuple> loadVectorTuples() {
+        def  ii = 0
+        List result = []
+        while (ii < vectorsConfig.size()) {
+            def vecData = vectorsConfig[ii]
+            def vecCode = vectorsConfig[ii + 1]
+            def vecSeed = vectorsConfig[ii + 2]
+            result << new VectorTuple(vecData: vecData, vecCode: vecCode, vecSeed: vecSeed)
             ii += 3
         }
+        return result
     }
 
-    @Test(expected = MnemonicException.MnemonicLengthException::class)
-    @Throws(Exception::class)
-    fun testBadEntropyLength() {
-        val entropy = HEX.hexToBytes("7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
+    void testVectors() {
+
+        when:
+        def code = mc.toMnemonic(HEX.hexToBytes(vector.vecData))
+        def seed = MnemonicCode.toSeed(code, "TREZOR")
+        def entropy = mc.toEntropy(vector.vecCode.split(" ") as List)
+
+        then:
+        vector.vecData == HEX.bytesToHex(entropy)
+        vector.vecCode == code.join(" ")
+        vector.vecSeed == HEX.bytesToHex(seed)
+
+        where:
+        vector << vectors
+
+    }
+
+    void testBadEntropyLength() {
+        when:
+        def entropy = HEX.hexToBytes("7f7f7f7f7f7f7f7f7f7f7f7f7f7f")
         mc.toMnemonic(entropy)
+        then:
+        thrown(MnemonicException.MnemonicLengthException)
     }
 
-    @Test(expected = MnemonicException.MnemonicLengthException::class)
-    @Throws(Exception::class)
-    fun testBadLength() {
-        val words = split("risk tiger venture dinner age assume float denial penalty hello")
+    void testBadLength() {
+        when:
+        def words = "risk tiger venture dinner age assume float denial penalty hello".split(" ") as List
         mc.check(words)
+        then:
+        thrown(MnemonicException.MnemonicLengthException)
     }
 
-    @Test(expected = MnemonicException.MnemonicWordException::class)
-    @Throws(Exception::class)
-    fun testBadWord() {
-        val words = split("risk tiger venture dinner xyzzy assume float denial penalty hello game wing")
+    void testBadWord() {
+        when:
+        def words = "risk tiger venture dinner xyzzy assume float denial penalty hello game wing".split(" ") as List
         mc.check(words)
+        then:
+        thrown(MnemonicException.MnemonicWordException)
     }
 
-    @Test(expected = MnemonicException.MnemonicChecksumException::class)
-    @Throws(Exception::class)
-    fun testBadChecksum() {
-        val words = split("bless cloud wheel regular tiny venue bird web grief security dignity zoo")
+    void testBadChecksum() {
+        when:
+        def words = "bless cloud wheel regular tiny venue bird web grief security dignity zoo".split(" ") as List
         mc.check(words)
+        then:
+        thrown(MnemonicException.MnemonicChecksumException)
     }
 
-    @Test(expected = MnemonicException.MnemonicLengthException::class)
-    @Throws(Exception::class)
-    fun testEmptyMnemonic() {
-        val words = listOf<String>()
+    void testEmptyMnemonic() {
+        when:
+        def words = []
         mc.check(words)
+        then:
+        thrown(MnemonicException.MnemonicLengthException)
     }
 
-    @Test(expected = MnemonicException.MnemonicLengthException::class)
-    @Throws(Exception::class)
-    fun testEmptyEntropy() {
-        val entropy = byteArrayOf()
+    void testEmptyEntropy() {
+        when:
+        def entropy = [] as byte[]
         mc.toMnemonic(entropy)
+        then:
+        thrown(MnemonicException.MnemonicLengthException)
     }
 
-    fun split(words: String): List<String> {
-        return Arrays.asList(*words.split("\\s+".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray())
-    }
+
 }
