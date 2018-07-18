@@ -20,13 +20,23 @@
 package com.nchain.address
 
 import com.nchain.bitcoinkt.params.NetworkParameters
+import com.nchain.key.WrongNetworkException
+import com.nchain.params.Networks
 
-class CashAddress : LegacyAddress {
+class CashAddress : VersionedChecksummedBytes {
+
+    @Transient
+    var parameters: NetworkParameters? = null
+        private set
+
+    /** The (big endian) 20 byte hash that is the core of a Bitcoin address.  */
+    val hash160: ByteArray
+        get() = bytes
 
     var addressType: CashAddressType? = null
         private set
 
-    override val isP2SHAddress: Boolean
+    val isP2SHAddress: Boolean
         get() = addressType == CashAddressType.Script
 
     val isP2PKHAddress: Boolean
@@ -42,15 +52,17 @@ class CashAddress : LegacyAddress {
         }
     }
 
-    internal constructor(params: NetworkParameters, addressType: CashAddressType, hash: ByteArray) : super(params, getLegacyVersion(params, addressType), hash) {
+    internal constructor(params: NetworkParameters, addressType: CashAddressType, hash: ByteArray) : super(getLegacyVersion(params, addressType), hash) {
+        this.parameters = params
         this.addressType = addressType
     }
 
-    internal constructor(params: NetworkParameters, version: Int, hash160: ByteArray) : super(params, version, hash160) {
+    internal constructor(params: NetworkParameters, version: Int, hash160: ByteArray) : super(version, hash160) {
+        this.parameters = params
         this.addressType = getType(params, version)
     }
 
-    override fun toCashAddress(): String {
+    fun toCashAddress(): String {
         return CashAddressHelper.encodeCashAddress(parameters!!.cashAddrPrefix,
                 CashAddressHelper.packAddressData(hash160, addressType!!.getValue()))
     }
@@ -58,12 +70,90 @@ class CashAddress : LegacyAddress {
         return toCashAddress()
     }
 
-    @Throws(CloneNotSupportedException::class)
-    override fun clone(): LegacyAddress {
-        return super.clone()
-    }
+//    @Throws(CloneNotSupportedException::class)
+//    override fun clone(): CashAddress {
+//        return super.clone()
+//    }
 
     companion object {
+
+        @Throws(AddressFormatException::class)
+        fun fromHash160(params: NetworkParameters, hash160: ByteArray): CashAddress {
+            return fromHash160(params, params.addressHeader, hash160)
+        }
+
+        @Throws(AddressFormatException::class)
+        fun fromHash160(params: NetworkParameters, version: Int, hash160: ByteArray): CashAddress {
+            return CashAddress(params, version, hash160)
+
+        }
+        @Throws(AddressFormatException::class)
+        fun fromBase58(params: NetworkParameters?, base58: String): CashAddress {
+            val parsed = VersionedChecksummedBytes(base58)
+            var addressParams: NetworkParameters? = null
+            if (params != null) {
+                if (!isAcceptableVersion(params, parsed.version)) {
+                    throw WrongNetworkException(parsed.version, params.acceptableAddressCodes)
+                }
+                addressParams = params
+            } else {
+                for (p in Networks.get()) {
+                    if (isAcceptableVersion(p, parsed.version)) {
+                        addressParams = p
+                        break
+                    }
+                }
+                if (addressParams == null) {
+                    throw AddressFormatException("No network found for $base58")
+                }
+            }
+            return CashAddress(addressParams, parsed.version, parsed.bytes)
+        }
+
+        fun fromP2PubKey(params: NetworkParameters, hash160: ByteArray): CashAddress {
+            return CashAddress(params, CashAddress.CashAddressType.PubKey, hash160)
+        }
+
+        fun fromP2SHHash(params: NetworkParameters, hash160: ByteArray): CashAddress {
+            return CashAddress(params, CashAddress.CashAddressType.Script, hash160)
+        }
+
+    //    fun fromP2SHScript(params: NetworkParameters, scriptPubKey: Script): CashAddress {
+    //        checkArgument(scriptPubKey.isPayToScriptHash, "Not a P2SH script")
+    //        return fromP2SHHash(params, scriptPubKey.pubKeyHash!!)
+    //    }
+
+
+        /**
+         * Given an address, examines the version byte and attempts to find a matching NetworkParameters. If you aren't sure
+         * which network the address is intended for (eg, it was provided by a user), you can use this to decide if it is
+         * compatible with the current wallet.
+         * @return a NetworkParameters of the address
+         * @throws AddressFormatException if the string wasn't of a known version
+         */
+        @Throws(AddressFormatException::class)
+        fun getParametersFromAddress(address: String): NetworkParameters? {
+            try {
+                return fromBase58(null, address).parameters
+            } catch (e: WrongNetworkException) {
+                throw RuntimeException(e)  // Cannot happen.
+            }
+
+        }
+
+
+        /**
+         * Check if a given address version is valid given the NetworkParameters.
+         */
+        internal fun isAcceptableVersion(params: NetworkParameters, version: Int): Boolean {
+            for (v in params.acceptableAddressCodes!!) {
+                if (version == v) {
+                    return true
+                }
+            }
+            return false
+        }
+
 
         internal fun getLegacyVersion(params: NetworkParameters, type: CashAddressType): Int {
             when (type) {

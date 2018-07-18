@@ -17,7 +17,7 @@
 
 package com.nchain.key
 
-import com.nchain.address.LegacyAddress
+import com.nchain.address.CashAddress
 import com.nchain.address.AddressFormatException
 import com.nchain.address.VersionedChecksummedBytes
 import com.nchain.bitcoinkt.params.MainNetParams
@@ -34,19 +34,19 @@ import java.util.Arrays
 
 import org.junit.Assert.*
 
-class AddressTest {
+class Base58AddressTest {
 
     @Test
     @Throws(Exception::class)
     fun testJavaSerialization() {
-        val testAddress = LegacyAddress.fromBase58(testParams, "n4eA2nbYqErp7H6jebchxAN59DmNpksexv")
+        val testAddress = CashAddress.fromBase58(testParams, "n4eA2nbYqErp7H6jebchxAN59DmNpksexv")
         var os = ByteArrayOutputStream()
         ObjectOutputStream(os).writeObject(testAddress)
         val testAddressCopy = ObjectInputStream(
                 ByteArrayInputStream(os.toByteArray())).readObject() as VersionedChecksummedBytes
         assertEquals(testAddress, testAddressCopy)
 
-        val mainAddress = LegacyAddress.fromBase58(mainParams, "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
+        val mainAddress = CashAddress.fromBase58(mainParams, "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
         os = ByteArrayOutputStream()
         ObjectOutputStream(os).writeObject(mainAddress)
         val mainAddressCopy = ObjectInputStream(
@@ -58,22 +58,22 @@ class AddressTest {
     @Throws(Exception::class)
     fun stringification() {
         // Test a testnet address.
-        val a = LegacyAddress(testParams, HEX.hexToBytes("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc"))
-        assertEquals("n4eA2nbYqErp7H6jebchxAN59DmNpksexv", a.toString())
+        val a = CashAddress.fromHash160(testParams, HEX.hexToBytes("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc"))
+        assertEquals("n4eA2nbYqErp7H6jebchxAN59DmNpksexv", a.toBase58())
         assertFalse(a.isP2SHAddress)
 
-        val b = LegacyAddress(mainParams, HEX.hexToBytes("4a22c3c4cbb31e4d03b15550636762bda0baf85a"))
-        assertEquals("17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL", b.toString())
+        val b = CashAddress.fromHash160(mainParams, HEX.hexToBytes("4a22c3c4cbb31e4d03b15550636762bda0baf85a"))
+        assertEquals("17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL", b.toBase58())
         assertFalse(b.isP2SHAddress)
     }
 
     @Test
     @Throws(Exception::class)
     fun decoding() {
-        val a = LegacyAddress.fromBase58(testParams, "n4eA2nbYqErp7H6jebchxAN59DmNpksexv")
+        val a = CashAddress.fromBase58(testParams, "n4eA2nbYqErp7H6jebchxAN59DmNpksexv")
         assertEquals("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc", HEX.bytesToHex(a.hash160))
 
-        val b = LegacyAddress.fromBase58(mainParams, "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
+        val b = CashAddress.fromBase58(mainParams, "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
         assertEquals("4a22c3c4cbb31e4d03b15550636762bda0baf85a", HEX.bytesToHex(b.hash160))
     }
 
@@ -81,7 +81,7 @@ class AddressTest {
     fun errorPaths() {
         // Check what happens if we try and decode garbage.
         try {
-            LegacyAddress.fromBase58(testParams, "this is not a valid address!")
+            CashAddress.fromBase58(testParams, "this is not a valid address!")
             fail()
         } catch (e: WrongNetworkException) {
             fail()
@@ -91,7 +91,7 @@ class AddressTest {
 
         // Check the empty case.
         try {
-            LegacyAddress.fromBase58(testParams, "")
+            CashAddress.fromBase58(testParams, "")
             fail()
         } catch (e: WrongNetworkException) {
             fail()
@@ -101,7 +101,7 @@ class AddressTest {
 
         // Check the case of a mismatched network.
         try {
-            LegacyAddress.fromBase58(testParams, "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
+            CashAddress.fromBase58(testParams, "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
             fail()
         } catch (e: WrongNetworkException) {
             // Success.
@@ -116,9 +116,9 @@ class AddressTest {
     @Test
     @Throws(Exception::class)
     fun getNetwork() {
-        var params = LegacyAddress.getParametersFromAddress("17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
+        var params = CashAddress.getParametersFromAddress("17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL")
         assertEquals(MainNetParams.id, params!!.id)
-        params = LegacyAddress.getParametersFromAddress("n4eA2nbYqErp7H6jebchxAN59DmNpksexv")
+        params = CashAddress.getParametersFromAddress("n4eA2nbYqErp7H6jebchxAN59DmNpksexv")
         assertEquals(TestNet3Params.id, params!!.id)
     }
 
@@ -126,25 +126,25 @@ class AddressTest {
     @Throws(Exception::class)
     fun p2shAddress() {
         // Test that we can construct P2SH addresses
-        val mainNetP2SHAddress = LegacyAddress.fromBase58(MainNetParams, "35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU")
+        val mainNetP2SHAddress = CashAddress.fromBase58(MainNetParams, "35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU")
         assertEquals(mainNetP2SHAddress.version.toLong(), MainNetParams.p2SHHeader.toLong())
         assertTrue(mainNetP2SHAddress.isP2SHAddress)
-        val testNetP2SHAddress = LegacyAddress.fromBase58(TestNet3Params, "2MuVSxtfivPKJe93EC1Tb9UhJtGhsoWEHCe")
+        val testNetP2SHAddress = CashAddress.fromBase58(TestNet3Params, "2MuVSxtfivPKJe93EC1Tb9UhJtGhsoWEHCe")
         assertEquals(testNetP2SHAddress.version.toLong(), TestNet3Params.p2SHHeader.toLong())
         assertTrue(testNetP2SHAddress.isP2SHAddress)
 
         // Test that we can determine what network a P2SH address belongs to
-        val mainNetParams = LegacyAddress.getParametersFromAddress("35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU")
+        val mainNetParams = CashAddress.getParametersFromAddress("35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU")
         assertEquals(MainNetParams.id, mainNetParams!!.id)
-        val testNetParams = LegacyAddress.getParametersFromAddress("2MuVSxtfivPKJe93EC1Tb9UhJtGhsoWEHCe")
+        val testNetParams = CashAddress.getParametersFromAddress("2MuVSxtfivPKJe93EC1Tb9UhJtGhsoWEHCe")
         assertEquals(TestNet3Params.id, testNetParams!!.id)
 
         // Test that we can convert them from hashes
         val hex = HEX.hexToBytes("2ac4b0b501117cc8119c5797b519538d4942e90e")
-        val a = LegacyAddress.fromP2SHHash(mainParams, hex)
-        assertEquals("35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU", a.toString())
-        val b = LegacyAddress.fromP2SHHash(testParams, HEX.hexToBytes("18a0e827269b5211eb51a4af1b2fa69333efa722"))
-        assertEquals("2MuVSxtfivPKJe93EC1Tb9UhJtGhsoWEHCe", b.toString())
+        val a = CashAddress.fromP2SHHash(mainParams, hex)
+        assertEquals("35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU", a.toBase58())
+        val b = CashAddress.fromP2SHHash(testParams, HEX.hexToBytes("18a0e827269b5211eb51a4af1b2fa69333efa722"))
+        assertEquals("2MuVSxtfivPKJe93EC1Tb9UhJtGhsoWEHCe", b.toBase58())
 //        val c = Address.fromP2SHScript(mainParams, ScriptBuilder.createP2SHOutputScript(hex))
 //        assertEquals("35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU", c.toString())
     }
@@ -169,7 +169,7 @@ class AddressTest {
     @Test
     @Throws(Exception::class)
     fun cloning() {
-        val a = LegacyAddress(testParams, HEX.hexToBytes("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc"))
+        val a = CashAddress.fromHash160(testParams, HEX.hexToBytes("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc"))
         val b = a.clone()
 
         assertEquals(a, b)
@@ -180,13 +180,13 @@ class AddressTest {
     @Throws(Exception::class)
     fun roundtripBase58() {
         val base58 = "17kzeh4N8g49GFvdDzSf8PjaPfyoD1MndL"
-        assertEquals(base58, LegacyAddress.fromBase58(null, base58).toBase58())
+        assertEquals(base58, CashAddress.fromBase58(null, base58).toBase58())
     }
 
     @Test
     @Throws(Exception::class)
     fun comparisonCloneEqualTo() {
-        val a = LegacyAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
+        val a = CashAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
         val b = a.clone()
 
         val result = a.compareTo(b)
@@ -196,7 +196,7 @@ class AddressTest {
     @Test
     @Throws(Exception::class)
     fun comparisonEqualTo() {
-        val a = LegacyAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
+        val a = CashAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
         val b = a.clone()
 
         val result = a.compareTo(b)
@@ -206,8 +206,8 @@ class AddressTest {
     @Test
     @Throws(Exception::class)
     fun comparisonLessThan() {
-        val a = LegacyAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
-        val b = LegacyAddress.fromBase58(mainParams, "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P")
+        val a = CashAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
+        val b = CashAddress.fromBase58(mainParams, "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P")
 
         val result = a.compareTo(b)
         assertTrue(result < 0)
@@ -216,8 +216,8 @@ class AddressTest {
     @Test
     @Throws(Exception::class)
     fun comparisonGreaterThan() {
-        val a = LegacyAddress.fromBase58(mainParams, "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P")
-        val b = LegacyAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
+        val a = CashAddress.fromBase58(mainParams, "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P")
+        val b = CashAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
 
         val result = a.compareTo(b)
         assertTrue(result > 0)
@@ -227,11 +227,11 @@ class AddressTest {
     @Throws(Exception::class)
     fun comparisonBytesVsString() {
         // TODO: To properly test this we need a much larger data set
-        val a = LegacyAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
-        val b = LegacyAddress.fromBase58(mainParams, "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P")
+        val a = CashAddress.fromBase58(mainParams, "1Dorian4RoXcnBv9hnQ4Y2C1an6NJ4UrjX")
+        val b = CashAddress.fromBase58(mainParams, "1EXoDusjGwvnjZUyKkxZ4UHEf77z6A5S4P")
 
         val resultBytes = a.compareTo(b)
-        val resultsString = a.toString().compareTo(b.toString())
+        val resultsString = a.toBase58().compareTo(b.toBase58())
         assertTrue(resultBytes < 0)
         assertTrue(resultsString < 0)
     }

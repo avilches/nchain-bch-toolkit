@@ -28,47 +28,6 @@ import com.nchain.params.Networks
 
 object CashAddressFactory {
 
-    fun fromP2PubKey(params: NetworkParameters, hash160: ByteArray): CashAddress {
-        return CashAddress(params, CashAddress.CashAddressType.PubKey, hash160)
-    }
-
-    fun fromP2SHHash(params: NetworkParameters, hash160: ByteArray): CashAddress {
-        return CashAddress(params, CashAddress.CashAddressType.Script, hash160)
-    }
-
-//    fun fromP2SHScript(params: NetworkParameters, scriptPubKey: Script): CashAddress {
-//        checkArgument(scriptPubKey.isPayToScriptHash, "Not a P2SH script")
-//        return fromP2SHHash(params, scriptPubKey.pubKeyHash!!)
-//    }
-
-    @Throws(AddressFormatException::class)
-    fun fromBase58(legacyAddress: LegacyAddress): CashAddress {
-        return fromBase58(legacyAddress.parameters, legacyAddress.toBase58())
-    }
-
-    @Throws(AddressFormatException::class)
-    fun fromBase58(params: NetworkParameters?, base58: String): CashAddress {
-        val parsed = VersionedChecksummedBytes(base58)
-        var addressParams: NetworkParameters? = null
-        if (params != null) {
-            if (!LegacyAddress.isAcceptableVersion(params, parsed.version)) {
-                throw WrongNetworkException(parsed.version, params.acceptableAddressCodes)
-            }
-            addressParams = params
-        } else {
-            for (p in Networks.get()) {
-                if (LegacyAddress.isAcceptableVersion(p, parsed.version)) {
-                    addressParams = p
-                    break
-                }
-            }
-            if (addressParams == null) {
-                throw AddressFormatException("No network found for $base58")
-            }
-        }
-        return CashAddress(addressParams, parsed.version, parsed.bytes)
-    }
-
     @Throws(AddressFormatException::class)
     fun fromFormattedAddress(params: NetworkParameters, addr: String): CashAddress {
         val cashAddressValidator = CashAddressValidator.create()

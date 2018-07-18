@@ -25,7 +25,6 @@ package com.nchain.key
 
 import com.nchain.address.CashAddress
 import com.nchain.address.CashAddressFactory
-import com.nchain.address.LegacyAddress
 import com.nchain.bitcoinkt.params.NetworkParameters
 import com.nchain.keycrypter.KeyCrypterException
 import com.nchain.shared.Randomizer
@@ -194,13 +193,8 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
      * Returns the address that corresponds to the public part of this ECKey. Note that an address is derived from
      * the RIPEMD-160 hash of the public key and is not the public key itself (which is too large to be convenient).
      */
-    fun toAddress(params: NetworkParameters): LegacyAddress {
-        return LegacyAddress(params, pubKeyHash)
-
-    }
-
-    fun toCashAddress(params: NetworkParameters): LegacyAddress {
-        return CashAddressFactory.fromP2PubKey(params, pubKeyHash)
+    fun toCashAddress(params: NetworkParameters): CashAddress {
+        return CashAddress.fromP2PubKey(params, pubKeyHash)
 
     }
 

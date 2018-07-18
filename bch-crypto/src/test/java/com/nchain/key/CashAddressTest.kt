@@ -222,14 +222,14 @@ class CashAddressTest {
         assert(!address.isP2SHAddress)
 
         // legacy main net
-        address = cashAddressFactory.fromBase58(null, "14krEkSaKoTkbFT9iUCfUYARo4EXA8co6M")
+        address = CashAddress.fromBase58(null, "14krEkSaKoTkbFT9iUCfUYARo4EXA8co6M")
         assertEquals(address.parameters, MainNetParams)
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
         // true
 
         // legacy testnet
-        address = cashAddressFactory.fromBase58(null, "mqc1tmwY2368LLGktnePzEyPAsgADxbksi")
+        address = CashAddress.fromBase58(null, "mqc1tmwY2368LLGktnePzEyPAsgADxbksi")
         assertEquals(address.parameters, TestNet3Params)
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
@@ -248,15 +248,9 @@ class CashAddressTest {
         for (legacy in CASH_ADDRESS_BY_LEGACY_FORMAT_MAIN.keys) {
             val plainCashAddress = CASH_ADDRESS_BY_LEGACY_FORMAT_MAIN[legacy]
 
-            val legacyAddress: LegacyAddress = LegacyAddress.fromBase58(params, legacy)
-            assertEquals(legacyAddress.toString(), legacy)
-
-
-            val legacyCashAddress: CashAddress = cashAddressFactory.fromBase58(params, legacy)
+            val legacyCashAddress: CashAddress = CashAddress.fromBase58(params, legacy)
+            assertEquals(legacyCashAddress.toBase58(), legacy)
             assertEquals(legacyCashAddress.toString(), plainCashAddress)
-
-            val legacyCashAddress2: CashAddress = cashAddressFactory.fromBase58(legacyAddress)
-            assertEquals(legacyCashAddress2.toString(), plainCashAddress)
 
         }
     }
@@ -267,16 +261,9 @@ class CashAddressTest {
         for (legacy in CASH_ADDRESS_BY_LEGACY_FORMAT_TEST.keys) {
             val plainCashAddress = CASH_ADDRESS_BY_LEGACY_FORMAT_TEST[legacy]
 
-            val legacyAddress: LegacyAddress = LegacyAddress.fromBase58(params, legacy)
-            assertEquals(legacyAddress.toString(), legacy)
-            assertEquals(legacyAddress.toCashAddress(), plainCashAddress)
-
-
-            val legacyCashAddress: CashAddress = cashAddressFactory.fromBase58(params, legacy)
-            assertEquals(legacyCashAddress.toCashAddress(), plainCashAddress)
-
-            val legacyCashAddress2: CashAddress = cashAddressFactory.fromBase58(legacyAddress)
-            assertEquals(legacyCashAddress2.toCashAddress(), plainCashAddress)
+            val legacyCashAddress: CashAddress = CashAddress.fromBase58(params, legacy)
+            assertEquals(legacyCashAddress.toBase58(), legacy)
+            assertEquals(legacyCashAddress.toString(), plainCashAddress)
 
         }
     }
