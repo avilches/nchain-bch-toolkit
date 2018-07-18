@@ -19,7 +19,7 @@ package com.nchain.key
 
 import com.nchain.address.AddressFormatException
 import com.nchain.address.VersionedChecksummedBytes
-import com.nchain.bitcoinkt.params.NetworkParameters
+import com.nchain.params.NetworkParameters
 import java.util.*
 
 /**

@@ -19,8 +19,8 @@
  */
 package com.nchain.address
 
-import com.nchain.bitcoinkt.params.MainNetParams
-import com.nchain.bitcoinkt.params.TestNet3Params
+import com.nchain.params.MainNetParams
+import com.nchain.params.TestNet3Params
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test

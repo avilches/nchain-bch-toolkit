@@ -20,9 +20,9 @@
 
 package com.nchain.params
 
-import com.nchain.bitcoinkt.params.MainNetParams
-import com.nchain.bitcoinkt.params.NetworkParameters
-import com.nchain.bitcoinkt.params.TestNet3Params
+import com.nchain.params.MainNetParams
+import com.nchain.params.NetworkParameters
+import com.nchain.params.TestNet3Params
 
 /**
  * Utility class that holds all the registered NetworkParameters types used for Address auto discovery.

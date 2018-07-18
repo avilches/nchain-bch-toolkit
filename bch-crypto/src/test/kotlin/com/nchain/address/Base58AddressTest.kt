@@ -17,9 +17,9 @@
 
 package com.nchain.address
 
-import com.nchain.bitcoinkt.params.MainNetParams
-import com.nchain.bitcoinkt.params.NetworkParameters
-import com.nchain.bitcoinkt.params.TestNet3Params
+import com.nchain.params.MainNetParams
+import com.nchain.params.NetworkParameters
+import com.nchain.params.TestNet3Params
 import com.nchain.key.WrongNetworkException
 import com.nchain.tools.HEX
 import org.junit.Test

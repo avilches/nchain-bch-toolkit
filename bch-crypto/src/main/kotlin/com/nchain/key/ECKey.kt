@@ -24,7 +24,7 @@
 package com.nchain.key
 
 import com.nchain.address.CashAddress
-import com.nchain.bitcoinkt.params.NetworkParameters
+import com.nchain.params.NetworkParameters
 import com.nchain.keycrypter.KeyCrypterException
 import com.nchain.shared.Randomizer
 import com.nchain.shared.Sha256Hash
@@ -131,10 +131,10 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
     val privKeyBytes: ByteArray
         get() = ByteUtils.bigIntegerToBytes(privKey, 32)
 
-    val privateKeyAsHex: String
+    val privKeyAsHex: String
         get() = privKeyBytes.toHex()
 
-    val publicKeyAsHex: String
+    val pubKeyAsHex: String
         get() = pub.encoded.toHex()
 
     /**
@@ -366,10 +366,9 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
      * @return Private key bytes as a [DumpedPrivateKey].
      * @throws IllegalStateException if the private key is not available.
      */
-    fun getPrivateKeyEncoded(params: NetworkParameters): DumpedPrivateKey {
+    fun dumpPrivKey(params: NetworkParameters): DumpedPrivateKey {
         return DumpedPrivateKey(params, privKeyBytes!!, isCompressed)
     }
-
 
     open class MissingPrivateKeyException : RuntimeException()
 
@@ -398,10 +397,6 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
         return toString(true, params)
     }
 
-    fun getPrivateKeyAsWiF(params: NetworkParameters): String {
-        return getPrivateKeyEncoded(params).toString()
-    }
-
     class StringHelper {
         val buffer = StringBuffer()
         fun add(o: Any, v: Any?) {
@@ -419,12 +414,12 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
 
     private fun toString(includePrivate: Boolean, params: NetworkParameters?): String {
         val helper = StringHelper() // MoreObjects.toStringHelper(this).omitNullValues()
-        helper.add("ECKey{pub HEX", publicKeyAsHex)
+        helper.add("ECKey{pub HEX", pubKeyAsHex)
         if (includePrivate) {
             try {
-                helper.add("priv HEX", privateKeyAsHex)
+                helper.add("priv HEX", privKeyAsHex)
                 if (params != null) {
-                    helper.add("priv WIF", getPrivateKeyAsWiF(params))
+                    helper.add("priv WIF", dumpPrivKey(params))
                 }
             } catch (e: IllegalStateException) {
                 // TODO: Make hasPrivKey() work for deterministic keys and fix this.
@@ -437,7 +432,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
         return helper.toString()
     }
 
-/*
+    /*
     open fun formatKeyWithAddress(includePrivateKeys: Boolean, builder: StringBuilder, params: NetworkParameters) {
         val address = toAddress(params)
         builder.append("  addr:")
@@ -453,7 +448,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
             builder.append("\n")
         }
     }
-*/
+    */
 
     companion object {
 //        private val log = LoggerFactory.getLogger(ECKey::class.java!!)
@@ -489,11 +484,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * Generates an entirely new keypair with the given [SecureRandom] object. Point compression is used so the
          * resulting public key will be 33 bytes (32 for the co-ordinate and 1 byte to represent the y bit).
          */
-        fun create(): ECKey {
-            return create(Randomizer.random)
-        }
-
-        fun create(secureRandom: SecureRandom): ECKey {
+        fun create(secureRandom: SecureRandom = Randomizer.random): ECKey {
             val generator = ECKeyPairGenerator()
             val keygenParams = ECKeyGenerationParameters(CURVE, secureRandom)
             generator.init(keygenParams)
@@ -511,6 +502,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * be used for signing.
          * @param compressed If set to true and pubKey is null, the derived public key will be in compressed form.
          */
+        /*
         @Deprecated("")
         fun create(privKey: BigInteger?, pubKey: ByteArray?, compressed: Boolean): ECKey {
             if (privKey == null && pubKey == null)
@@ -527,6 +519,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
                 return ECKey(privKey, LazyECPoint(CURVE.curve, pubKey))
             }
         }
+        */
 
         /**
          * Creates an ECKey given either the private key only, the public key only, or both. If only the private key
@@ -596,7 +589,6 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
             return ECKey(privKey, getPointWithCompression(point, compressed))
         }
 
-
         /**
          * Creates an ECKey given the private key only. The public key is calculated from it (this is slow), either
          * compressed or not.
@@ -619,9 +611,9 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * generator point by the private key. This is used to speed things up when you know you have the right values
          * already. The compression state of the point will be preserved.
          */
-        fun fromPrivateAndPrecalculatedPublic(priv: ByteArray, pub: ByteArray): ECKey {
-            return ECKey(BigInteger(1, priv), CURVE.curve.decodePoint(pub))
-        }
+//        fun fromPrivateAndPrecalculatedPublic(priv: ByteArray, pub: ByteArray): ECKey {
+//            return ECKey(BigInteger(1, priv), CURVE.curve.decodePoint(pub))
+//        }
 
         /**
          * Creates an ECKey that cannot be used for signing, only verifying signatures, from the given point. The
@@ -643,10 +635,10 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * Returns public key bytes from the given private key. To convert a byte array into a BigInteger, use <tt>
          * new BigInteger(1, bytes);</tt>
          */
-        fun publicKeyFromPrivate(privKey: BigInteger, compressed: Boolean): ByteArray {
-            val point = publicPointFromPrivate(privKey)
-            return point.getEncoded(compressed)
-        }
+//        fun publicKeyFromPrivate(privKey: BigInteger, compressed: Boolean): ByteArray {
+//            val point = publicPointFromPrivate(privKey)
+//            return point.getEncoded(compressed)
+//        }
 
         /**
          * Returns public key point from the given private key. To convert a byte array into a BigInteger, use <tt>
@@ -668,6 +660,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
         /**
          * Returns true if the given pubkey is canonical, i.e. the correct length taking into account compression.
          */
+/*
         fun isPubKeyCanonical(pubkey: ByteArray): Boolean {
             if (pubkey.size < 33)
                 return false
@@ -683,18 +676,19 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
                 return false
             return true
         }
+*/
 
+        /* To understand this code, see the definition of the ASN.1 format for EC private keys in the OpenSSL source
+         code in ec_asn1.c:
+
+         ASN1_SEQUENCE(EC_PRIVATEKEY) = {
+           ASN1_SIMPLE(EC_PRIVATEKEY, version, LONG),
+           ASN1_SIMPLE(EC_PRIVATEKEY, privateKey, ASN1_OCTET_STRING),
+           ASN1_EXP_OPT(EC_PRIVATEKEY, parameters, ECPKPARAMETERS, 0),
+           ASN1_EXP_OPT(EC_PRIVATEKEY, publicKey, ASN1_BIT_STRING, 1)
+         } ASN1_SEQUENCE_END(EC_PRIVATEKEY)
+        */
         private fun extractKeyFromASN1(asn1privkey: ByteArray): ECKey {
-            // To understand this code, see the definition of the ASN.1 format for EC private keys in the OpenSSL source
-            // code in ec_asn1.c:
-            //
-            // ASN1_SEQUENCE(EC_PRIVATEKEY) = {
-            //   ASN1_SIMPLE(EC_PRIVATEKEY, version, LONG),
-            //   ASN1_SIMPLE(EC_PRIVATEKEY, privateKey, ASN1_OCTET_STRING),
-            //   ASN1_EXP_OPT(EC_PRIVATEKEY, parameters, ECPKPARAMETERS, 0),
-            //   ASN1_EXP_OPT(EC_PRIVATEKEY, publicKey, ASN1_BIT_STRING, 1)
-            // } ASN1_SEQUENCE_END(EC_PRIVATEKEY)
-            //
             try {
                 val decoder = ASN1InputStream(asn1privkey)
                 val seq = decoder.readObject() as DLSequence
@@ -730,7 +724,9 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
         }
 
 
-        /** Decompress a compressed public key (x co-ord and low-bit of y-coord).  */
+        /*
+        Decompress a compressed public key (x co-ord and low-bit of y-coord).
+        */
         fun decompressKey(xBN: BigInteger, yBit: Boolean): ECPoint {
             val x9 = X9IntegerConverter()
             val compEnc = x9.integerToBytes(xBN, 1 + x9.getByteLength(CURVE.curve))
@@ -740,18 +736,3 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
 
     }
 }
-/**
- * Generates an entirely new keypair. Point compression is used so the resulting public key will be 33 bytes
- * (32 for the co-ordinate and 1 byte to represent the y bit).
- */
-/**
- * Creates an ECKey given the private key only. The public key is calculated from it (this is slow). The resulting
- * public key is compressed.
- */
-/**
- * Signs a text message using the standard Bitcoin messaging signing format and returns the signature as a base64
- * encoded string.
- *
- * @throws IllegalStateException if this ECKey does not have the private part.
- * @throws KeyCrypterException if this ECKey is encrypted and no AESKey is provided or it does not decrypt the ECKey.
- */

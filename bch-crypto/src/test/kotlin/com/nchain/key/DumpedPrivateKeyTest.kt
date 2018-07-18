@@ -25,8 +25,8 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 
 import org.junit.Test
-import com.nchain.bitcoinkt.params.MainNetParams
-import com.nchain.bitcoinkt.params.TestNet3Params
+import com.nchain.params.MainNetParams
+import com.nchain.params.TestNet3Params
 
 class DumpedPrivateKeyTest {
 

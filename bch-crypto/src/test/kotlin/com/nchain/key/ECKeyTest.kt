@@ -18,9 +18,9 @@
 package com.nchain.key
 
 import com.nchain.address.CashAddress
-import com.nchain.bitcoinkt.params.MainNetParams
-import com.nchain.bitcoinkt.params.TestNet3Params
-import com.nchain.bitcoinkt.params.UnitTestParams
+import com.nchain.params.MainNetParams
+import com.nchain.params.TestNet3Params
+import com.nchain.params.UnitTestParams
 import com.nchain.keycrypter.ECKeyCrypted
 import com.nchain.keycrypter.KeyCrypter
 import com.nchain.keycrypter.KeyCrypterException
@@ -165,7 +165,7 @@ class ECKeyTest {
         val addr = "mqAJmaxMcG5pPHHc3H3NtyXzY7kGbJLuMF"
         val privkey = "92shANodC6Y4evT5kFzjNFQAdjqTtHAnDTLzqBBq4BbKUPyx6CD"
         val key = DumpedPrivateKey.fromBase58(TestNet3Params, privkey).key
-        assertEquals(privkey, key.getPrivateKeyEncoded(TestNet3Params).toString())
+        assertEquals(privkey, key.dumpPrivKey(TestNet3Params).toString())
         assertEquals(addr, key.toCashAddress(TestNet3Params).toBase58())
     }
 
@@ -174,7 +174,7 @@ class ECKeyTest {
     fun base58Encoding_leadingZero() {
         val privkey = "91axuYLa8xK796DnBXXsMbjuc8pDYxYgJyQMvFzrZ6UfXaGYuqL"
         val key = DumpedPrivateKey.fromBase58(TestNet3Params, privkey).key
-        assertEquals(privkey, key.getPrivateKeyEncoded(TestNet3Params).toString())
+        assertEquals(privkey, key.dumpPrivKey(TestNet3Params).toString())
         assertEquals(0, key.privKeyBytes[0].toLong())
     }
 
@@ -185,7 +185,7 @@ class ECKeyTest {
         for (i in 0..19) {
             val key = ECKey.create()
             val key1 = DumpedPrivateKey.fromBase58(TestNet3Params,
-                    key.getPrivateKeyEncoded(TestNet3Params).toString()).key
+                    key.dumpPrivKey(TestNet3Params).toString()).key
             assertArrayEquals(key.privKeyBytes, key1.privKeyBytes)
             assertEquals(key.privKeyBytes.toHex(), key1.privKeyBytes.toHex())
         }
@@ -292,14 +292,14 @@ class ECKeyTest {
     @Throws(Exception::class)
     fun testGetPrivateKeyAsHex() {
         val key = ECKey.fromPrivate(BigInteger.TEN).decompress() // An example private key.
-        assertEquals("000000000000000000000000000000000000000000000000000000000000000a", key.privateKeyAsHex)
+        assertEquals("000000000000000000000000000000000000000000000000000000000000000a", key.privKeyAsHex)
     }
 
     @Test
     @Throws(Exception::class)
     fun testGetPublicKeyAsHex() {
         val key = ECKey.fromPrivate(BigInteger.TEN).decompress() // An example private key.
-        assertEquals("04a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7893aba425419bc27a3b6c7e693a24c696f794c2ed877a1593cbee53b037368d7", key.publicKeyAsHex)
+        assertEquals("04a0434d9e47f3c86235477c7b1ae6ae5d3442d49b1943c2b752a68e2a47e247c7893aba425419bc27a3b6c7e693a24c696f794c2ed877a1593cbee53b037368d7", key.pubKeyAsHex)
     }
 
 
@@ -333,7 +333,7 @@ class ECKeyTest {
         val key = ECKey.create()
         assertTrue(key.isCompressed)
         val params = UnitTestParams
-        val base58 = key.getPrivateKeyEncoded(params).toString()
+        val base58 = key.dumpPrivKey(params).toString()
         val key2 = DumpedPrivateKey.fromBase58(params, base58).key
         assertTrue(key2.isCompressed)
         assertArrayEquals(key.privKeyBytes, key2.privKeyBytes)

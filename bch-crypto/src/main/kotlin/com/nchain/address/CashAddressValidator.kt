@@ -19,7 +19,7 @@
  */
 package com.nchain.address
 
-import com.nchain.bitcoinkt.params.NetworkParameters
+import com.nchain.params.NetworkParameters
 
 class CashAddressValidator {
 

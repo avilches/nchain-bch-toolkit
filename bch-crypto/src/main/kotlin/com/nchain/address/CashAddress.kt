@@ -20,7 +20,7 @@
 package com.nchain.address
 
 import com.nchain.address.CashAddressHelper.ConvertBits
-import com.nchain.bitcoinkt.params.NetworkParameters
+import com.nchain.params.NetworkParameters
 import com.nchain.key.WrongNetworkException
 import com.nchain.params.Networks
 

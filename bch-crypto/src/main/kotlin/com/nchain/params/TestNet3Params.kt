@@ -19,7 +19,7 @@
  * The original file was from the bitcoinj-cash project (https://github.com/bitcoinj-cash/bitcoinj).
  */
 
-package com.nchain.bitcoinkt.params
+package com.nchain.params
 
 import com.nchain.tools.ByteUtils
 import java.util.*
