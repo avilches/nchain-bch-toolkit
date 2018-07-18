@@ -42,7 +42,7 @@ object ByteUtils {
      * @param numBytes the desired size of the resulting byte array
      * @return numBytes byte long array.
      */
-    fun bigIntegerToBytes(b: BigInteger, numBytes: Int): ByteArray {
+    @JvmStatic fun bigIntegerToBytes(b: BigInteger, numBytes: Int): ByteArray {
         val bytes = ByteArray(numBytes)
         val biBytes = b.toByteArray()
         val start = if (biBytes.size == numBytes + 1) 1 else 0
@@ -51,39 +51,39 @@ object ByteUtils {
         return bytes
     }
 
-    fun uint32ToByteArrayBE(v: Long): ByteArray {
+    @JvmStatic fun uint32ToByteArrayBE(v: Long): ByteArray {
         val out = ByteArray(4)
         uint32ToByteArrayBE(v, out, 0)
         return out
     }
 
-    fun uint32ToByteArrayBE(v: Long, out: ByteArray, offset: Int) {
+    @JvmStatic fun uint32ToByteArrayBE(v: Long, out: ByteArray, offset: Int) {
         out[offset] = (0xFF and (v shr 24).toInt()).toByte()
         out[offset + 1] = (0xFF and (v shr 16).toInt()).toByte()
         out[offset + 2] = (0xFF and (v shr 8).toInt()).toByte()
         out[offset + 3] = (0xFF and v.toInt()).toByte()
     }
 
-    fun uint32ToByteArrayLE(v: Long): ByteArray {
+    @JvmStatic fun uint32ToByteArrayLE(v: Long): ByteArray {
         val out = ByteArray(4)
         uint32ToByteArrayLE(v, out, 0)
         return out
     }
 
-    fun uint32ToByteArrayLE(v: Long, out: ByteArray, offset: Int) {
+    @JvmStatic fun uint32ToByteArrayLE(v: Long, out: ByteArray, offset: Int) {
         out[offset] = (0xFF and v.toInt()).toByte()
         out[offset + 1] = (0xFF and (v shr 8).toInt()).toByte()
         out[offset + 2] = (0xFF and (v shr 16).toInt()).toByte()
         out[offset + 3] = (0xFF and (v shr 24).toInt()).toByte()
     }
 
-    fun uint64ToByteArrayLE(v: Long): ByteArray {
+    @JvmStatic fun uint64ToByteArrayLE(v: Long): ByteArray {
         val out = ByteArray(8)
         uint64ToByteArrayLE(v, out, 0)
         return out
     }
 
-    fun uint64ToByteArrayLE(v: Long, out: ByteArray, offset: Int) {
+    @JvmStatic fun uint64ToByteArrayLE(v: Long, out: ByteArray, offset: Int) {
         out[offset] = (0xFF and v.toInt()).toByte()
         out[offset + 1] = (0xFF and (v shr 8).toInt()).toByte()
         out[offset + 2] = (0xFF and (v shr 16).toInt()).toByte()
@@ -95,7 +95,7 @@ object ByteUtils {
     }
 
     @Throws(IOException::class)
-    fun uint32ToByteStreamLE(v: Long, stream: OutputStream) {
+    @JvmStatic fun uint32ToByteStreamLE(v: Long, stream: OutputStream) {
         stream.write((0xFF and v.toInt()))
         stream.write((0xFF and (v shr 8).toInt()))
         stream.write((0xFF and (v shr 16).toInt()))
@@ -103,7 +103,7 @@ object ByteUtils {
     }
 
     @Throws(IOException::class)
-    fun int64ToByteStreamLE(v: Long, stream: OutputStream) {
+    @JvmStatic fun int64ToByteStreamLE(v: Long, stream: OutputStream) {
         stream.write((0xFF and v.toInt()))
         stream.write((0xFF and (v shr 8).toInt()))
         stream.write((0xFF and (v shr 16).toInt()))
@@ -115,7 +115,7 @@ object ByteUtils {
     }
 
     @Throws(IOException::class)
-    fun uint64ToByteStreamLE(`val`: BigInteger, stream: OutputStream) {
+    @JvmStatic fun uint64ToByteStreamLE(`val`: BigInteger, stream: OutputStream) {
         var bytes = `val`.toByteArray()
         if (bytes.size > 8) {
             throw RuntimeException("Input too large to encode into a uint64")
@@ -131,21 +131,21 @@ object ByteUtils {
     /**
      * Work around lack of unsigned types in Java.
      */
-//    fun isLessThanUnsigned(n1: Long, n2: Long): Boolean {
+//    @JvmStatic fun isLessThanUnsigned(n1: Long, n2: Long): Boolean {
 //        return UnsignedLongs.compare(n1, n2) < 0
 //    }
 
     /**
      * Work around lack of unsigned types in Java.
      */
-//    fun isLessThanOrEqualToUnsigned(n1: Long, n2: Long): Boolean {
+//    @JvmStatic fun isLessThanOrEqualToUnsigned(n1: Long, n2: Long): Boolean {
 //        return UnsignedLongs.compare(n1, n2) <= 0
 //    }
 
     /**
      * Returns a copy of the given byte array in reverse order.
      */
-    fun reverseBytes(bytes: ByteArray): ByteArray {
+    @JvmStatic fun reverseBytes(bytes: ByteArray): ByteArray {
         // We could use the XOR trick here but it's easier to understand if we don't. If we find this is really a
         // performance issue the matter can be revisited.
         val buf = ByteArray(bytes.size)
@@ -160,7 +160,7 @@ object ByteUtils {
      * @param bytes length must be divisible by 4.
      * @param trimLength trim output to this length.  If positive, must be divisible by 4.
      */
-    fun reverseDwordBytes(bytes: ByteArray, trimLength: Int): ByteArray {
+    @JvmStatic fun reverseDwordBytes(bytes: ByteArray, trimLength: Int): ByteArray {
         check(bytes.size % 4 == 0)
         check(trimLength < 0 || trimLength % 4 == 0)
 
@@ -178,7 +178,7 @@ object ByteUtils {
     }
 
     /** Parse 4 bytes from the byte array (starting at the offset) as unsigned 32-bit integer in little endian format.  */
-    fun readUint32(bytes: ByteArray, offset: Int): Long {
+    @JvmStatic fun readUint32(bytes: ByteArray, offset: Int): Long {
         return  ((bytes[offset].toLong() and 0xffL)) or
                 ((bytes[offset + 1].toLong() and 0xffL) shl 8) or
                 ((bytes[offset + 2].toLong() and 0xffL) shl 16) or
@@ -186,7 +186,7 @@ object ByteUtils {
     }
 
     /** Parse 8 bytes from the byte array (starting at the offset) as signed 64-bit integer in little endian format.  */
-    fun readInt64(bytes: ByteArray, offset: Int): Long {
+    @JvmStatic fun readInt64(bytes: ByteArray, offset: Int): Long {
         return  ((bytes[offset].toLong() and 0xffL)) or
                 ((bytes[offset + 1].toLong() and 0xffL) shl 8) or
                 ((bytes[offset + 2].toLong() and 0xffL) shl 16) or
@@ -198,7 +198,7 @@ object ByteUtils {
     }
 
     /** Parse 4 bytes from the byte array (starting at the offset) as unsigned 32-bit integer in big endian format.  */
-    fun readUint32BE(bytes: ByteArray, offset: Int): Long {
+    @JvmStatic fun readUint32BE(bytes: ByteArray, offset: Int): Long {
         return  ((bytes[offset].toLong() and 0xffL) shl 24) or
                 ((bytes[offset + 1].toLong() and 0xffL) shl 16) or
                 ((bytes[offset + 2].toLong() and 0xffL) shl 8)  or
@@ -206,14 +206,14 @@ object ByteUtils {
     }
 
     /** Parse 2 bytes from the byte array (starting at the offset) as unsigned 16-bit integer in big endian format.  */
-    fun readUint16BE(bytes: ByteArray, offset: Int): Int {
+    @JvmStatic fun readUint16BE(bytes: ByteArray, offset: Int): Int {
         return bytes[offset].toInt() and 0xff shl 8 or (bytes[offset + 1].toInt() and 0xff)
     }
 
     /**
      * Calculates RIPEMD160(SHA256(input)). This is used in Address calculations.
      */
-    fun sha256hash160(input: ByteArray): ByteArray {
+    @JvmStatic fun sha256hash160(input: ByteArray): ByteArray {
         val sha256 = Sha256Hash.hash(input)
         val digest = RIPEMD160Digest()
         digest.update(sha256, 0, sha256.size)
@@ -228,7 +228,7 @@ object ByteUtils {
      * the number in big endian format (with a sign bit).
      * @param hasLength can be set to false if the given array is missing the 4 byte length field
      */
-    fun decodeMPI(mpi: ByteArray, hasLength: Boolean): BigInteger {
+    @JvmStatic fun decodeMPI(mpi: ByteArray, hasLength: Boolean): BigInteger {
         val buf: ByteArray
         if (hasLength) {
             val length = readUint32BE(mpi, 0).toInt()
@@ -251,7 +251,7 @@ object ByteUtils {
      * the number in big endian format (with a sign bit).
      * @param includeLength indicates whether the 4 byte length field should be included
      */
-    fun encodeMPI(value: BigInteger, includeLength: Boolean): ByteArray {
+    @JvmStatic fun encodeMPI(value: BigInteger, includeLength: Boolean): ByteArray {
         var value = value
         if (value == BigInteger.ZERO) {
             return if (!includeLength)
@@ -297,7 +297,7 @@ object ByteUtils {
      * @param dataLE
      * @return
      */
-    fun minimallyEncodeLE(dataLE: ByteArray): ByteArray {
+    @JvmStatic fun minimallyEncodeLE(dataLE: ByteArray): ByteArray {
         var dataLE = dataLE
 
         if (dataLE.size == 0) {
@@ -356,7 +356,7 @@ object ByteUtils {
      * @param bytesLE
      * @return
      */
-    fun checkMinimallyEncodedLE(bytesLE: ByteArray, maxNumSize: Int): Boolean {
+    @JvmStatic fun checkMinimallyEncodedLE(bytesLE: ByteArray, maxNumSize: Int): Boolean {
 
         if (bytesLE.size > maxNumSize) {
             return false
@@ -400,7 +400,7 @@ object ByteUtils {
      * Bitcoin only uses this "compact" format for encoding difficulty targets, which are unsigned 256bit quantities.
      * Thus, all the complexities of the sign bit and using base 256 are probably an implementation accident.
      */
-    fun decodeCompactBits(compact: Long): BigInteger {
+    @JvmStatic fun decodeCompactBits(compact: Long): BigInteger {
         val size = (compact shr 24).toInt() and 0xFF
         val bytes = ByteArray(4 + size)
         bytes[3] = size.toByte()
@@ -413,7 +413,7 @@ object ByteUtils {
     /**
      * @see ByteUtils.decodeCompactBits
      */
-    fun encodeCompactBits(value: BigInteger): Long {
+    @JvmStatic fun encodeCompactBits(value: BigInteger): Long {
         var result: Long
         var size = value.toByteArray().size
         if (size <= 3)
@@ -432,7 +432,7 @@ object ByteUtils {
     }
 
 
-    fun copyOf(`in`: ByteArray, length: Int): ByteArray {
+    @JvmStatic fun copyOf(`in`: ByteArray, length: Int): ByteArray {
         val out = ByteArray(length)
         System.arraycopy(`in`, 0, out, 0, Math.min(length, `in`.size))
         return out
@@ -441,7 +441,7 @@ object ByteUtils {
     /**
      * Creates a copy of bytes and appends b to the end of it
      */
-    fun appendByte(bytes: ByteArray, b: Byte): ByteArray {
+    @JvmStatic fun appendByte(bytes: ByteArray, b: Byte): ByteArray {
         val result = Arrays.copyOf(bytes, bytes.size + 1)
         result[result.size - 1] = b
         return result
@@ -459,7 +459,7 @@ object ByteUtils {
      * @param charsetName the name of a supported [charset][java.nio.charset.Charset]
      * @return the decoded String
      */
-    fun toString(bytes: ByteArray, charsetName: String): String {
+    @JvmStatic fun toString(bytes: ByteArray, charsetName: String): String {
         try {
             return String(bytes, Charset.forName(charsetName))
         } catch (e: UnsupportedEncodingException) {
@@ -480,7 +480,7 @@ object ByteUtils {
      * @param charsetName the name of a supported [charset][java.nio.charset.Charset]
      * @return the encoded bytes
      */
-    fun toBytes(str: CharSequence, charsetName: String): ByteArray {
+    @JvmStatic fun toBytes(str: CharSequence, charsetName: String): ByteArray {
         try {
             return str.toString().toByteArray(charset(charsetName))
         } catch (e: UnsupportedEncodingException) {
@@ -489,20 +489,35 @@ object ByteUtils {
     }
 
     /** Checks if the given bit is set in data, using little endian (not the same as Java native big endian)  */
-    fun checkBitLE(data: ByteArray, index: Int): Boolean {
+    @JvmStatic fun checkBitLE(data: ByteArray, index: Int): Boolean {
         return data[index ushr 3].toInt() and bitMask[7 and index] != 0
     }
 
     /** Sets the given bit in data to one, using little endian (not the same as Java native big endian)  */
-    fun setBitLE(data: ByteArray, index: Int) {
+    @JvmStatic fun setBitLE(data: ByteArray, index: Int) {
         data[index ushr 3 ] = (data[index ushr 3].toInt() or bitMask[7 and index]).toByte()
     }
 
-    fun toByteArray(vararg values: Int): ByteArray {
+    @JvmStatic fun toByteArray(vararg values: Int): ByteArray {
         val conv = ByteArray(values.size)
         for (i in values.indices) {
             conv[i] = (values[i] and 0xFF).toByte()
         }
         return conv
     }
+
+    @JvmStatic fun deserialize(o:ByteArray):Any {
+        return ObjectInputStream(ByteArrayInputStream(o)).readObject()
+    }
+
+    @JvmStatic fun serialize(o:Any):ByteArray {
+        val os = ByteArrayOutputStream()
+        ObjectOutputStream(os).writeObject(o)
+        return os.toByteArray()
+    }
+
+    @JvmStatic fun serializeRound(o:Any):Any {
+        return deserialize(serialize(o))
+    }
+
 }

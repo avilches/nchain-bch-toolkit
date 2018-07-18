@@ -25,6 +25,7 @@ import com.nchain.key.WrongNetworkException
 import com.nchain.params.MainNetParams
 import com.nchain.params.Networks
 import com.nchain.params.TestNet3Params
+import com.nchain.tools.ByteUtils
 
 class CashAddress(@Transient var parameters: NetworkParameters,
                   val addressType: CashAddressType,
@@ -46,7 +47,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
     val isTestNet: Boolean
         get() = parameters == TestNet3Params
 
-    enum class CashAddressType private constructor(private val value: Int) {
+    enum class CashAddressType constructor(private val value: Int) {
         PubKey(0),
         Script(1);
 
@@ -58,24 +59,20 @@ class CashAddress(@Transient var parameters: NetworkParameters,
     fun toCashAddress(): String {
         return CashAddressHelper.encodeCashAddress(parameters.cashAddrPrefix, CashAddressHelper.packAddressData(hash160, addressType.getValue()))
     }
+
     override fun toString(): String {
         return toCashAddress()
     }
 
-//    @Throws(CloneNotSupportedException::class)
-//    override fun clone(): CashAddress {
-//        return super.clone()
-//    }
-
     companion object {
 
         @Throws(AddressFormatException::class)
-        fun fromHash160(params: NetworkParameters, hash160: ByteArray): CashAddress {
+        @JvmStatic fun fromHash160(params: NetworkParameters, hash160: ByteArray): CashAddress {
             return CashAddress(params, params.addressHeader, hash160)
         }
 
         @Throws(AddressFormatException::class)
-        fun from(address: String): CashAddress {
+        @JvmStatic fun from(address: String): CashAddress {
             try {
                 return fromBase58(null, address)
             } catch (e: Exception) {
@@ -84,7 +81,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
         }
 
         @Throws(AddressFormatException::class)
-        fun fromBase58(params: NetworkParameters? = null, base58: String): CashAddress {
+        @JvmStatic fun fromBase58(params: NetworkParameters? = null, base58: String): CashAddress {
             val parsed = VersionedChecksummedBytes(base58)
             var addressParams: NetworkParameters? = null
             if (params != null) {
@@ -106,11 +103,11 @@ class CashAddress(@Transient var parameters: NetworkParameters,
             return CashAddress(addressParams, parsed.version, parsed.bytes)
         }
 
-        fun fromP2PubKey(params: NetworkParameters, hash160: ByteArray): CashAddress {
+        @JvmStatic fun fromP2PubKey(params: NetworkParameters, hash160: ByteArray): CashAddress {
             return CashAddress(params, CashAddress.CashAddressType.PubKey, hash160)
         }
 
-        fun fromP2SHHash(params: NetworkParameters, hash160: ByteArray): CashAddress {
+        @JvmStatic fun fromP2SHHash(params: NetworkParameters, hash160: ByteArray): CashAddress {
             return CashAddress(params, CashAddress.CashAddressType.Script, hash160)
         }
 
@@ -128,7 +125,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
          * @throws AddressFormatException if the string wasn't of a known version
          */
         @Throws(AddressFormatException::class)
-        fun getParametersFromAddress(address: String): NetworkParameters? {
+        @JvmStatic fun getParametersFromAddress(address: String): NetworkParameters? {
             try {
                 return fromBase58(null, address).parameters
             } catch (e: AddressFormatException) {
@@ -150,7 +147,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
         /**
          * Check if a given address version is valid given the NetworkParameters.
          */
-        internal fun isAcceptableVersion(params: NetworkParameters, version: Int): Boolean {
+        @JvmStatic fun isAcceptableVersion(params: NetworkParameters, version: Int): Boolean {
             for (v in params.acceptableAddressCodes!!) {
                 if (version == v) {
                     return true
@@ -161,7 +158,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
 
 
         @Throws(AddressFormatException::class)
-        fun fromFormattedAddress(address: String): CashAddress {
+        @JvmStatic fun fromFormattedAddress(address: String): CashAddress {
             val prefixPos = address.indexOf(":")
             if (prefixPos > 0) {
                 val prefix = address.substring(0, prefixPos)
@@ -177,7 +174,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
         }
 
         @Throws(AddressFormatException::class)
-        fun fromFormattedAddress(params: NetworkParameters, addr: String): CashAddress {
+        @JvmStatic fun fromFormattedAddress(params: NetworkParameters, addr: String): CashAddress {
             val (prefix, payload) = CashAddressHelper.decodeCashAddress(addr, params.cashAddrPrefix)
 
             CashAddressValidator.checkValidPrefix(params, prefix)
@@ -207,7 +204,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
         }
 
         @Throws(AddressFormatException::class)
-        private fun getAddressTypeFromVersionByte(versionByte: Byte): CashAddress.CashAddressType {
+        @JvmStatic fun getAddressTypeFromVersionByte(versionByte: Byte): CashAddress.CashAddressType {
             when (versionByte.toInt() shr 3 and 0x1f) {
                 0 -> return CashAddress.CashAddressType.PubKey
                 1 -> return CashAddress.CashAddressType.Script
@@ -215,7 +212,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
             }
         }
 
-        private fun calculateHashSizeFromVersionByte(versionByte: Byte): Int {
+        @JvmStatic fun calculateHashSizeFromVersionByte(versionByte: Byte): Int {
             var hash_size = 20 + 4 * (versionByte.toInt() and 0x03)
             if (versionByte.toInt() and 0x04 != 0) {
                 hash_size *= 2
@@ -223,7 +220,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
             return hash_size
         }
 
-        internal fun getLegacyVersion(params: NetworkParameters, type: CashAddressType): Int {
+        @JvmStatic fun getLegacyVersion(params: NetworkParameters, type: CashAddressType): Int {
             when (type) {
                 CashAddressType.PubKey -> return params.addressHeader
                 CashAddressType.Script -> return params.p2SHHeader
@@ -231,7 +228,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
             throw AddressFormatException("Invalid Cash address type: " + type.getValue())
         }
 
-        internal fun getType(params: NetworkParameters, version: Int): CashAddressType {
+        @JvmStatic fun getType(params: NetworkParameters, version: Int): CashAddressType {
             if (version == params.addressHeader) {
                 return CashAddressType.PubKey
             } else if (version == params.p2SHHeader) {

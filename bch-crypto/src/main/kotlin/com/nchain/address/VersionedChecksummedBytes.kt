@@ -18,6 +18,7 @@ package com.nchain.address
 
 
 import com.nchain.shared.Sha256Hash
+import com.nchain.tools.ByteUtils
 import java.io.Serializable
 import java.util.*
 
@@ -97,7 +98,7 @@ open class VersionedChecksummedBytes : Serializable, Cloneable, Comparable<Versi
      */
     @Throws(CloneNotSupportedException::class)
     public override fun clone(): VersionedChecksummedBytes {
-        return super.clone() as VersionedChecksummedBytes
+        return ByteUtils.serializeRound(this) as VersionedChecksummedBytes
     }
 
     /**

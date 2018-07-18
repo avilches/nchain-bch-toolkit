@@ -34,6 +34,6 @@ fun String.hexStringToByteArray(): ByteArray {
 }
 
 object HEX {
-    fun hexToBytes(hex: String): ByteArray = hex.hexStringToByteArray()
-    fun bytesToHex(bytes: ByteArray): String = bytes.toHex()
+    @JvmStatic fun hexToBytes(hex: String): ByteArray = hex.hexStringToByteArray()
+    @JvmStatic fun bytesToHex(bytes: ByteArray): String = bytes.toHex()
 }
