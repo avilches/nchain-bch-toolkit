@@ -68,7 +68,7 @@ object Base58 {
      * @param input the bytes to encode
      * @return the base58-encoded string
      */
-    fun encode(input: ByteArray): String {
+    @JvmStatic fun encode(input: ByteArray): String {
         var input = input
         if (input.size == 0) {
             return ""
@@ -108,7 +108,7 @@ object Base58 {
      * @throws AddressFormatException if the given string is not a valid base58 string
      */
     @Throws(AddressFormatException::class)
-    fun decode(input: String): ByteArray {
+    @JvmStatic fun decode(input: String): ByteArray {
         if (input.length == 0) {
             return ByteArray(0)
         }

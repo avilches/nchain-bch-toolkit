@@ -36,7 +36,6 @@ import java.util.*
  */
 class CashAddressTest {
 
-    var cashAddressFactory: CashAddressFactory = CashAddressFactory
     val ADDRESSES_FILE_PATH_MAIN = "/bch_addresses_main.csv"
     val ADDRESSES_FILE_PATH_TEST = "/bch_addresses_test.csv"
     val CASH_ADDRESS_BY_LEGACY_FORMAT_MAIN = HashMap<String, String>()
@@ -63,7 +62,7 @@ class CashAddressTest {
         val params = MainNetParams
         val plainAddress = "bchtest:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h"
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
             fail("Exception expected but didn't happen")
         } catch (ignored: AddressFormatException) {
         }
@@ -75,7 +74,7 @@ class CashAddressTest {
         val params = MainNetParams
         val plainAddress = "bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h"
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
         } catch (ex: AddressFormatException) {
             fail("Unexpected exception: " + ex.message)
         }
@@ -88,7 +87,7 @@ class CashAddressTest {
         val payload = byteArrayOf()
         val plainAddress = CashAddressHelper.encodeCashAddress(params.cashAddrPrefix, payload)
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
             fail("Exception expected but didn't happen")
         } catch (ignore: AddressFormatException) {
         }
@@ -101,7 +100,7 @@ class CashAddressTest {
         val payload = byteArrayOf(0x07, 0x01, 0x16, 0x15, 0x17, 0x16, 0x11, 0x0e, 0x1c, 0x06, 0x19, 0xa, 0x1c, 0x00, 0xb, 0x00, 0x18, 0x05, 0x1e, 0x13, 0x07, 0x1d, 0x0b, 0x02, 0x03, 0x03, 0x03, 0x1a, 0x3, 0x14, 0x1b, 0x1f, 0x19, 0x18)
         val plainAddress = CashAddressHelper.encodeCashAddress(params.cashAddrPrefix, payload)
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
             fail("Exception expected but didn't happen")
         } catch (ignore: AddressFormatException) {
         }
@@ -114,7 +113,7 @@ class CashAddressTest {
         val payload = byteArrayOf(0x07, 0x01, 0x16, 0x15, 0x17, 0x16, 0x11, 0x0e, 0x1c, 0x06, 0x19, 0xa, 0x1c, 0x00, 0xb, 0x00, 0x18, 0x05, 0x1e, 0x13, 0x07, 0x1d, 0x0b, 0x02, 0x03)
         val plainAddress = CashAddressHelper.encodeCashAddress(params.cashAddrPrefix, payload)
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
             fail("Exception expected but didn't happen")
         } catch (ignore: AddressFormatException) {
         }
@@ -127,7 +126,7 @@ class CashAddressTest {
         val payload = byteArrayOf(0x07, 0x01, 0x16, 0x15, 0x17, 0x16, 0x11, 0x0e, 0x1c, 0x06, 0x19, 0xa, 0x1c, 0x00, 0xb, 0x00, 0x18, 0x05, 0x1e, 0x13, 0x0d)
         val plainAddress = CashAddressHelper.encodeCashAddress(params.cashAddrPrefix, payload)
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
             fail("Exception expected but didn't happen")
         } catch (ignore: AddressFormatException) {
         }
@@ -140,7 +139,7 @@ class CashAddressTest {
         val payload = byteArrayOf(0x1f, 0x01, 0x16, 0x15, 0x17, 0x16, 0x11, 0x0e, 0x1c, 0x06, 0x19, 0xa, 0x1c, 0x00, 0xb, 0x00, 0x18, 0x05, 0x1e, 0x13, 0x07, 0x1d, 0x0b, 0x02, 0x03, 0x03, 0x03, 0x1a, 0x3, 0x14, 0x1b, 0x1f, 0x19, 0x18)
         val plainAddress = CashAddressHelper.encodeCashAddress(params.cashAddrPrefix, payload)
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
             fail("Exception expected but didn't happen")
         } catch (ignore: AddressFormatException) {
         }
@@ -153,7 +152,7 @@ class CashAddressTest {
         val payload = byteArrayOf(0x00, 0x06, 0x16, 0x15, 0x17, 0x16, 0x11, 0x0e, 0x1c, 0x06, 0x19, 0xa, 0x1c, 0x00, 0xb, 0x00, 0x18, 0x05, 0x1e, 0x13, 0x07, 0x1d, 0x0b, 0x02, 0x03, 0x03, 0x03, 0x1a, 0x3, 0x14, 0x1b, 0x1f, 0x19, 0x18)
         val plainAddress = CashAddressHelper.encodeCashAddress(params.cashAddrPrefix, payload)
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
             fail("Exception expected but didn't happen")
         } catch (ignore: AddressFormatException) {
         }
@@ -165,7 +164,7 @@ class CashAddressTest {
         val params = MainNetParams
         val plainAddress = "bitcoincash:ppk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h"
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
             fail("Exception expected but didn't happen")
         } catch (ignored: AddressFormatException) {
         }
@@ -177,7 +176,7 @@ class CashAddressTest {
         val params = MainNetParams
         val plainAddress = "BITCOINCASH:QPK4HK3WUXE2UQTQC97N8ATZRRR6R5MLECZF9SUR4H"
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
         } catch (ex: AddressFormatException) {
             fail("Unexpected exception: " + ex.message)
         }
@@ -189,7 +188,7 @@ class CashAddressTest {
         val params = MainNetParams
         val plainAddress = "bitcoincash:qpk4hk3wuxe2uqtqc97n8atzrrr6r5mleczf9sur4h"
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
         } catch (ex: AddressFormatException) {
             fail("Unexpected exception: " + ex.message)
         }
@@ -201,7 +200,7 @@ class CashAddressTest {
         val params = MainNetParams
         val plainAddress = "bitcoincash:qPk4hk3wuxe2UQtqc97n8atzrRR6r5mlECzf9sur4H"
         try {
-            cashAddressFactory.fromFormattedAddress(params, plainAddress)
+            CashAddress.fromFormattedAddress(params, plainAddress)
             fail("Exception expected but didn't happen")
         } catch (ignore: AddressFormatException) {
         }
@@ -212,12 +211,12 @@ class CashAddressTest {
         val params = MainNetParams
 
         // cashaddr
-        var address = cashAddressFactory.fromFormattedAddress(params, "bitcoincash:qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
+        var address = CashAddress.fromFormattedAddress(params, "bitcoincash:qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
         // w/ no cashaddr prefix
-        address = cashAddressFactory.fromFormattedAddress(params, "qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
+        address = CashAddress.fromFormattedAddress(params, "qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
@@ -235,7 +234,7 @@ class CashAddressTest {
         assert(!address.isP2SHAddress)
 
         // testnet w/ no cashaddr prefix
-        address = cashAddressFactory.fromFormattedAddress(TestNet3Params, "qph2v4mkxjgdqgmlyjx6njmey0ftrxlnggt9t0a6zy")
+        address = CashAddress.fromFormattedAddress(TestNet3Params, "qph2v4mkxjgdqgmlyjx6njmey0ftrxlnggt9t0a6zy")
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
@@ -272,7 +271,7 @@ class CashAddressTest {
     fun testFromCashToLegacyAddressMain() {
         val params = MainNetParams
         for (legacy in CASH_ADDRESS_BY_LEGACY_FORMAT_MAIN.keys) {
-            val cashAddress = cashAddressFactory.fromFormattedAddress(params, CASH_ADDRESS_BY_LEGACY_FORMAT_MAIN[legacy]!!)
+            val cashAddress = CashAddress.fromFormattedAddress(params, CASH_ADDRESS_BY_LEGACY_FORMAT_MAIN[legacy]!!)
 
             assertEquals(cashAddress.toBase58(), legacy)
         }
@@ -282,7 +281,7 @@ class CashAddressTest {
     fun testFromCashToLegacyAddressTest() {
         val params = TestNet3Params
         for (legacy in CASH_ADDRESS_BY_LEGACY_FORMAT_TEST.keys) {
-            val cashAddress = cashAddressFactory.fromFormattedAddress(params, CASH_ADDRESS_BY_LEGACY_FORMAT_TEST[legacy]!!)
+            val cashAddress = CashAddress.fromFormattedAddress(params, CASH_ADDRESS_BY_LEGACY_FORMAT_TEST[legacy]!!)
 
             assertEquals(cashAddress.toBase58(), legacy)
         }

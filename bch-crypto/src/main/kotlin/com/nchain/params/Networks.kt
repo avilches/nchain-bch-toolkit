@@ -38,6 +38,10 @@ object Networks {
         return networks
     }
 
+    fun findByCashAddressPrefix(cashAddrPrefix:String): NetworkParameters? {
+        return networks.find { it.cashAddrPrefix == cashAddrPrefix }
+    }
+
 /*
     fun register(network: NetworkParameters) {
         register(Lists.newArrayList(network))

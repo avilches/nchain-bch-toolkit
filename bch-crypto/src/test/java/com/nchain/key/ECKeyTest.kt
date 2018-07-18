@@ -18,7 +18,6 @@
 package com.nchain.key
 
 import com.nchain.address.CashAddress
-import com.nchain.address.CashAddressFactory
 import com.nchain.bitcoinkt.params.MainNetParams
 import com.nchain.bitcoinkt.params.TestNet3Params
 import com.nchain.bitcoinkt.params.UnitTestParams

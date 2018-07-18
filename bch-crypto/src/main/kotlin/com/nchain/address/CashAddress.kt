@@ -19,6 +19,7 @@
  */
 package com.nchain.address
 
+import com.nchain.address.CashAddressHelper.ConvertBits
 import com.nchain.bitcoinkt.params.NetworkParameters
 import com.nchain.key.WrongNetworkException
 import com.nchain.params.Networks
@@ -154,6 +155,55 @@ class CashAddress : VersionedChecksummedBytes {
             return false
         }
 
+
+        @Throws(AddressFormatException::class)
+        fun fromFormattedAddress(params: NetworkParameters, addr: String): CashAddress {
+            val cashAddressValidator = CashAddressValidator.create()
+
+            val (prefix, payload) = CashAddressHelper.decodeCashAddress(addr, params.cashAddrPrefix)
+
+            cashAddressValidator.checkValidPrefix(params, prefix)
+            cashAddressValidator.checkNonEmptyPayload(payload)
+
+            val extraBits = (payload.size * 5 % 8).toByte()
+            cashAddressValidator.checkAllowedPadding(extraBits)
+
+            val last = payload[payload.size - 1]
+            val mask = ((1 shl extraBits.toInt()) - 1).toByte()
+            cashAddressValidator.checkNonZeroPadding(last, mask)
+
+            val data = ByteArray(payload.size * 5 / 8)
+            ConvertBits(data, payload, 5, 8, false)
+
+            val versionByte = data[0]
+            cashAddressValidator.checkFirstBitIsZero(versionByte)
+
+            val hashSize = calculateHashSizeFromVersionByte(versionByte)
+            cashAddressValidator.checkDataLength(data, hashSize)
+
+            val result = ByteArray(data.size - 1)
+            System.arraycopy(data, 1, result, 0, data.size - 1)
+            val type = getAddressTypeFromVersionByte(versionByte)
+
+            return CashAddress(params, type, result)
+        }
+
+        @Throws(AddressFormatException::class)
+        private fun getAddressTypeFromVersionByte(versionByte: Byte): CashAddress.CashAddressType {
+            when (versionByte.toInt() shr 3 and 0x1f) {
+                0 -> return CashAddress.CashAddressType.PubKey
+                1 -> return CashAddress.CashAddressType.Script
+                else -> throw AddressFormatException("Unknown Type")
+            }
+        }
+
+        private fun calculateHashSizeFromVersionByte(versionByte: Byte): Int {
+            var hash_size = 20 + 4 * (versionByte.toInt() and 0x03)
+            if (versionByte.toInt() and 0x04 != 0) {
+                hash_size *= 2
+            }
+            return hash_size
+        }
 
         internal fun getLegacyVersion(params: NetworkParameters, type: CashAddressType): Int {
             when (type) {

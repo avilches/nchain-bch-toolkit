@@ -24,7 +24,6 @@
 package com.nchain.key
 
 import com.nchain.address.CashAddress
-import com.nchain.address.CashAddressFactory
 import com.nchain.bitcoinkt.params.NetworkParameters
 import com.nchain.keycrypter.KeyCrypterException
 import com.nchain.shared.Randomizer
