@@ -205,41 +205,53 @@ class CashAddressTest {
 
     @Test
     fun isP2PKHAddress_bitboxTest() {
-
         // mainnet w cashaddr prefix
-        var address = CashAddress.fromFormattedAddress(MainNetParams, "bitcoincash:qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
+        var address = CashAddress.from("bitcoincash:qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
+        assertEquals(address.parameters, MainNetParams)
+        assert(address.isMainNet)
+        assert(!address.isTestNet)
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
         // mainnet w/ no cashaddr prefix
-        address = CashAddress.fromFormattedAddress(MainNetParams, "qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
+        address = CashAddress.from("qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
+        assertEquals(address.parameters, MainNetParams)
+        assert(address.isMainNet)
+        assert(!address.isTestNet)
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
         // legacy main net
-        address = CashAddress.fromBase58(MainNetParams, "14krEkSaKoTkbFT9iUCfUYARo4EXA8co6M")
+        address = CashAddress.from("14krEkSaKoTkbFT9iUCfUYARo4EXA8co6M")
         assertEquals(address.parameters, MainNetParams)
+        assert(address.isMainNet)
+        assert(!address.isTestNet)
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
         // testnet w cashaddr prefix
-        address = CashAddress.fromFormattedAddress(TestNet3Params, "bchtest:qph2v4mkxjgdqgmlyjx6njmey0ftrxlnggt9t0a6zy")
+        address = CashAddress.from("bchtest:qph2v4mkxjgdqgmlyjx6njmey0ftrxlnggt9t0a6zy")
+        assertEquals(address.parameters, TestNet3Params)
+        assert(!address.isMainNet)
+        assert(address.isTestNet)
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
         // testnet w/ no cashaddr prefix
-        address = CashAddress.fromFormattedAddress(TestNet3Params, "qph2v4mkxjgdqgmlyjx6njmey0ftrxlnggt9t0a6zy")
+        address = CashAddress.from("qph2v4mkxjgdqgmlyjx6njmey0ftrxlnggt9t0a6zy")
+        assertEquals(address.parameters, TestNet3Params)
+        assert(!address.isMainNet)
+        assert(address.isTestNet)
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
         // legacy testnet
-        address = CashAddress.fromBase58(TestNet3Params, "mqc1tmwY2368LLGktnePzEyPAsgADxbksi")
+        address = CashAddress.from("mqc1tmwY2368LLGktnePzEyPAsgADxbksi")
         assertEquals(address.parameters, TestNet3Params)
+        assert(!address.isMainNet)
+        assert(address.isTestNet)
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
-
-
-
     }
 
     @Test
@@ -250,7 +262,7 @@ class CashAddressTest {
 
             val legacyCashAddress: CashAddress = CashAddress.fromBase58(params, legacy)
             assertEquals(legacyCashAddress.toBase58(), legacy)
-            assertEquals(legacyCashAddress.toString(), plainCashAddress)
+            assertEquals(legacyCashAddress.toCashAddress(), plainCashAddress)
 
         }
     }
@@ -263,7 +275,7 @@ class CashAddressTest {
 
             val legacyCashAddress: CashAddress = CashAddress.fromBase58(params, legacy)
             assertEquals(legacyCashAddress.toBase58(), legacy)
-            assertEquals(legacyCashAddress.toString(), plainCashAddress)
+            assertEquals(legacyCashAddress.toCashAddress(), plainCashAddress)
 
         }
     }

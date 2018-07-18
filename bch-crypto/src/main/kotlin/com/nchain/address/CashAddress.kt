@@ -22,7 +22,9 @@ package com.nchain.address
 import com.nchain.address.CashAddressHelper.ConvertBits
 import com.nchain.params.NetworkParameters
 import com.nchain.key.WrongNetworkException
+import com.nchain.params.MainNetParams
 import com.nchain.params.Networks
+import com.nchain.params.TestNet3Params
 
 class CashAddress(@Transient var parameters: NetworkParameters,
                   val addressType: CashAddressType,
@@ -38,6 +40,11 @@ class CashAddress(@Transient var parameters: NetworkParameters,
     val isP2PKHAddress: Boolean
         get() = addressType == CashAddressType.PubKey
 
+    val isMainNet: Boolean
+        get() = parameters == MainNetParams
+
+    val isTestNet: Boolean
+        get() = parameters == TestNet3Params
 
     enum class CashAddressType private constructor(private val value: Int) {
         PubKey(0),
@@ -68,7 +75,16 @@ class CashAddress(@Transient var parameters: NetworkParameters,
         }
 
         @Throws(AddressFormatException::class)
-        fun fromBase58(params: NetworkParameters?, base58: String): CashAddress {
+        fun from(address: String): CashAddress {
+            try {
+                return fromBase58(null, address)
+            } catch (e: Exception) {
+                return fromFormattedAddress(address)
+            }
+        }
+
+        @Throws(AddressFormatException::class)
+        fun fromBase58(params: NetworkParameters? = null, base58: String): CashAddress {
             val parsed = VersionedChecksummedBytes(base58)
             var addressParams: NetworkParameters? = null
             if (params != null) {
