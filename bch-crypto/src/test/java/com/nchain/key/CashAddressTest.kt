@@ -22,8 +22,7 @@ package com.nchain.key
 import com.nchain.address.*
 import com.nchain.bitcoinkt.params.MainNetParams
 import com.nchain.bitcoinkt.params.TestNet3Params
-import org.junit.Assert.assertEquals
-import org.junit.Assert.fail
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
@@ -208,28 +207,25 @@ class CashAddressTest {
 
     @Test
     fun isP2PKHAddress_bitboxTest() {
-        val params = MainNetParams
 
-        // cashaddr
-        var address = CashAddress.fromFormattedAddress(params, "bitcoincash:qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
+        // mainnet w cashaddr prefix
+        var address = CashAddress.fromFormattedAddress(MainNetParams, "bitcoincash:qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
-        // w/ no cashaddr prefix
-        address = CashAddress.fromFormattedAddress(params, "qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
+        // mainnet w/ no cashaddr prefix
+        address = CashAddress.fromFormattedAddress(MainNetParams, "qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s")
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
         // legacy main net
-        address = CashAddress.fromBase58(null, "14krEkSaKoTkbFT9iUCfUYARo4EXA8co6M")
+        address = CashAddress.fromBase58(MainNetParams, "14krEkSaKoTkbFT9iUCfUYARo4EXA8co6M")
         assertEquals(address.parameters, MainNetParams)
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
-        // true
 
-        // legacy testnet
-        address = CashAddress.fromBase58(null, "mqc1tmwY2368LLGktnePzEyPAsgADxbksi")
-        assertEquals(address.parameters, TestNet3Params)
+        // testnet w cashaddr prefix
+        address = CashAddress.fromFormattedAddress(TestNet3Params, "bchtest:qph2v4mkxjgdqgmlyjx6njmey0ftrxlnggt9t0a6zy")
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
 
@@ -237,6 +233,13 @@ class CashAddressTest {
         address = CashAddress.fromFormattedAddress(TestNet3Params, "qph2v4mkxjgdqgmlyjx6njmey0ftrxlnggt9t0a6zy")
         assert(address.isP2PKHAddress)
         assert(!address.isP2SHAddress)
+
+        // legacy testnet
+        address = CashAddress.fromBase58(TestNet3Params, "mqc1tmwY2368LLGktnePzEyPAsgADxbksi")
+        assertEquals(address.parameters, TestNet3Params)
+        assert(address.isP2PKHAddress)
+        assert(!address.isP2SHAddress)
+
 
 
     }
@@ -272,8 +275,11 @@ class CashAddressTest {
         val params = MainNetParams
         for (legacy in CASH_ADDRESS_BY_LEGACY_FORMAT_MAIN.keys) {
             val cashAddress = CashAddress.fromFormattedAddress(params, CASH_ADDRESS_BY_LEGACY_FORMAT_MAIN[legacy]!!)
-
             assertEquals(cashAddress.toBase58(), legacy)
+
+            val autoCashAddress = CashAddress.fromFormattedAddress(CASH_ADDRESS_BY_LEGACY_FORMAT_MAIN[legacy]!!)
+            assertEquals(autoCashAddress.toBase58(), legacy)
+
         }
     }
 
@@ -282,10 +288,29 @@ class CashAddressTest {
         val params = TestNet3Params
         for (legacy in CASH_ADDRESS_BY_LEGACY_FORMAT_TEST.keys) {
             val cashAddress = CashAddress.fromFormattedAddress(params, CASH_ADDRESS_BY_LEGACY_FORMAT_TEST[legacy]!!)
-
             assertEquals(cashAddress.toBase58(), legacy)
+
+            val autoCashAddress = CashAddress.fromFormattedAddress(CASH_ADDRESS_BY_LEGACY_FORMAT_TEST[legacy]!!)
+            assertEquals(autoCashAddress.toBase58(), legacy)
         }
     }
+
+    @Test
+    @Throws(Exception::class)
+    fun getNetwork() {
+        val mainNetAddress = "qqfx3wcg8ts09mt5l3zey06wenapyfqq2qrcyj5x0s"
+
+        assertEquals(CashAddress.getParametersFromAddress(mainNetAddress), MainNetParams)
+        assertEquals(CashAddress.getParametersFromAddress("bitcoincash:"+mainNetAddress), MainNetParams)
+        assertEquals(CashAddress.getParametersFromAddress("bchtest:"+mainNetAddress), null)
+
+        val testNetAddress = "qph2v4mkxjgdqgmlyjx6njmey0ftrxlnggt9t0a6zy"
+        assertEquals(CashAddress.getParametersFromAddress(testNetAddress), TestNet3Params)
+        assertEquals(CashAddress.getParametersFromAddress("bitcoincash:"+testNetAddress), null)
+        assertEquals(CashAddress.getParametersFromAddress("bchtest:"+testNetAddress), TestNet3Params)
+
+    }
+
 
 
 }

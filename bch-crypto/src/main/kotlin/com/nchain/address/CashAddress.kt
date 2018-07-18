@@ -115,10 +115,19 @@ class CashAddress(@Transient var parameters: NetworkParameters,
         fun getParametersFromAddress(address: String): NetworkParameters? {
             try {
                 return fromBase58(null, address).parameters
-            } catch (e: WrongNetworkException) {
-                throw RuntimeException(e)  // Cannot happen.
-            }
+            } catch (e: AddressFormatException) {
 
+                var params:NetworkParameters? = null
+                for (it in Networks.get()) {
+                    try {
+                        val fixedAddress = if (address.contains(":")) address else it.cashAddrPrefix+":"+address
+                        params = fromFormattedAddress(it, fixedAddress).parameters
+                        break
+                    } catch (e: Exception) {
+                    }
+                }
+                return params
+            }
         }
 
 
@@ -134,6 +143,22 @@ class CashAddress(@Transient var parameters: NetworkParameters,
             return false
         }
 
+
+        @Throws(AddressFormatException::class)
+        fun fromFormattedAddress(address: String): CashAddress {
+            val prefixPos = address.indexOf(":")
+            if (prefixPos > 0) {
+                val prefix = address.substring(0, prefixPos)
+                return fromFormattedAddress(Networks.findByCashAddressPrefix(prefix)!!, address)
+            }
+            for (it in Networks.get()) {
+                try {
+                    return fromFormattedAddress(it, it.cashAddrPrefix+":"+address)
+                } catch (e: Exception) {
+                }
+            }
+            throw AddressFormatException()
+        }
 
         @Throws(AddressFormatException::class)
         fun fromFormattedAddress(params: NetworkParameters, addr: String): CashAddress {
