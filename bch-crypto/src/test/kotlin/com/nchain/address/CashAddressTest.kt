@@ -17,14 +17,12 @@
  * This file has been modified for the bitcoinkt project.
  * The original file was from the bitcoinj-cash project (https://github.com/bitcoinj-cash/bitcoinj).
  */
-package com.nchain.key
+package com.nchain.address
 
-import com.nchain.address.*
 import com.nchain.bitcoinkt.params.MainNetParams
 import com.nchain.bitcoinkt.params.TestNet3Params
 import org.junit.Assert.*
 import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Test
 import java.io.IOException
 import java.io.StringReader

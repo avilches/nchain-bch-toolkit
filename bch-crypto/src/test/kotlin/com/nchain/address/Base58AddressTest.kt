@@ -15,14 +15,12 @@
  * limitations under the License.
  */
 
-package com.nchain.key
+package com.nchain.address
 
-import com.nchain.address.CashAddress
-import com.nchain.address.AddressFormatException
-import com.nchain.address.VersionedChecksummedBytes
 import com.nchain.bitcoinkt.params.MainNetParams
 import com.nchain.bitcoinkt.params.NetworkParameters
 import com.nchain.bitcoinkt.params.TestNet3Params
+import com.nchain.key.WrongNetworkException
 import com.nchain.tools.HEX
 import org.junit.Test
 

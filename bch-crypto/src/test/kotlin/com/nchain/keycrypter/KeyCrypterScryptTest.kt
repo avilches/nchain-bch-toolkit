@@ -15,10 +15,8 @@
  * limitations under the License.
  */
 
-package com.nchain.key
+package com.nchain.keycrypter
 
-import com.nchain.keycrypter.KeyCrypterException
-import com.nchain.keycrypter.KeyCrypterScrypt
 import com.nchain.tools.HEX
 import com.nchain.tools.loggerFor
 import org.junit.Assert.*

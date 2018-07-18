@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.nchain.key
+package com.nchain.address
 
-import com.nchain.address.VersionedChecksummedBytes
 import com.nchain.bitcoinkt.params.MainNetParams
 import com.nchain.bitcoinkt.params.NetworkParameters
 import com.nchain.bitcoinkt.params.TestNet3Params

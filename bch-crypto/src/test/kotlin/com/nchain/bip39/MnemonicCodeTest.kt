@@ -15,10 +15,8 @@
  * limitations under the License.
  */
 
-package com.nchain.key
+package com.nchain.bip39
 
-import com.nchain.bip39.MnemonicCode
-import com.nchain.bip39.MnemonicException
 import com.nchain.tools.HEX
 import org.junit.Test
 

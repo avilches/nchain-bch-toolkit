@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.nchain.key
+package com.nchain.shared
 
 import com.nchain.shared.VarInt
 import junit.framework.TestCase

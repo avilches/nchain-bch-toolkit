@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.nchain.key
+package com.nchain.address
 
-import com.nchain.address.AddressFormatException
-import com.nchain.address.Base58
 import junit.framework.TestCase
 import org.junit.Test
 

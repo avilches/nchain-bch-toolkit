@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.nchain.key
+package com.nchain.tools
 
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -28,7 +28,7 @@ import org.junit.Test
 
 import org.junit.Assert.*
 
-class UtilsTest {
+class ByteUtilsTest {
 
     @Test
     fun bigIntegerToBytesTest() {
