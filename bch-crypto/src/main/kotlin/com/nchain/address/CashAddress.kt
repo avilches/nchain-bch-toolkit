@@ -162,28 +162,26 @@ class CashAddress(@Transient var parameters: NetworkParameters,
 
         @Throws(AddressFormatException::class)
         fun fromFormattedAddress(params: NetworkParameters, addr: String): CashAddress {
-            val cashAddressValidator = CashAddressValidator.create()
-
             val (prefix, payload) = CashAddressHelper.decodeCashAddress(addr, params.cashAddrPrefix)
 
-            cashAddressValidator.checkValidPrefix(params, prefix)
-            cashAddressValidator.checkNonEmptyPayload(payload)
+            CashAddressValidator.checkValidPrefix(params, prefix)
+            CashAddressValidator.checkNonEmptyPayload(payload)
 
             val extraBits = (payload.size * 5 % 8).toByte()
-            cashAddressValidator.checkAllowedPadding(extraBits)
+            CashAddressValidator.checkAllowedPadding(extraBits)
 
             val last = payload[payload.size - 1]
             val mask = ((1 shl extraBits.toInt()) - 1).toByte()
-            cashAddressValidator.checkNonZeroPadding(last, mask)
+            CashAddressValidator.checkNonZeroPadding(last, mask)
 
             val data = ByteArray(payload.size * 5 / 8)
             ConvertBits(data, payload, 5, 8, false)
 
             val versionByte = data[0]
-            cashAddressValidator.checkFirstBitIsZero(versionByte)
+            CashAddressValidator.checkFirstBitIsZero(versionByte)
 
             val hashSize = calculateHashSizeFromVersionByte(versionByte)
-            cashAddressValidator.checkDataLength(data, hashSize)
+            CashAddressValidator.checkDataLength(data, hashSize)
 
             val result = ByteArray(data.size - 1)
             System.arraycopy(data, 1, result, 0, data.size - 1)

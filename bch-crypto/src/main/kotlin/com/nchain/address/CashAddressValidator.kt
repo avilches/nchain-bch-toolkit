@@ -21,7 +21,7 @@ package com.nchain.address
 
 import com.nchain.params.NetworkParameters
 
-class CashAddressValidator {
+object CashAddressValidator {
 
     @Throws(AddressFormatException::class)
     fun checkValidPrefix(params: NetworkParameters, prefix: String) {
@@ -63,11 +63,5 @@ class CashAddressValidator {
         }
     }
 
-    companion object {
-
-        fun create(): CashAddressValidator {
-            return CashAddressValidator()
-        }
-    }
 
 }
