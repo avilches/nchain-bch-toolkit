@@ -24,18 +24,13 @@ import com.nchain.bitcoinkt.params.NetworkParameters
 import com.nchain.key.WrongNetworkException
 import com.nchain.params.Networks
 
-class CashAddress : VersionedChecksummedBytes {
+class CashAddress(@Transient var parameters: NetworkParameters,
+                  val addressType: CashAddressType,
+                  version: Int,
+                  val hash160: ByteArray) : VersionedChecksummedBytes(version, hash160) {
 
-    @Transient
-    var parameters: NetworkParameters? = null
-        private set
-
-    /** The (big endian) 20 byte hash that is the core of a Bitcoin address.  */
-    val hash160: ByteArray
-        get() = bytes
-
-    var addressType: CashAddressType? = null
-        private set
+    internal constructor(params: NetworkParameters, addressType: CashAddressType, hash: ByteArray) : this(params, addressType, getLegacyVersion(params, addressType), hash)
+    internal constructor(params: NetworkParameters, version: Int, hash160: ByteArray) : this(params, getType(params, version), version, hash160)
 
     val isP2SHAddress: Boolean
         get() = addressType == CashAddressType.Script
@@ -53,19 +48,8 @@ class CashAddress : VersionedChecksummedBytes {
         }
     }
 
-    internal constructor(params: NetworkParameters, addressType: CashAddressType, hash: ByteArray) : super(getLegacyVersion(params, addressType), hash) {
-        this.parameters = params
-        this.addressType = addressType
-    }
-
-    internal constructor(params: NetworkParameters, version: Int, hash160: ByteArray) : super(version, hash160) {
-        this.parameters = params
-        this.addressType = getType(params, version)
-    }
-
     fun toCashAddress(): String {
-        return CashAddressHelper.encodeCashAddress(parameters!!.cashAddrPrefix,
-                CashAddressHelper.packAddressData(hash160, addressType!!.getValue()))
+        return CashAddressHelper.encodeCashAddress(parameters.cashAddrPrefix, CashAddressHelper.packAddressData(hash160, addressType.getValue()))
     }
     override fun toString(): String {
         return toCashAddress()
@@ -80,14 +64,9 @@ class CashAddress : VersionedChecksummedBytes {
 
         @Throws(AddressFormatException::class)
         fun fromHash160(params: NetworkParameters, hash160: ByteArray): CashAddress {
-            return fromHash160(params, params.addressHeader, hash160)
+            return CashAddress(params, params.addressHeader, hash160)
         }
 
-        @Throws(AddressFormatException::class)
-        fun fromHash160(params: NetworkParameters, version: Int, hash160: ByteArray): CashAddress {
-            return CashAddress(params, version, hash160)
-
-        }
         @Throws(AddressFormatException::class)
         fun fromBase58(params: NetworkParameters?, base58: String): CashAddress {
             val parsed = VersionedChecksummedBytes(base58)
