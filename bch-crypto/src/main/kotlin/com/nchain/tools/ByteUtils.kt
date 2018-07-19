@@ -29,7 +29,7 @@ import java.util.*
 object ByteUtils {
 
     // zero length arrays are immutable so we can save some object allocation by reusing the same instance.
-    val EMPTY_BYTE_ARRAY = ByteArray(0)
+    @JvmStatic val EMPTY_BYTE_ARRAY = ByteArray(0)
 
     // 00000001, 00000010, 00000100, 00001000, ...
     private val bitMask = intArrayOf(0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80)

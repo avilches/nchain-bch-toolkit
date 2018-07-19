@@ -79,7 +79,7 @@ open class VersionedChecksummedBytes : Serializable, Cloneable, Comparable<Versi
     }
 
     override fun hashCode(): Int {
-        return Arrays.hashCode(arrayOf(version, Arrays.hashCode(bytes)))
+        return Arrays.hashCode(arrayOf(version, *bytes.toTypedArray()))
     }
 
     override fun equals(other: Any?): Boolean {
