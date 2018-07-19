@@ -237,4 +237,19 @@ class ByteUtilsTest {
         assertEquals(ByteUtils.readInt64(HEX.hexToBytes("FFFFFFFFFFFFFFFF"), 0), -1L)
     }
 
+    @Test
+    fun testConcat() {
+        assertArrayEquals(byteArrayOf(), ByteUtils.concat(byteArrayOf()))
+        assertArrayEquals(byteArrayOf(), ByteUtils.concat(byteArrayOf(), byteArrayOf()))
+        assertArrayEquals(byteArrayOf(), ByteUtils.concat(byteArrayOf(), byteArrayOf(), byteArrayOf()))
+
+        assertArrayEquals(byteArrayOf(1), ByteUtils.concat(byteArrayOf(1)))
+        assertArrayEquals(byteArrayOf(1,2), ByteUtils.concat(byteArrayOf(1),byteArrayOf(2)))
+        assertArrayEquals(byteArrayOf(1), ByteUtils.concat(byteArrayOf(),byteArrayOf(1), byteArrayOf()))
+        assertArrayEquals(byteArrayOf(1,2,3,4), ByteUtils.concat(byteArrayOf(1,2), byteArrayOf(3,4)))
+        assertArrayEquals(byteArrayOf(1,2,3,4), ByteUtils.concat(byteArrayOf(1), byteArrayOf(2,3,4)))
+        assertArrayEquals(byteArrayOf(1,2,3,4), ByteUtils.concat(byteArrayOf(), byteArrayOf(1,2,3,4)))
+
+    }
+
 }

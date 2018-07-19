@@ -164,7 +164,7 @@ class ECKeyTest {
     fun base58Encoding() {
         val addr = "mqAJmaxMcG5pPHHc3H3NtyXzY7kGbJLuMF"
         val privkey = "92shANodC6Y4evT5kFzjNFQAdjqTtHAnDTLzqBBq4BbKUPyx6CD"
-        val key = DumpedPrivateKey.fromBase58(TestNet3Params, privkey).key
+        val key = ECKey.fromPrivateDump(TestNet3Params, privkey)
         assertEquals(privkey, key.dumpPrivKey(TestNet3Params).toString())
         assertEquals(addr, key.toCashAddress(TestNet3Params).toBase58())
     }
@@ -173,7 +173,7 @@ class ECKeyTest {
     @Throws(Exception::class)
     fun base58Encoding_leadingZero() {
         val privkey = "91axuYLa8xK796DnBXXsMbjuc8pDYxYgJyQMvFzrZ6UfXaGYuqL"
-        val key = DumpedPrivateKey.fromBase58(TestNet3Params, privkey).key
+        val key = ECKey.fromPrivateDump(TestNet3Params, privkey)
         assertEquals(privkey, key.dumpPrivKey(TestNet3Params).toString())
         assertEquals(0, key.privKeyBytes[0].toLong())
     }
@@ -184,8 +184,11 @@ class ECKeyTest {
         // Replace the loop bound with 1000 to get some keys with leading zero byte
         for (i in 0..19) {
             val key = ECKey.create()
-            val key1 = DumpedPrivateKey.fromBase58(TestNet3Params,
-                    key.dumpPrivKey(TestNet3Params).toString()).key
+//            val key1 = DumpedPrivateKey.fromBase58(TestNet3Params,
+//                    key.dumpPrivKey(TestNet3Params).toString()).key
+
+            val key1 = ECKey.fromPrivateDump(TestNet3Params, key.dumpPrivKey(TestNet3Params).toBase58())
+
             assertArrayEquals(key.privKeyBytes, key1.privKeyBytes)
             assertEquals(key.privKeyBytes.toHex(), key1.privKeyBytes.toHex())
         }

@@ -17,12 +17,15 @@
 
 package com.nchain.address
 
+import com.nchain.key.DumpedPrivateKey
+import com.nchain.key.ECKey
 import com.nchain.params.MainNetParams
 import com.nchain.params.TestNet3Params
 import com.nchain.key.WrongNetworkException
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.HEX
 import org.junit.Assert
+import spock.lang.Ignore
 import spock.lang.Specification
 
 class Base58AddressSpec extends Specification {
@@ -156,24 +159,21 @@ class Base58AddressSpec extends Specification {
 //        assertEquals("35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU", c.toString())
     }
 
-    /*
-    @Test
-    @Throws(Exception::class)
-    fun p2shAddressCreationFromKeys() {
+    @Ignore
+    void p2shAddressCreationFromKeys() {
         // import some keys from this example: https://gist.github.com/gavinandresen/3966071
-        var key1 = DumpedPrivateKey.fromBase58(mainParams, "5JaTXbAUmfPYZFRwrYaALK48fN6sFJp4rHqq2QSXs8ucfpE4yQU").key
+        def key1 = DumpedPrivateKey.fromBase58(MainNetParams.INSTANCE, "5JaTXbAUmfPYZFRwrYaALK48fN6sFJp4rHqq2QSXs8ucfpE4yQU").key
         key1 = ECKey.fromPrivate(key1.privKeyBytes)
-        var key2 = DumpedPrivateKey.fromBase58(mainParams, "5Jb7fCeh1Wtm4yBBg3q3XbT6B525i17kVhy3vMC9AqfR6FH2qGk").key
+        def key2 = DumpedPrivateKey.fromBase58(MainNetParams.INSTANCE, "5Jb7fCeh1Wtm4yBBg3q3XbT6B525i17kVhy3vMC9AqfR6FH2qGk").key
         key2 = ECKey.fromPrivate(key2.privKeyBytes)
-        var key3 = DumpedPrivateKey.fromBase58(mainParams, "5JFjmGo5Fww9p8gvx48qBYDJNAzR9pmH5S389axMtDyPT8ddqmw").key
+        def key3 = DumpedPrivateKey.fromBase58(MainNetParams.INSTANCE, "5JFjmGo5Fww9p8gvx48qBYDJNAzR9pmH5S389axMtDyPT8ddqmw").key
         key3 = ECKey.fromPrivate(key3.privKeyBytes)
 
-        val keys = Arrays.asList(key1, key2, key3)
-        val p2shScript = ScriptBuilder.createP2SHOutputScript(2, keys)
-        val address = Address.fromP2SHScript(mainParams, p2shScript)
-        assertEquals("3N25saC4dT24RphDAwLtD8LUN4E2gZPJke", address.toString())
+//        def keys = Arrays.asList(key1, key2, key3)
+//        def p2shScript = ScriptBuilder.createP2SHOutputScript(2, keys)
+//        def address = CashAddress.fromP2SHScript(MainNetParams.INSTANCE, p2shScript)
+//        assertEquals("3N25saC4dT24RphDAwLtD8LUN4E2gZPJke", address.toString())
     }
-    */
 
     def cloning() {
         when:

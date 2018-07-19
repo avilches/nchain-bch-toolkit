@@ -447,6 +447,21 @@ object ByteUtils {
         return result
     }
 
+    fun concat(vararg arrays: ByteArray): ByteArray {
+        var length = 0
+        for (array in arrays) {
+            length += array.size
+        }
+        val result = ByteArray(length)
+        var pos = 0
+        for (array in arrays) {
+            System.arraycopy(array, 0, result, pos, array.size)
+            pos += array.size
+        }
+        return result
+    }
+
+
     /**
      * Constructs a new String by decoding the given bytes using the specified charset.
      *
@@ -465,7 +480,6 @@ object ByteUtils {
         } catch (e: UnsupportedEncodingException) {
             throw RuntimeException(e)
         }
-
     }
 
     /**
