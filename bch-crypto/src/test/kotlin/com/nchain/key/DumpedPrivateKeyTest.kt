@@ -46,7 +46,7 @@ class DumpedPrivateKeyTest {
     @Throws(Exception::class)
     fun testJavaSerialization() {
 
-        val key = DumpedPrivateKey(MAINNET, ECKey.create().privKeyBytes, true)
+        val key = DumpedPrivateKey.createFromPrivKey(MAINNET, ECKey.create().privKeyBytes, true)
         val os = ByteArrayOutputStream()
         ObjectOutputStream(os).writeObject(key)
         val keyCopy = ObjectInputStream(ByteArrayInputStream(os.toByteArray()))
@@ -57,7 +57,7 @@ class DumpedPrivateKeyTest {
     @Test
     @Throws(Exception::class)
     fun cloning() {
-        val a = DumpedPrivateKey(MAINNET, ECKey.create().privKeyBytes, true)
+        val a = DumpedPrivateKey.createFromPrivKey(MAINNET, ECKey.create().privKeyBytes, true)
         // TODO: Consider overriding clone() in DumpedPrivateKey to narrow the type
         val b = a.clone() as DumpedPrivateKey
 

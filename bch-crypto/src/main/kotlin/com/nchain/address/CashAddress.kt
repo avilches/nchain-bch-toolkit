@@ -64,6 +64,12 @@ class CashAddress(@Transient var parameters: NetworkParameters,
         return toCashAddress()
     }
 
+
+    @Throws(CloneNotSupportedException::class)
+    override fun clone(): CashAddress {
+        return CashAddress(parameters, addressType, version, hash160)
+    }
+
     companion object {
 
         @Throws(AddressFormatException::class)

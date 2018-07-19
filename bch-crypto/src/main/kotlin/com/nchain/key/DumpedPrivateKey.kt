@@ -39,11 +39,9 @@ class DumpedPrivateKey : VersionedChecksummedBytes {
             return if (compressed) key else key.decompress()
         }
 
-    // Used by ECKey.getPrivateKeyEncoded()
-    internal constructor(params: NetworkParameters, keyBytes: ByteArray, compressed: Boolean) : super(params.dumpedPrivateKeyHeader, encode(keyBytes, compressed)) {
+    internal constructor(version: Int, bytes: ByteArray, compressed: Boolean) : super(version, bytes) {
         this.compressed = compressed
     }
-
 
     @Deprecated("Use {@link #fromBase58(NetworkParameters, String)} ")
     @Throws(AddressFormatException::class)
@@ -62,13 +60,19 @@ class DumpedPrivateKey : VersionedChecksummedBytes {
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        if (o == null || javaClass != o.javaClass) return false
-        val other = o as DumpedPrivateKey?
-        return version == other!!.version && compressed == other.compressed && Arrays.equals(bytes, other.bytes)
+        if (o != null && o is DumpedPrivateKey) {
+            return version == o.version && compressed == o.compressed && Arrays.equals(bytes, o.bytes)
+        }
+        return false
     }
 
     override fun hashCode(): Int {
-        return Arrays.hashCode(arrayOf(version, compressed, Arrays.hashCode(bytes)))
+        return Arrays.hashCode(arrayOf(*bytes.toTypedArray(), version, compressed))
+    }
+
+    @Throws(CloneNotSupportedException::class)
+    public override fun clone(): DumpedPrivateKey {
+        return DumpedPrivateKey(version, bytes, compressed)
     }
 
     companion object {
@@ -85,11 +89,15 @@ class DumpedPrivateKey : VersionedChecksummedBytes {
          * if the given private key is valid but for a different chain (eg testnet vs mainnet)
          */
         @Throws(AddressFormatException::class)
-        fun fromBase58(params: NetworkParameters?, base58: String): DumpedPrivateKey {
+        @JvmStatic @JvmOverloads fun fromBase58(params: NetworkParameters? = null, base58: String): DumpedPrivateKey {
             return DumpedPrivateKey(params, base58)
         }
 
-        private fun encode(keyBytes: ByteArray, compressed: Boolean): ByteArray {
+        @JvmStatic fun createFromPrivKey(params: NetworkParameters, keyBytes: ByteArray, compressed: Boolean):DumpedPrivateKey {
+            return DumpedPrivateKey(params.dumpedPrivateKeyHeader, checkSize(keyBytes, compressed), compressed)
+        }
+
+        private fun checkSize(keyBytes: ByteArray, compressed: Boolean): ByteArray {
             check(keyBytes.size == 32, {"Private keys must be 32 bytes"})
             if (!compressed) {
                 return keyBytes

@@ -257,7 +257,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
 
         companion object {
 
-            fun decodeFromDER(bytes: ByteArray): ECDSASignature {
+            @JvmStatic fun decodeFromDER(bytes: ByteArray): ECDSASignature {
                 var decoder: ASN1InputStream? = null
                 try {
                     decoder = ASN1InputStream(bytes)
@@ -367,7 +367,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
      * @throws IllegalStateException if the private key is not available.
      */
     fun dumpPrivKey(params: NetworkParameters): DumpedPrivateKey {
-        return DumpedPrivateKey(params, privKeyBytes!!, isCompressed)
+        return DumpedPrivateKey.createFromPrivKey(params, privKeyBytes!!, isCompressed)
     }
 
     open class MissingPrivateKeyException : RuntimeException()
@@ -484,7 +484,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * Generates an entirely new keypair with the given [SecureRandom] object. Point compression is used so the
          * resulting public key will be 33 bytes (32 for the co-ordinate and 1 byte to represent the y bit).
          */
-        fun create(secureRandom: SecureRandom = Randomizer.random): ECKey {
+        @JvmStatic @JvmOverloads fun create(secureRandom: SecureRandom = Randomizer.random): ECKey {
             val generator = ECKeyPairGenerator()
             val keygenParams = ECKeyGenerationParameters(CURVE, secureRandom)
             generator.init(keygenParams)
@@ -572,19 +572,27 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * Construct an ECKey from an ASN.1 encoded private key. These are produced by OpenSSL and stored by Bitcoin
          * Core in its wallet. Note that this is slow because it requires an EC point multiply.
          */
-        fun fromASN1Hex(asn1privkey: String): ECKey {
+        @JvmStatic fun fromASN1Hex(asn1privkey: String): ECKey {
             return fromASN1(asn1privkey.hexStringToByteArray())
         }
 
-        fun fromASN1(asn1privkey: ByteArray): ECKey {
+        @JvmStatic fun fromASN1(asn1privkey: ByteArray): ECKey {
             return extractKeyFromASN1(asn1privkey)
         }
 
         /**
          * Creates an ECKey given the private key only. The public key is calculated from it (this is slow), either
          * compressed or not.
-         */
-        fun fromPrivate(privKey: BigInteger, compressed: Boolean = true): ECKey {
+//         */
+        @JvmStatic fun fromPrivateDump(dumpedPrivateKey: DumpedPrivateKey): ECKey {
+            return DumpedPrivateKey.fromBase58(null, dumpedPrivateKey.toBase58()).key
+        }
+
+        @JvmStatic fun fromPrivateDump(params: NetworkParameters? = null, base58Wif:String): ECKey {
+            return DumpedPrivateKey.fromBase58(params, base58Wif).key
+        }
+
+        @JvmStatic fun fromPrivate(privKey: BigInteger, compressed: Boolean = true): ECKey {
             val point = publicPointFromPrivate(privKey)
             return ECKey(privKey, getPointWithCompression(point, compressed))
         }
@@ -593,7 +601,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * Creates an ECKey given the private key only. The public key is calculated from it (this is slow), either
          * compressed or not.
          */
-        fun fromPrivate(privKeyBytes: ByteArray, compressed: Boolean = true): ECKey {
+        @JvmStatic fun fromPrivate(privKeyBytes: ByteArray, compressed: Boolean = true): ECKey {
             return fromPrivate(BigInteger(1, privKeyBytes), compressed)
         }
 
@@ -602,7 +610,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * generator point by the private key. This is used to speed things up when you know you have the right values
          * already. The compression state of pub will be preserved.
          */
-        fun fromPrivateAndPrecalculatedPublic(priv: BigInteger, pub: ECPoint): ECKey {
+        @JvmStatic fun fromPrivateAndPrecalculatedPublic(priv: BigInteger, pub: ECPoint): ECKey {
             return ECKey(priv, pub)
         }
 
@@ -619,7 +627,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * Creates an ECKey that cannot be used for signing, only verifying signatures, from the given point. The
          * compression state of pub will be preserved.
          */
-        fun fromPublicOnly(pub: ECPoint): ECKey {
+        @JvmStatic fun fromPublicOnly(pub: ECPoint): ECKey {
             return ECKey(null, pub)
         }
 
@@ -627,7 +635,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * Creates an ECKey that cannot be used for signing, only verifying signatures, from the given encoded point.
          * The compression state of pub will be preserved.
          */
-        fun fromPublicOnly(pub: ByteArray): ECKey {
+        @JvmStatic fun fromPublicOnly(pub: ByteArray): ECKey {
             return ECKey(null, CURVE.curve.decodePoint(pub))
         }
 
@@ -644,7 +652,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * Returns public key point from the given private key. To convert a byte array into a BigInteger, use <tt>
          * new BigInteger(1, bytes);</tt>
          */
-        fun publicPointFromPrivate(privKey: BigInteger): ECPoint {
+        @JvmStatic fun publicPointFromPrivate(privKey: BigInteger): ECPoint {
             var privKey = privKey
             /*
              * TODO: FixedPointCombMultiplier currently doesn't support scalars longer than the group order,
@@ -727,7 +735,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
         /*
         Decompress a compressed public key (x co-ord and low-bit of y-coord).
         */
-        fun decompressKey(xBN: BigInteger, yBit: Boolean): ECPoint {
+        @JvmStatic fun decompressKey(xBN: BigInteger, yBit: Boolean): ECPoint {
             val x9 = X9IntegerConverter()
             val compEnc = x9.integerToBytes(xBN, 1 + x9.getByteLength(CURVE.curve))
             compEnc[0] = (if (yBit) 0x03 else 0x02).toByte()

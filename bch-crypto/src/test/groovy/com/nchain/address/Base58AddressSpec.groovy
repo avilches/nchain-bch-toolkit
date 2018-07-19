@@ -31,8 +31,12 @@ class Base58AddressSpec extends Specification {
         setup:
         CashAddress testAddress = CashAddress.fromBase58(network, address)
 
-        expect: 'clone should work in the same way as serialization'
-        testAddress == (ByteUtils.serializeRound(testAddress) as VersionedChecksummedBytes)
+        when:
+        def testAddressSerialized = (ByteUtils.serializeRound(testAddress) as VersionedChecksummedBytes)
+
+        then:
+        testAddressSerialized == testAddress
+        Assert.assertNotSame(testAddress, testAddressSerialized)
 
         when:
         def os = new ByteArrayOutputStream()
@@ -42,6 +46,7 @@ class Base58AddressSpec extends Specification {
 
         then: 'binary serializaction should create identical objects'
         testAddress == testAddressCopy
+        Assert.assertNotSame(testAddress, testAddressCopy)
 
         where:
         network                 | address
@@ -177,6 +182,8 @@ class Base58AddressSpec extends Specification {
 
         then:
         a == b
+        a.parameters == b.parameters
+        a.hashCode() == b.hashCode()
         Assert.assertNotSame(a, b)
         a.compareTo(b) == 0
 

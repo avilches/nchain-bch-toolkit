@@ -84,9 +84,10 @@ open class VersionedChecksummedBytes : Serializable, Cloneable, Comparable<Versi
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
-        val other = other as VersionedChecksummedBytes?
-        return this.version == other!!.version && Arrays.equals(this.bytes, other.bytes)
+        if (other != null && other is VersionedChecksummedBytes) {
+            return version == other.version && Arrays.equals(bytes, other.bytes)
+        }
+        return false
     }
 
     /**
@@ -98,7 +99,7 @@ open class VersionedChecksummedBytes : Serializable, Cloneable, Comparable<Versi
      */
     @Throws(CloneNotSupportedException::class)
     public override fun clone(): VersionedChecksummedBytes {
-        return ByteUtils.serializeRound(this) as VersionedChecksummedBytes
+        return VersionedChecksummedBytes(version, bytes)
     }
 
     /**

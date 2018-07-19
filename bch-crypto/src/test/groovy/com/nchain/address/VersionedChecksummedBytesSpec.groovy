@@ -33,16 +33,9 @@ class VersionedChecksummedBytesSpec extends Specification {
 
         then:
         a == b
-        Assert.assertNotSame(a, b)
-    }
-
-    void comparisonCloneEqualTo() {
-        when:
-        def a = new VersionedChecksummedBytes(TestNet3Params.INSTANCE.addressHeader, HEX.hexToBytes("fda79a24e50ff70ff42f7d89585da5bd19d9e5cc"))
-        def b = a.clone()
-
-        then:
+        a.hashCode() == b.hashCode()
         a.compareTo(b) == 0
+        Assert.assertNotSame(a, b)
     }
 
 }
