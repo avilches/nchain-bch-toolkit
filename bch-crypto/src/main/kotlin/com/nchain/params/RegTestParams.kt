@@ -34,24 +34,24 @@ object RegTestParams : NetworkParameters(
         dumpedPrivateKeyHeader = 239,
         acceptableAddressCodes = intArrayOf(TESTNET_ADDRESS_HEADER, TESTNET_P2SH_HEADER),
         bip32HeaderPub = 0x043587CF, //The 4 byte header that serializes in base58 to "xpub".
-        bip32HeaderPriv = 0x04358394, //The 4 byte header that serializes in base58 to "xprv"
+        bip32HeaderPriv = 0x04358394 //The 4 byte header that serializes in base58 to "xprv"
 
-        maxTarget = BigInteger("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
-        majorityEnforceBlockUpgrade = 750,
-        majorityRejectBlockOutdated = 950,
-        majorityWindow = 1000,
-        subsidyDecreaseBlockCount = 150,
-        spendableCoinbaseDepth = 100,
-        interval = Integer.MAX_VALUE, // Difficulty adjustments are disabled for regtest.
-
-        uahfHeight = 0,
-        daaUpdateHeight = 0,
-        monolithHeight = 0,
-
-        packetMagic = 0xe3e1f3e8L,
-        port = 18444,
-        dnsSeeds = emptyArray(),
-        addrSeeds = emptyArray()
+//        maxTarget = BigInteger("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
+//        majorityEnforceBlockUpgrade = 750,
+//        majorityRejectBlockOutdated = 950,
+//        majorityWindow = 1000,
+//        subsidyDecreaseBlockCount = 150,
+//        spendableCoinbaseDepth = 100,
+//        interval = Integer.MAX_VALUE, // Difficulty adjustments are disabled for regtest.
+//
+//        uahfHeight = 0,
+//        daaUpdateHeight = 0,
+//        monolithHeight = 0,
+//
+//        packetMagic = 0xe3e1f3e8L,
+//        port = 18444,
+//        dnsSeeds = emptyArray(),
+//        addrSeeds = emptyArray()
 )
 {
 
@@ -63,7 +63,7 @@ object RegTestParams : NetworkParameters(
 //            throw RuntimeException("genesis block hash is incorrect")
     }
 
-    override fun allowEmptyPeerChain(): Boolean {
-        return true
-    }
+//    override fun allowEmptyPeerChain(): Boolean {
+//        return true
+//    }
 }

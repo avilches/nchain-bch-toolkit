@@ -86,7 +86,7 @@ import java.util.*
  * this class so round-tripping preserves state. Unless you're working with old software or doing unusual things, you
  * can usually ignore the compressed/uncompressed distinction.
  */
-class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
+class ECKey constructor(val priv: BigInteger?, val pub: LazyECPoint) {
 
     /**
      * Gets the raw public key value. This appears in transaction scriptSigs. Note that this is **not** the same
@@ -108,6 +108,8 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
             }
             return _pubKeyHash as ByteArray
         }
+    open val isPubKeyOnly: Boolean
+        get() = priv == null
 
     /**
      * Gets the private key in the form of an integer field element. The public key is derived by performing EC
@@ -149,7 +151,7 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
     }
 
 
-    protected constructor(priv: BigInteger?, pub: ECPoint) : this(priv, LazyECPoint(pub)) {
+    constructor(priv: BigInteger?, pub: ECPoint) : this(priv, LazyECPoint(pub)) {
         if (priv != null) {
             // Try and catch buggy callers or bad key imports, etc. Zero and one are special because these are often
             // used as sentinel values and because scripting languages have a habit of auto-casting true and false to
@@ -546,15 +548,15 @@ class ECKey protected constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          * Utility for compressing an elliptic curve point. Returns the same point if it's already compressed.
          * See the ECKey class docs for a discussion of point compression.
          */
-//        fun compressPoint(point: ECPoint): ECPoint {
-//            return getPointWithCompression(point, true)
-//        }
-//
-//        fun compressPoint(point: LazyECPoint): LazyECPoint {
-//            return if (point.isCompressed) point else LazyECPoint(compressPoint(point.get()))
-//        }
+        @JvmStatic fun compressPoint(point: ECPoint): ECPoint {
+            return getPointWithCompression(point, true)
+        }
 
-        fun decompressPoint(point: ECPoint): ECPoint {
+        @JvmStatic fun compressPoint(point: LazyECPoint): LazyECPoint {
+            return if (point.isCompressed) point else LazyECPoint(compressPoint(point.get()))
+        }
+
+        @JvmStatic fun decompressPoint(point: ECPoint): ECPoint {
             return getPointWithCompression(point, false)
         }
 

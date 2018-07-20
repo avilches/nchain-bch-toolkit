@@ -61,7 +61,7 @@ abstract class NetworkParameters protected constructor(
         /** Returns the 4 byte header for BIP32 (HD) wallet - public key part.  */
         val bip32HeaderPub: Int,
         /** Returns the 4 byte header for BIP32 (HD) wallet - private key part.  */
-        val bip32HeaderPriv: Int,
+        val bip32HeaderPriv: Int
 
 
         /**
@@ -69,46 +69,46 @@ abstract class NetworkParameters protected constructor(
          */
 
         /** Maximum target represents the easiest allowable proof of work.  */
-        val maxTarget: BigInteger,
+//        val maxTarget: BigInteger,
 
         /**
          * The number of blocks in the last [] blocks
          * at which to trigger a notice to the user to upgrade their client, where
          * the client does not understand those blocks.
          */
-        val majorityEnforceBlockUpgrade: Int,
+//        val majorityEnforceBlockUpgrade: Int,
 
         /**
          * The number of blocks in the last [] blocks
          * at which to enforce the requirement that all new blocks are of the
          * newer type (i.e. outdated blocks are rejected).
          */
-        val majorityRejectBlockOutdated: Int,
+//        val majorityRejectBlockOutdated: Int,
 
         /**
          * The sampling window from which the version numbers of blocks are taken
          * in order to determine if a new block version is now the majority.
          */
-        val majorityWindow: Int,
+//        val majorityWindow: Int,
 
         /**
          * The depth of blocks required for a coinbase transaction to be spendable.
          */
-        val spendableCoinbaseDepth: Int,
+//        val spendableCoinbaseDepth: Int,
 
-        val subsidyDecreaseBlockCount: Int,
+//        val subsidyDecreaseBlockCount: Int,
 
         /**
          * How many blocks pass between difficulty adjustment periods. Bitcoin standardises this to be 2015.
          */
-        val interval: Int = INTERVAL,
+//        val interval: Int = INTERVAL,
 
         /**
          * How much time in seconds is supposed to pass between "interval" blocks. If the actual elapsed time is
          * significantly different from this value, the network difficulty formula will produce a different value. Both
          * test and main Bitcoin networks use 2 weeks (1209600 seconds).
          */
-        val targetTimespan: Int = TARGET_TIMESPAN,
+//        val targetTimespan: Int = TARGET_TIMESPAN,
 
 
         /**
@@ -116,22 +116,22 @@ abstract class NetworkParameters protected constructor(
          * the following are block heights when particular features became enabled
          * they are the height of the first block where the feature is active
          */
-        val uahfHeight: Int,                            // 1 aug 2018 split from BTC
-        val daaUpdateHeight: Int,                       // 13 nov 2018 DAA upgrade
-        val monolithHeight: Int,                         // 15 may 2018 upgrade
+//        val uahfHeight: Int,                            // 1 aug 2018 split from BTC
+//        val daaUpdateHeight: Int,                       // 13 nov 2018 DAA upgrade
+//        val monolithHeight: Int,                         // 15 may 2018 upgrade
 
         /**
          * network related
          */
 
         /** Default TCP port on which to connect to nodes.  */
-        val port: Int,
+//        val port: Int,
         /** The header bytes that identify the start of a packet on this network.  */
-        val packetMagic: Long,
+//        val packetMagic: Long,
         /** Returns DNS names that when resolved, give IP addresses of active peers.  */
-        val dnsSeeds: Array<String>,
+//        val dnsSeeds: Array<String>,
         /** Returns IP address of known seed peers. */
-        val addrSeeds: Array<Int>
+//        val addrSeeds: Array<Int>
 ) {
 
     /**
@@ -202,9 +202,9 @@ abstract class NetworkParameters protected constructor(
     /**
      * If we are running in testnet-in-a-box mode, we allow connections to nodes with 0 non-genesis blocks.
      */
-    open fun allowEmptyPeerChain(): Boolean {
-        return true
-    }
+//    open fun allowEmptyPeerChain(): Boolean {
+//        return true
+//    }
 
     /**
      * The flags indicating which block validation tests should be applied to
@@ -228,12 +228,12 @@ abstract class NetworkParameters protected constructor(
 //        return flags
 //    }
 
-    enum class ProtocolVersion private constructor(val bitcoinProtocolVersion: Int) {
-        MINIMUM(70000),
-        PONG(60001),
-        BLOOM_FILTER(70000),
-        CURRENT(70013)
-    }
+//    enum class ProtocolVersion private constructor(val bitcoinProtocolVersion: Int) {
+//        MINIMUM(70000),
+//        PONG(60001),
+//        BLOOM_FILTER(70000),
+//        CURRENT(70013)
+//    }
 
     /**
      * Returns the number of coins that will be produced in total, on this
@@ -258,9 +258,9 @@ abstract class NetworkParameters protected constructor(
     /**
      * Scheme part for URIs, for example "bitcoincash".
      */
-    val uriScheme: String
-        get() = BITCOIN_SCHEME
-
+//    val uriScheme: String
+//        get() = BITCOIN_SCHEME
+//
     /**
      * Checks if we are at a difficulty transition point.
      * @param storedPrev The previous stored block
@@ -348,9 +348,9 @@ abstract class NetworkParameters protected constructor(
      * not. Always returns true for Bitcoin, but exists to be overriden for other
      * networks.
      */
-    fun hasMaxMoney(): Boolean {
-        return true
-    }
+//    fun hasMaxMoney(): Boolean {
+//        return true
+//    }
 
     companion object {
         val ID_MAINNET = "com.nchain.bitcoinkt.production"
@@ -361,28 +361,28 @@ abstract class NetworkParameters protected constructor(
         /**
          * Scheme part for Bitcoin URIs.
          */
-        val BITCOIN_SCHEME = "bitcoincash"
+//        val BITCOIN_SCHEME = "bitcoincash"
 
         /**
          * The number that is one greater than the largest representable SHA-256 hash.
          */
-        private val LARGEST_HASH = BigInteger.ONE.shiftLeft(256)
+//        private val LARGEST_HASH = BigInteger.ONE.shiftLeft(256)
 
-        val TARGET_TIMESPAN = 14 * 24 * 60 * 60  // 2 weeks per difficulty cycle, on average.
-        val TARGET_SPACING = 10 * 60  // 10 minutes per block.
-        val INTERVAL = TARGET_TIMESPAN / TARGET_SPACING // blocks per difficulty cycle
+//        val TARGET_TIMESPAN = 14 * 24 * 60 * 60  // 2 weeks per difficulty cycle, on average.
+//        val TARGET_SPACING = 10 * 60  // 10 minutes per block.
+//        val INTERVAL = TARGET_TIMESPAN / TARGET_SPACING // blocks per difficulty cycle
 
         /**
          * Blocks with a timestamp after this should enforce BIP 16, aka "Pay to script hash". This BIP changed the
          * network rules in a soft-forking manner, that is, blocks that don't follow the rules are accepted but not
          * mined upon and thus will be quickly re-orged out as long as the majority are enforcing the rule.
          */
-        val BIP16_ENFORCE_TIME = 1333238400
+//        val BIP16_ENFORCE_TIME = 1333238400
 
         /**
          * The maximum number of coins to be generated
          */
-        val MAX_COINS: Long = 21000000
+//        val MAX_COINS: Long = 21000000
 
         /**
          * The maximum money to be generated

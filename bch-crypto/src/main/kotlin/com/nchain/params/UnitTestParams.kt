@@ -37,25 +37,25 @@ object UnitTestParams : NetworkParameters(
         dumpedPrivateKeyHeader = 239,
         acceptableAddressCodes = intArrayOf(UNITTEST_ADDRESS_HEADER, UNITTEST_P2SH_HEADER),
         bip32HeaderPub = 0x043587CF,
-        bip32HeaderPriv = 0x04358394,
+        bip32HeaderPriv = 0x04358394
 
-        maxTarget = BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
-        majorityEnforceBlockUpgrade = 3,
-        majorityRejectBlockOutdated = 4,
-        majorityWindow = 7,
-        subsidyDecreaseBlockCount = 100,
-        spendableCoinbaseDepth = 5,
-        interval = 10,
-        targetTimespan = 200000000,
-
-        uahfHeight = 0,
-        daaUpdateHeight = 1000,
-        monolithHeight = 2000,
-
-        packetMagic = 0xf4e5f3f4L,
-        port = 18333,
-        dnsSeeds = emptyArray(),
-        addrSeeds = emptyArray()
+//        maxTarget = BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
+//        majorityEnforceBlockUpgrade = 3,
+//        majorityRejectBlockOutdated = 4,
+//        majorityWindow = 7,
+//        subsidyDecreaseBlockCount = 100,
+//        spendableCoinbaseDepth = 5,
+//        interval = 10,
+//        targetTimespan = 200000000,
+//
+//        uahfHeight = 0,
+//        daaUpdateHeight = 1000,
+//        monolithHeight = 2000,
+//
+//        packetMagic = 0xf4e5f3f4L,
+//        port = 18333,
+//        dnsSeeds = emptyArray(),
+//        addrSeeds = emptyArray()
 )
 {
 

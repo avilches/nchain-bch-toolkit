@@ -2,7 +2,6 @@ package com.nchain.address
 
 import com.nchain.params.MainNetParams
 import com.nchain.params.TestNet3Params
-import groovy.transform.CompileStatic
 import spock.lang.Shared
 import spock.lang.Specification
 

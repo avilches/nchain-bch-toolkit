@@ -159,6 +159,7 @@ class Base58AddressSpec extends Specification {
 //        assertEquals("35b9vsyH1KoFT5a5KtrKusaCcPLkiSo1tU", c.toString())
     }
 
+    // TODO: vilches
     @Ignore
     void p2shAddressCreationFromKeys() {
         // import some keys from this example: https://gist.github.com/gavinandresen/3966071
