@@ -30,6 +30,7 @@ import com.nchain.shared.Randomizer
 import com.nchain.shared.Sha256Hash
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.ByteUtils.readUint32BE
+import com.nchain.tools.DER
 import com.nchain.tools.hexStringToByteArray
 import com.nchain.tools.toHex
 import org.spongycastle.asn1.*
@@ -239,54 +240,9 @@ class ECKey constructor(val priv: BigInteger?, val pub: LazyECPoint) {
          */
         fun encodeToDER(): ByteArray {
             try {
-                return derByteStream().toByteArray()
+                return DER.encode(this)
             } catch (e: IOException) {
                 throw RuntimeException(e)  // Cannot happen.
-            }
-
-        }
-
-        @Throws(IOException::class)
-        fun derByteStream(): ByteArrayOutputStream {
-            // Usually 70-72 bytes.
-            val bos = ByteArrayOutputStream(72)
-            val seq = DERSequenceGenerator(bos)
-            seq.addObject(ASN1Integer(r))
-            seq.addObject(ASN1Integer(s))
-            seq.close()
-            return bos
-        }
-
-        companion object {
-
-            @JvmStatic fun decodeFromDER(bytes: ByteArray): ECDSASignature {
-                var decoder: ASN1InputStream? = null
-                try {
-                    decoder = ASN1InputStream(bytes)
-                    val seq = decoder.readObject() as DLSequence
-                            ?: throw VerificationException.SignatureFormatError("Reached past end of ASN.1 stream.")
-                    val r: ASN1Integer
-                    val s: ASN1Integer
-                    try {
-                        r = seq.getObjectAt(0) as ASN1Integer
-                        s = seq.getObjectAt(1) as ASN1Integer
-                    } catch (e: ClassCastException) {
-                        throw IllegalArgumentException(e)
-                    }
-
-                    // OpenSSL deviates from the DER spec by interpreting these values as unsigned, though they should not be
-                    // Thus, we always use the positive versions. See: http://r6.ca/blog/20111119T211504Z.html
-                    return ECDSASignature(r.positiveValue, s.positiveValue)
-                } catch (e: Exception) {
-                    throw VerificationException.SignatureFormatError(e)
-                } finally {
-                    if (decoder != null)
-                        try {
-                            decoder.close()
-                        } catch (x: IOException) {
-                        }
-
-                }
             }
         }
     }

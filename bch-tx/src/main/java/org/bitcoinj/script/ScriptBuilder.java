@@ -240,24 +240,22 @@ public class ScriptBuilder {
      * Creates a scriptSig that can redeem a pay-to-address output.
      * If given signature is null, incomplete scriptSig will be created with OP_0 instead of signature
      */
-/*
+
     public static Script createInputScript(@Nullable TransactionSignature signature, ECKey pubKey) {
         byte[] pubkeyBytes = pubKey.getPubKey();
         byte[] sigBytes = signature != null ? signature.encodeToBitcoin() : new byte[]{};
         return new ScriptBuilder().data(sigBytes).data(pubkeyBytes).build();
     }
-*/
+
 
     /**
      * Creates a scriptSig that can redeem a pay-to-pubkey output.
      * If given signature is null, incomplete scriptSig will be created with OP_0 instead of signature
      */
-/*
     public static Script createInputScript(@Nullable TransactionSignature signature) {
         byte[] sigBytes = signature != null ? signature.encodeToBitcoin() : new byte[]{};
         return new ScriptBuilder().data(sigBytes).build();
     }
-*/
 
     /** Creates a program that requires at least N of the given keys to sign, using OP_CHECKMULTISIG. */
     public static Script createMultiSigOutputScript(int threshold, List<ECKey> pubkeys) {

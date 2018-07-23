@@ -25,9 +25,28 @@ open class VerificationException : RuntimeException {
     constructor(msg:String, e: Exception) : super(msg, e) {}
     constructor(e: Exception) : super(e) {}
 
+    class BlockVersionOutOfDate(version: Long) : VerificationException("Block version #"
+            + version + " is outdated.")
+
+    class CoinbaseHeightMismatch(message: String) : VerificationException(message)
+
+    class CoinbaseScriptSizeOutOfRange : VerificationException("Coinbase script size out of range")
+
+    class DuplicatedOutPoint : VerificationException("Duplicated outpoint")
+
+    class EmptyInputsOrOutputs : VerificationException("Transaction had no inputs or no outputs.")
+
+    class ExcessiveValue : VerificationException("Total transaction output value greater than possible")
+
+    class LargerThanMaxBlockSize : VerificationException("Transaction larger than MAX_BLOCK_SIZE")
+
+    class NegativeValueOutput : VerificationException("Transaction output negative")
+
     class SignatureFormatError : VerificationException {
         constructor(msg: String) : super(msg) {}
         constructor(e: Exception) : super(e) {}
     }
+
+    class UnexpectedCoinbaseInput : VerificationException("Coinbase input as input in non-coinbase transaction")
 
 }

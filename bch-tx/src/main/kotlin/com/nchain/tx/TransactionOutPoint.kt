@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions.checkState
 import com.nchain.key.ECKey
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
+import com.nchain.tools.ByteUtils
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.ScriptException
 import java.io.IOException
@@ -36,7 +37,7 @@ import java.io.OutputStream
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-class TransactionOutPoint {
+class TransactionOutPoint(val params:NetworkParameters) {
 
     /** Hash of the transaction to which we refer.  */
     /**
@@ -64,23 +65,23 @@ class TransactionOutPoint {
 //            return result
 //        }
 //
-//    constructor(params: NetworkParameters, index: Long, fromTx: Transaction?) : super(params) {
-//        this.index = index
-//        if (fromTx != null) {
-//            this.hash = fromTx.hash
-//            this.fromTx = fromTx
-//        } else {
-//            // This happens when constructing the genesis block.
-//            hash = Sha256Hash.ZERO_HASH
-//        }
+    constructor(params: NetworkParameters, index: Long, fromTx: Transaction?):this(params) {
+        this.index = index
+        if (fromTx != null) {
+            this.hash = fromTx.hash
+            this.fromTx = fromTx
+        } else {
+            // This happens when constructing the genesis block.
+            hash = Sha256Hash.ZERO_HASH
+        }
 //        length = MESSAGE_LENGTH
-//    }
+    }
 //
-//    constructor(params: NetworkParameters, index: Long, hash: Sha256Hash?) : super(params) {
-//        this.index = index
-//        this.hash = hash
+    constructor(params: NetworkParameters, index: Long, hash: Sha256Hash?) : this(params) {
+        this.index = index
+        this.hash = hash
 //        length = MESSAGE_LENGTH
-//    }
+    }
 //
 //    constructor(params: NetworkParameters, connectedOutput: TransactionOutput) : this(params, connectedOutput.index.toLong(), connectedOutput.parentTransactionHash) {
 //        this.connectedOutput = connectedOutput
@@ -111,27 +112,27 @@ class TransactionOutPoint {
         hash = readHash()
         index = readUint32()
     }
+*/
 
     @Throws(IOException::class)
-    public override fun bitcoinSerializeToStream(stream: OutputStream) {
+    fun bitcoinSerializeToStream(stream: OutputStream) {
         stream.write(hash!!.reversedBytes)
-        Utils.uint32ToByteStreamLE(index, stream)
+        ByteUtils.uint32ToByteStreamLE(index, stream)
     }
-*/
 
     /**
      * An outpoint is a part of a transaction input that points to the output of another transaction. If we have both
      * sides in memory, and they have been linked together, this returns a pointer to the connected output, or null
      * if there is no such connection.
      */
-    fun getConnectedOutput(): TransactionOutput? {
-        if (fromTx != null) {
-            return fromTx!!.getOutputs().get(index.toInt())
-        } else if (connectedOutput != null) {
-            return connectedOutput
-        }
-        return null
-    }
+//    fun getConnectedOutput(): TransactionOutput? {
+//        if (fromTx != null) {
+//            return fromTx!!.getOutputs().get(index.toInt())
+//        } else if (connectedOutput != null) {
+//            return connectedOutput
+//        }
+//        return null
+//    }
 
     /**
      * Returns the ECKey identified in the connected output, for either pay-to-address scripts or pay-to-key scripts.

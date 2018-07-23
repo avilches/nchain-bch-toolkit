@@ -382,7 +382,7 @@ abstract class NetworkParameters protected constructor(
         /**
          * The maximum number of coins to be generated
          */
-//        val MAX_COINS: Long = 21000000
+        const val MAX_COINS: Long = 21000000
 
         /**
          * The maximum money to be generated

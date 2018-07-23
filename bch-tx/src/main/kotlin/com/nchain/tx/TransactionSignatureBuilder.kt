@@ -229,7 +229,7 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             // EC math so we'll do it anyway.
             val inputs = transaction.getInputs()
             for (i in inputs.indices) {
-//                inputs[i].clearScriptBytes()
+                inputs[i].clearScriptBytes()
             }
 
             // This step has no purpose beyond being synchronized with Bitcoin Core's bugs. OP_CODESEPARATOR
@@ -245,7 +245,7 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             // the signature covers the hash of the prevout transaction which obviously includes the output script
             // already. Perhaps it felt safer to him in some way, or is another leftover from how the code was written.
             val input = inputs[inputIndex]
-//            input.setScriptBytes( connectedScript )
+            input.setScriptBytes(connectedScript)
 
             if (sigHashType and 0x1f == Transaction.SigHash.NONE.value.toByte()) {
                 // SIGHASH_NONE means no outputs are signed at all - the signature is effectively for a "blank cheque".
@@ -265,40 +265,39 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
 
                     // Bitcoin Core's bug is that SignatureHash was supposed to return a hash and on this codepath it
                     // actually returns the constant "1" to indicate an error, which is never checked for. Oops.
-                    return Sha256Hash.wrap("0100000000000000000000000000000000000000000000000000000000000000")
+//                    return Sha256Hash.wrap("0100000000000000000000000000000000000000000000000000000000000000")
                 }
                 // In SIGHASH_SINGLE the outputs after the matching input index are deleted, and the outputs before
                 // that position are "nulled out". Unintuitively, the value in a "null" transaction is set to -1.
                 val outputs = ArrayList(transaction.getOutputs().subList(0, inputIndex + 1))
                 for (i in 0 until inputIndex)
-//                    outputs!![i] = TransactionOutput(transaction.params!!, transaction, Coin.NEGATIVE_SATOSHI, byteArrayOf())
+                    outputs!![i] = TransactionOutput(transaction.params!!, transaction, Coin.NEGATIVE_SATOSHI, byteArrayOf())
                 // The signature isn't broken by new versions of the transaction issued by other parties.
                 for (i in inputs.indices)
                     if (i != inputIndex)
                         inputs[i].sequenceNumber = 0
-//                transaction.clearOutputs()
-//                outputs.forEach { transaction.addOutput(it) }
-
+                transaction.clearOutputs()
+                outputs.forEach { transaction.addOutput(it) }
             }
 
             if (sigHashType and Transaction.SigHash.ANYONECANPAY.value.toByte() == Transaction.SigHash.ANYONECANPAY.value.toByte()) {
                 // SIGHASH_ANYONECANPAY means the signature in the input is not broken by changes/additions/removals
                 // of other inputs. For example, this is useful for building assurance contracts.
-//                transaction.clearInputs()
-//                transaction.addInput(input)
+                transaction.clearInputs()
+                transaction.addInput(input)
             }
 
 //            val bos = UnsafeByteArrayOutputStream(if (transaction.length == Message.UNKNOWN_LENGTH) 256 else transaction.length + 4)
-//            transaction.bitcoinSerialize(bos)
+            val bos = UnsafeByteArrayOutputStream()
+            transaction.bitcoinSerializeToStream(bos)
             // We also have to write a hash type (sigHashType is actually an unsigned char)
-//            ByteUtils.uint32ToByteStreamLE((0x000000ff and sigHashType.toInt()).toLong(), bos)
+            ByteUtils.uint32ToByteStreamLE((0x000000ff and sigHashType.toInt()).toLong(), bos)
             // Note that this is NOT reversed to ensure it will be signed correctly. If it were to be printed out
             // however then we would expect that it is IS reversed.
-//            val hash = Sha256Hash.twiceOf(bos.toByteArray())
-//            bos.close()
+            val hash = Sha256Hash.twiceOf(bos.toByteArray())
+            bos.close()
 
-//            return hash
-            return null
+            return hash
         } catch (e: IOException) {
             throw RuntimeException(e)  // Cannot happen.
         }

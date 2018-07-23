@@ -24,6 +24,7 @@ dependencies {
     testCompile("junit", "junit", "4.12")
     testCompile("org.codehaus.groovy", "groovy", "2.4.15")
     testCompile("org.spockframework", "spock-core", "1.1-groovy-2.4")
+    testImplementation("com.fasterxml.jackson.core", "jackson-databind", "2.5.2")
 }
 
 configure<JavaPluginConvention> {

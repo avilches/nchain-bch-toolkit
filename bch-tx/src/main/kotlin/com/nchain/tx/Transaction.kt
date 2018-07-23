@@ -19,15 +19,24 @@ package com.nchain.tx
 
 import com.google.common.collect.ImmutableMap
 import com.google.common.primitives.Longs
+import com.nchain.address.CashAddress
+import com.nchain.bitcoinkt.core.TransactionSignatureBuilder
+import com.nchain.key.ECKey
 import org.slf4j.LoggerFactory
 import java.util.*
 
 import com.nchain.key.VerificationException
+import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
+import com.nchain.tools.ByteUtils
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
+import org.bitcoinj.script.ScriptBuilder
 import org.bitcoinj.script.ScriptException
+import org.bitcoinj.tx.TransactionSignature
+import java.io.IOException
+import java.io.OutputStream
 import java.math.BigInteger
 
 /**
@@ -50,13 +59,13 @@ import java.math.BigInteger
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-class Transaction {
+class Transaction(val params:NetworkParameters) {
 
     // These are bitcoinkt serialized.
     var version: Long = 0
         private set
-    private var inputs: ArrayList<TransactionInput>? = null
-    private var outputs: ArrayList<TransactionOutput>? = null
+    private var inputs: MutableList<TransactionInput> = mutableListOf()
+    private var outputs: MutableList<TransactionOutput> = mutableListOf()
 
     private var lockTime: Long = 0
 
@@ -64,7 +73,7 @@ class Transaction {
     // block in which it was included. Note that this can be changed by re-orgs so the wallet may update this field.
     // Old serialized transactions don't have this field, thus null is valid. It is used for returning an ordered
     // list of transactions from a wallet, which is helpful for presenting to users.
-    private var updatedAt: Date? = null
+//    private var updatedAt: Date? = null
 
     // This is an in memory helper only.
     /**
@@ -88,14 +97,14 @@ class Transaction {
     // regardless of where they actually appeared in the block.
     //
     // If this transaction is not stored in the wallet, appearsInHashes is null.
-    private var appearsInHashes: MutableMap<Sha256Hash, Int>? = null
+//    private var appearsInHashes: MutableMap<Sha256Hash, Int>? = null
 
     // Transactions can be encoded in a way that will use more bytes than is optimal
     // (due to VarInts having multiple encodings)
     // MAX_BLOCK_SIZE must be compared to the optimal encoding, not the actual encoding, so when parsing, we keep track
     // of the size of the ideal encoding in addition to the actual message size (which Message needs) so that Blocks
     // can properly keep track of optimal encoded size
-    private var optimalEncodingMessageSize: Int = 0
+//    private var optimalEncodingMessageSize: Int = 0
 
     /**
      * Returns the purpose for which this transaction was created. See the javadoc for [Purpose] for more
@@ -105,7 +114,7 @@ class Transaction {
      * Marks the transaction as being created for the given purpose. See the javadoc for [Purpose] for more
      * information on the point of this field and what it can be.
      */
-    var purpose: Purpose? = Purpose.UNKNOWN
+//    var purpose: Purpose? = Purpose.UNKNOWN
 
     /**
      * This field can be used by applications to record the exchange rate that was valid when the transaction happened.
@@ -129,7 +138,7 @@ class Transaction {
      * Set the transaction [.memo]. It can be used to record the memo of the payment request that initiated the
      * transaction.
      */
-    var memo: String? = null
+//    var memo: String? = null
 
     val hashAsString: String
         get() = hash.toString()
@@ -140,11 +149,8 @@ class Transaction {
     val inputSum: Coin
         get() {
             var inputTotal = Coin.ZERO
-
-            if (inputs != null) {
-                for (input in inputs!!) {
-                    inputTotal = inputTotal.add(input.value?:Coin.ZERO)
-                }
+            for (input in inputs) {
+                inputTotal = inputTotal.add(input.value?:Coin.ZERO)
             }
 
             return inputTotal
@@ -164,12 +170,9 @@ class Transaction {
     val outputSum: Coin
         get() {
             var totalOut = Coin.ZERO
-
-            if (inputs != null) {
-                for (output in outputs!!) {
-                    totalOut = totalOut.add(output.getValue())
-                }
-            }
+             for (output in outputs) {
+                totalOut = totalOut.add(output.getValue())
+             }
 
             return totalOut
         }
@@ -177,7 +180,7 @@ class Transaction {
     /*
     fun getOutputSum: Coin{
         var totalOut = Coin.ZERO
-        for (output in outputs!!){
+        for (output in outputs){
             totalOut = totalOut.add(output.getValue())
         }
         return totalOut
@@ -194,7 +197,7 @@ class Transaction {
     val fee: Coin?
         get() {
             var fee = Coin.ZERO
-            for (input in inputs!!) {
+            for (input in inputs) {
                 if (input.value == null)
                     return null
                 fee = fee.add(input.value!!)
@@ -206,20 +209,23 @@ class Transaction {
     /**
      * Returns true if any of the outputs is marked as spent.
      */
+/*
     val isAnyOutputSpent: Boolean
         get() {
-            for (output in outputs!!) {
+            for (output in outputs) {
                 if (!output.isAvailableForSpending)
                     return true
             }
             return false
         }
+*/
 
     /**
      * Returns the earliest time at which the transaction was seen (broadcast or included into the chain),
      * or the epoch if that information isn't available.
      */
     // Older wallets did not store this field. Set to the epoch.
+/*
     var updateTime: Date?
         get() {
             if (updatedAt == null) {
@@ -230,6 +236,7 @@ class Transaction {
         set(updatedAt) {
             this.updatedAt = updatedAt ?: Date(0)       // support setting null for very old tx
         }
+*/
 
     /**
      * The priority (coin age) calculation doesn't use the regular message size, but rather one adjusted downwards
@@ -242,7 +249,7 @@ class Transaction {
     val messageSizeForPriorityCalc: Int
         get() {
             var size = messageSize
-            for (input in inputs!!) {
+            for (input in inputs) {
                 val benefit = 41 + Math.min(110, input.getScriptSig().listProgram().size)
                 if (size > benefit)
                     size -= benefit
@@ -258,7 +265,7 @@ class Transaction {
      * position in a block but by the data in the inputs.
      */
     val isCoinBase: Boolean
-        get() = inputs!!.size == 1 && inputs!![0].isCoinBase
+        get() = inputs.size == 1 && inputs[0].isCoinBase
 
     /**
      * A transaction is mature if it is either a building coinbase tx that is as deep or deeper than the required coinbase depth, or a non-coinbase tx.
@@ -281,9 +288,9 @@ class Transaction {
         @Throws(ScriptException::class)
         get() {
             var sigOps = 0
-            for (input in inputs!!)
+            for (input in inputs)
                 sigOps += Script.getSigOpCount(input.getScriptBytes()!!)
-            for (output in outputs!!)
+            for (output in outputs)
                 sigOps += Script.getSigOpCount(output.scriptBytes!!)
             return sigOps
         }
@@ -296,6 +303,7 @@ class Transaction {
      * To check if this transaction is final at a given height and time, see [Transaction.isFinal]
      *
      */
+/*
     val isTimeLocked: Boolean
         get() {
             if (getLockTime() == 0L)
@@ -305,6 +313,7 @@ class Transaction {
                     return true
             return false
         }
+*/
 
 /*
     val isOpReturn: Boolean
@@ -314,7 +323,7 @@ class Transaction {
         get() {
             // Only one OP_RETURN output per transaction is allowed as "standard" transaction
             // So just return the first OP_RETURN data found
-            for (output in outputs!!) {
+            for (output in outputs) {
                 if (output.isOpReturn) {
                     return output.opReturnData
                 }
@@ -403,7 +412,7 @@ class Transaction {
     fun getValueSentToMe(transactionBag: TransactionBag): Coin {
         // This is tested in WalletTest.
         var v = Coin.ZERO
-        for (o in outputs!!) {
+        for (o in outputs) {
             if (!o.isMineOrWatched(transactionBag)) continue
             v = v.add(o.getValue())
         }
@@ -416,9 +425,9 @@ class Transaction {
      * transaction doesn't have that data because it's not stored in the wallet or because it has never appeared in a
      * block.
      */
-    fun getAppearsInHashes(): Map<Sha256Hash, Int>? {
-        return if (appearsInHashes != null) ImmutableMap.copyOf(appearsInHashes!!) else null
-    }
+//    fun getAppearsInHashes(): Map<Sha256Hash, Int>? {
+//        return if (appearsInHashes != null) ImmutableMap.copyOf(appearsInHashes!!) else null
+//    }
 
     /**
      *
@@ -474,7 +483,7 @@ class Transaction {
     fun getValueSentFromMe(wallet: TransactionBag): Coin {
         // This is tested in WalletTest.
         var v = Coin.ZERO
-        for (input in inputs!!) {
+        for (input in inputs) {
             // This input is taking value from a transaction in our wallet. To discover the value,
             // we must find the connected transaction.
             var connected = input.getConnectedOutput(wallet.getTransactionPool(Pool.UNSPENT))
@@ -519,7 +528,7 @@ class Transaction {
      */
 /*
     fun isEveryOwnedOutputSpent(transactionBag: TransactionBag): Boolean {
-        for (output in outputs!!) {
+        for (output in outputs) {
             if (output.isAvailableForSpending && output.isMineOrWatched(transactionBag))
                 return false
         }
@@ -577,7 +586,7 @@ class Transaction {
         inputs = ArrayList(numInputs.toInt())
         for (i in 0 until numInputs) {
             val input = TransactionInput(params!!, this, payload!!, cursor, serializer!!)
-            inputs!!.add(input)
+            inputs.add(input)
             val scriptLen = readVarInt(TransactionOutPoint.MESSAGE_LENGTH)
             optimalEncodingMessageSize += (TransactionOutPoint.MESSAGE_LENGTH.toLong() + VarInt.sizeOf(scriptLen).toLong() + scriptLen + 4).toInt()
             cursor += (scriptLen + 4).toInt()
@@ -588,7 +597,7 @@ class Transaction {
         outputs = ArrayList(numOutputs.toInt())
         for (i in 0 until numOutputs) {
             val output = TransactionOutput(params!!, this, payload!!, cursor, serializer!!)
-            outputs!!.add(output)
+            outputs.add(output)
             val scriptLen = readVarInt(8)
             optimalEncodingMessageSize += (8 + VarInt.sizeOf(scriptLen).toLong() + scriptLen).toInt()
             cursor += scriptLen.toInt()
@@ -637,7 +646,7 @@ class Transaction {
             }
             s.append('\n')
         }
-        if (inputs!!.size == 0) {
+        if (inputs.size == 0) {
             s.append("  INCOMPLETE: No inputs!\n")
             return s.toString()
         }
@@ -645,8 +654,8 @@ class Transaction {
             var script: String
             var script2: String
             try {
-                script = inputs!![0].getScriptSig().toString()
-                script2 = outputs!![0].getScriptPubKey().toString()
+                script = inputs[0].getScriptSig().toString()
+                script2 = outputs[0].getScriptPubKey().toString()
             } catch (e: ScriptException) {
                 script = "???"
                 script2 = "???"
@@ -656,7 +665,7 @@ class Transaction {
                     .append(")  (scriptPubKey ").append(script2).append(")\n")
             return s.toString()
         }
-        for (`in` in inputs!!) {
+        for (`in` in inputs) {
             s.append("     ")
             s.append("in   ")
 
@@ -684,7 +693,7 @@ class Transaction {
 
             s.append('\n')
         }
-        for (out in outputs!!) {
+        for (out in outputs) {
             s.append("     ")
             s.append("out  ")
             try {
@@ -721,17 +730,15 @@ class Transaction {
      * Removes all the inputs from this transaction.
      * Note that this also invalidates the length attribute
      */
-/*
     fun clearInputs() {
-        unCache()
-        for (input in inputs!!) {
-            input.parent = null
-        }
-        inputs!!.clear()
+//        unCache()
+//        for (input in inputs) {
+//            input.parent = null
+//        }
+        inputs.clear()
         // You wanted to reserialize, right?
-        this.length = this.unsafeBitcoinSerialize().size
+//        this.length = this.unsafeBitcoinSerialize().size
     }
-*/
 
     /**
      * Adds an input to this transaction that imports value from the given output. Note that this input is *not*
@@ -748,21 +755,21 @@ class Transaction {
      * Adds an input directly, with no checking that it's valid.
      * @return the new input.
      */
-//    fun addInput(input: TransactionInput): TransactionInput {
+    fun addInput(input: TransactionInput): TransactionInput {
 //        unCache()
 //        input.parent = this
-//        inputs!!.add(input)
-//        adjustLength(inputs!!.size, input.length)
-//        return input
-//    }
+        inputs.add(input)
+//        adjustLength(inputs.size, input.length)
+        return input
+    }
 
     /**
      * Creates and adds an input to this transaction, with no checking that it's valid.
      * @return the newly created input.
      */
-//    fun addInput(spendTxHash: Sha256Hash, outputIndex: Long, script: Script): TransactionInput {
-//        return addInput(TransactionInput(params!!, this, script.listProgram(), TransactionOutPoint(params!!, outputIndex, spendTxHash)))
-//    }
+    fun addInput(spendTxHash: Sha256Hash, outputIndex: Long, script: Script): TransactionInput {
+        return addInput(TransactionInput(params!!, this, script.listProgram(), TransactionOutPoint(params!!, outputIndex, spendTxHash)))
+    }
 
     /**
      * Adds a new and fully signed input for the given parameters. Note that this method is **not** thread safe
@@ -772,16 +779,15 @@ class Transaction {
      *
      * @throws ScriptException if the scriptPubKey is not a pay to address or pay to pubkey script.
      */
-/*
     @Throws(ScriptException::class)
     @JvmOverloads
     fun addSignedInput(prevOut: TransactionOutPoint, scriptPubKey: Script, sigKey: ECKey,
                        sigHash: SigHash = SigHash.ALL, anyoneCanPay: Boolean = false): TransactionInput {
         // Verify the API user didn't try to do operations out of order.
-        checkState(!outputs!!.isEmpty(), "Attempting to sign tx without outputs.")
+        check(!outputs.isEmpty(), {"Attempting to sign tx without outputs."})
         val input = TransactionInput(params!!, this, byteArrayOf(), prevOut)
         addInput(input)
-        val hash = TransactionSignatureBuilder(this).hashForSignature(inputs!!.size - 1, scriptPubKey, sigHash, anyoneCanPay)
+        val hash = TransactionSignatureBuilder(this).hashForSignature(inputs.size - 1, scriptPubKey, sigHash, anyoneCanPay)
         val ecSig = sigKey.sign(hash)
         val txSig = TransactionSignature(ecSig, sigHash, anyoneCanPay, false)
         if (scriptPubKey.isSentToRawPubKey)
@@ -792,7 +798,7 @@ class Transaction {
             throw ScriptException("Don't know how to sign for this kind of scriptPubKey: " + scriptPubKey)
         return input
     }
-*/
+
 
     /**
      * Adds a new and fully signed input for the given parameters. Note that this method is **not** thread safe
@@ -807,13 +813,13 @@ class Transaction {
     fun addSignedInput(prevOut: TransactionOutPoint, scriptPubKey: Script, sigKey: ECKey,
                        sigHash: SigHash, anyoneCanPay: Boolean, forkId: Boolean): TransactionInput {
         // Verify the API user didn't try to do operations out of order.
-        checkState(!outputs!!.isEmpty(), "Attempting to sign tx without outputs.")
+        checkState(!outputs.isEmpty(), "Attempting to sign tx without outputs.")
         val input = TransactionInput(params!!, this, byteArrayOf(), prevOut)
         addInput(input)
         val hash = if (forkId)
-            TransactionSignatureBuilder(this).hashForSignatureWitness(inputs!!.size - 1, scriptPubKey, prevOut.getConnectedOutput()!!.getValue(), sigHash, anyoneCanPay)
+            TransactionSignatureBuilder(this).hashForSignatureWitness(inputs.size - 1, scriptPubKey, prevOut.getConnectedOutput()!!.getValue(), sigHash, anyoneCanPay)
         else
-            TransactionSignatureBuilder(this).hashForSignature(inputs!!.size - 1, scriptPubKey, sigHash, anyoneCanPay)
+            TransactionSignatureBuilder(this).hashForSignature(inputs.size - 1, scriptPubKey, sigHash, anyoneCanPay)
 
         val ecSig = sigKey.sign(hash)
         val txSig = TransactionSignature(ecSig, sigHash, anyoneCanPay, forkId)
@@ -847,74 +853,67 @@ class Transaction {
      * Removes all the outputs from this transaction.
      * Note that this also invalidates the length attribute
      */
-/*
     fun clearOutputs() {
-        unCache()
-        for (output in outputs!!) {
-            output.parent =(null)
-        }
-        outputs!!.clear()
+//        unCache()
+//        for (output in outputs) {
+//            output.parent =(null)
+//        }
+        outputs.clear()
         // You wanted to reserialize, right?
-        this.length = this.unsafeBitcoinSerialize().size
+//        this.length = this.unsafeBitcoinSerialize().size
     }
-*/
 
     /**
      * Adds the given output to this transaction. The output must be completely initialized. Returns the given output.
      */
-/*
     fun addOutput(to: TransactionOutput): TransactionOutput {
-        unCache()
-        to.parent = (this)
-        outputs!!.add(to)
-        adjustLength(outputs!!.size, to.length)
+//        unCache()
+//        to.parent = (this)
+        outputs.add(to)
+//        adjustLength(outputs.size, to.length)
         return to
     }
-*/
 
     /**
      * Creates an output based on the given address and value, adds it to this transaction, and returns the new output.
      */
-//    fun addOutput(value: Coin, address: CashAddress): TransactionOutput {
-//        return addOutput(TransactionOutput(params!!, this, value, address))
-//    }
+    fun addOutput(value: Coin, address: CashAddress): TransactionOutput {
+        return addOutput(TransactionOutput(params!!, this, value, address))
+    }
 
     /**
      * Creates an output that pays to the given pubkey directly (no address) with the given value, adds it to this
      * transaction, and returns the new output.
      */
-//    fun addOutput(value: Coin, pubkey: ECKey): TransactionOutput {
-//        return addOutput(TransactionOutput(params!!, this, value, pubkey))
-//    }
+    fun addOutput(value: Coin, pubkey: ECKey): TransactionOutput {
+        return addOutput(TransactionOutput(params!!, this, value, pubkey))
+    }
 
     /**
      * Creates an output that pays to the given script. The address and key forms are specialisations of this method,
      * you won't normally need to use it unless you're doing unusual things.
      */
-//    fun addOutput(value: Coin, script: Script): TransactionOutput {
-//        return addOutput(TransactionOutput(params!!, this, value, script.listProgram()))
-//    }
+    fun addOutput(value: Coin, script: Script): TransactionOutput {
+        return addOutput(TransactionOutput(params!!, this, value, script.listProgram()))
+    }
 
-/*
     fun addData(data:ByteArray): TransactionOutput {
         val script = ScriptBuilder.createOpReturnScript(data)
         return addOutput(TransactionOutput(params!!, this, Coin.ZERO, script.listProgram()))
     }
-*/
 
-/*
+
     @Throws(IOException::class)
-    override fun bitcoinSerializeToStream(stream: OutputStream) {
-        Utils.uint32ToByteStreamLE(version, stream)
-        stream.write(VarInt(inputs!!.size.toLong()).encode())
-        for (`in` in inputs!!)
-            `in`.bitcoinSerialize(stream)
-        stream.write(VarInt(outputs!!.size.toLong()).encode())
-        for (out in outputs!!)
-            out.bitcoinSerialize(stream)
-        Utils.uint32ToByteStreamLE(lockTime, stream)
+    fun bitcoinSerializeToStream(stream: OutputStream) {
+        ByteUtils.uint32ToByteStreamLE(version, stream)
+        stream.write(VarInt(inputs.size.toLong()).encode())
+        for (`in` in inputs)
+            `in`.bitcoinSerializeToStream(stream)
+        stream.write(VarInt(outputs.size.toLong()).encode())
+        for (out in outputs)
+            out.bitcoinSerializeToStream(stream)
+        ByteUtils.uint32ToByteStreamLE(lockTime, stream)
     }
-*/
 
 
     /**
@@ -936,13 +935,13 @@ class Transaction {
     fun setLockTime(lockTime: Long) {
 //        unCache()
         var seqNumSet = false
-        for (input in inputs!!) {
+        for (input in inputs) {
             if (input.sequenceNumber != TransactionInput.NO_SEQUENCE) {
                 seqNumSet = true
                 break
             }
         }
-        if (lockTime != 0L && (!seqNumSet || inputs!!.isEmpty())) {
+        if (lockTime != 0L && (!seqNumSet || inputs.isEmpty())) {
             // At least one input must have a non-default sequence number for lock times to have any effect.
             // For instance one of them can be set to zero to make this feature work.
             log.warn("You are setting the lock time on a transaction but none of the inputs have non-default sequence numbers. This will not do what you expect!")
@@ -957,12 +956,12 @@ class Transaction {
 
     /** Returns an unmodifiable view of all inputs.  */
     fun getInputs(): List<TransactionInput> {
-        return Collections.unmodifiableList(inputs!!)
+        return Collections.unmodifiableList(inputs)
     }
 
     /** Returns an unmodifiable view of all outputs.  */
     fun getOutputs(): List<TransactionOutput> {
-        return Collections.unmodifiableList(outputs!!)
+        return Collections.unmodifiableList(outputs)
     }
 
     /**
@@ -977,7 +976,7 @@ class Transaction {
 /*
     fun getWalletOutputs(transactionBag: TransactionBag): List<TransactionOutput> {
         val walletOutputs = LinkedList<TransactionOutput>()
-        for (o in outputs!!) {
+        for (o in outputs) {
             if (!o.isMineOrWatched(transactionBag)) continue
             walletOutputs.add(o)
         }
@@ -987,18 +986,18 @@ class Transaction {
 */
 
     /** Randomly re-orders the transaction outputs: good for privacy  */
-    fun shuffleOutputs() {
-        Collections.shuffle(outputs!!)
-    }
+//    fun shuffleOutputs() {
+//        Collections.shuffle(outputs)
+//    }
 
     /** Same as getInputs().get(index).  */
     fun getInput(index: Long): TransactionInput {
-        return inputs!![index.toInt()]
+        return inputs[index.toInt()]
     }
 
     /** Same as getOutputs().get(index)  */
     fun getOutput(index: Long): TransactionOutput {
-        return outputs!![index.toInt()]
+        return outputs[index.toInt()]
     }
 
     /**
@@ -1083,28 +1082,29 @@ class Transaction {
      *
      * @throws VerificationException
      */
-/*
     @Throws(VerificationException::class)
     fun verify() {
-        if (inputs!!.size == 0 || outputs!!.size == 0)
+        if (inputs.size == 0 || outputs.size == 0)
             throw VerificationException.EmptyInputsOrOutputs()
-        if (this.messageSize > Block.MAX_BLOCK_SIZE)
-            throw VerificationException.LargerThanMaxBlockSize()
+
+        // TODO:
+//        if (this.messageSize > Block.MAX_BLOCK_SIZE)
+//            throw VerificationException.LargerThanMaxBlockSize()
 
         var valueOut = Coin.ZERO
         val outpoints = HashSet<TransactionOutPoint>()
-        for (input in inputs!!) {
+        for (input in inputs) {
             if (outpoints.contains(input.outpoint))
                 throw VerificationException.DuplicatedOutPoint()
             outpoints.add(input.outpoint!!)
         }
         try {
-            for (output in outputs!!) {
+            for (output in outputs) {
                 if (output.getValue().signum < 0)
                 // getValue() can throw IllegalStateException
                     throw VerificationException.NegativeValueOutput()
                 valueOut = valueOut.add(output.getValue())
-                if (params!!.hasMaxMoney() && valueOut.compareTo(params!!.maxMoney) > 0)
+                if (valueOut.compareTo(MAX_MONEY) > 0)
                     throw IllegalArgumentException()
             }
         } catch (e: IllegalStateException) {
@@ -1114,15 +1114,14 @@ class Transaction {
         }
 
         if (isCoinBase) {
-            if (inputs!![0].getScriptBytes()!!.size < 2 || inputs!![0].getScriptBytes()!!.size > 100)
+            if (inputs[0].getScriptBytes()!!.size < 2 || inputs[0].getScriptBytes()!!.size > 100)
                 throw VerificationException.CoinbaseScriptSizeOutOfRange()
         } else {
-            for (input in inputs!!)
+            for (input in inputs)
                 if (input.isCoinBase)
                     throw VerificationException.UnexpectedCoinbaseInput()
         }
     }
-*/
 
     /**
      *
@@ -1135,10 +1134,10 @@ class Transaction {
      * Note that currently the replacement feature is disabled in Bitcoin Core and will need to be
      * re-activated before this functionality is useful.
      */
-    fun isFinal(height: Int, blockTimeSeconds: Long): Boolean {
-        val time = getLockTime()
-        return time < (if (time < LOCKTIME_THRESHOLD) height.toLong() else blockTimeSeconds) || !isTimeLocked
-    }
+//    fun isFinal(height: Int, blockTimeSeconds: Long): Boolean {
+//        val time = getLockTime()
+//        return time < (if (time < LOCKTIME_THRESHOLD) height.toLong() else blockTimeSeconds) || !isTimeLocked
+//    }
 
     /**
      * Returns either the lock time as a date, if it was specified in seconds, or an estimate based on the time in
@@ -1154,10 +1153,14 @@ class Transaction {
 */
 
     companion object {
+
+        @JvmStatic val MAX_MONEY = Coin.COIN.multiply(NetworkParameters.MAX_COINS)
+
         /**
          * A comparator that can be used to sort transactions by their updateTime field. The ordering goes from most recent
          * into the past.
          */
+/*
         val SORT_TX_BY_UPDATE_TIME: Comparator<Transaction> = Comparator { tx1, tx2 ->
             val time1 = tx1.updateTime!!.time
             val time2 = tx2.updateTime!!.time
@@ -1165,6 +1168,7 @@ class Transaction {
             //If time1==time2, compare by tx hash to make comparator consistent with equals
             if (updateTimeComparison != 0) updateTimeComparison else tx1.hash!!.compareTo(tx2.hash!!)
         }
+*/
         /** A comparator that can be used to sort transactions by their chain height.  */
 /*
         val SORT_TX_BY_HEIGHT: Comparator<Transaction> = Comparator { tx1, tx2 ->

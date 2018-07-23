@@ -32,6 +32,7 @@ import com.nchain.key.VerificationException
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
+import com.nchain.tools.ByteUtils
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
 import org.bitcoinj.script.ScriptException
@@ -46,7 +47,7 @@ import org.bitcoinj.script.ScriptException
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-open class TransactionInput {
+open class TransactionInput(val params:NetworkParameters) {
 
     // Allows for altering transactions after they were broadcast. Values below NO_SEQUENCE-1 mean it can be altered.
     private var sequence: Long = 0
@@ -70,6 +71,10 @@ open class TransactionInput {
      */
     var value: Coin? = null
         private set
+
+    var length: Int = 0
+
+//    var parentTransaction: Transaction? = null
 
     /**
      * Coinbase transactions have special inputs with hashes of zero. If this is such an input, returns true.
@@ -149,17 +154,15 @@ open class TransactionInput {
 //    val isStandard: DefaultRiskAnalysis.RuleViolation
 //        get() = DefaultRiskAnalysis.isInputStandard(this)
 
-/*
     @JvmOverloads constructor(params: NetworkParameters, parentTransaction: Transaction?, scriptBytes: ByteArray?,
-                              outpoint: TransactionOutPoint = TransactionOutPoint(params, UNCONNECTED, null as Transaction?), value: Coin? = null) : super(params) {
+                              outpoint: TransactionOutPoint = TransactionOutPoint(params, UNCONNECTED, null as Transaction?), value: Coin? = null) : this(params) {
         this.scriptBytes = scriptBytes
         this.outpoint = outpoint
         this.sequence = NO_SEQUENCE
         this.value = value
-        parent = (parentTransaction)
+//        this.parentTransaction = parentTransaction
         length = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
     }
-*/
 
     /**
      * Creates an UNSIGNED input that links to the given output
@@ -213,12 +216,12 @@ open class TransactionInput {
 //    }
 //
 //    @Throws(IOException::class)
-//    override fun bitcoinSerializeToStream(stream: OutputStream) {
-//        outpoint!!.bitcoinSerialize(stream)
-//        stream.write(VarInt(scriptBytes!!.size.toLong()).encode())
-//        stream.write(scriptBytes!!)
-//        Utils.uint32ToByteStreamLE(sequence, stream)
-//    }
+    fun bitcoinSerializeToStream(stream: OutputStream) {
+        outpoint!!.bitcoinSerializeToStream(stream)
+        stream.write(VarInt(scriptBytes!!.size.toLong()).encode())
+        stream.write(scriptBytes!!)
+        ByteUtils.uint32ToByteStreamLE(sequence, stream)
+    }
 
     /**
      * Returns the script that is fed to the referenced output (scriptPubKey) script in order to satisfy it: usually
@@ -237,13 +240,11 @@ open class TransactionInput {
     }
 
     /** Set the given program as the scriptSig that is supposed to satisfy the connected output script.  */
-/*
     fun setScriptSig(scriptSig: Script) {
         this.scriptSig = WeakReference(checkNotNull(scriptSig))
         // TODO: This should all be cleaned up so we have a consistent internal representation.
         setScriptBytes(scriptSig.listProgram())
     }
-*/
 
     /**
      * The "script bytes" might not actually be a script. In coinbase transactions where new coins are minted there
@@ -256,25 +257,23 @@ open class TransactionInput {
     }
 
     /** Clear input scripts, e.g. in preparation for signing.  */
-//    fun clearScriptBytes() {
-//        setScriptBytes(TransactionInput.EMPTY_ARRAY)
-//    }
+    fun clearScriptBytes() {
+        setScriptBytes(TransactionInput.EMPTY_ARRAY)
+    }
 
     /**
      * @param scriptBytes the scriptBytes to set
      */
     // TODO: when all Java removed, make this internal
-/*
     fun setScriptBytes(scriptBytes: ByteArray?) {
-        unCache()
+//        unCache()
         this.scriptSig = null
         val oldLength = length
         this.scriptBytes = scriptBytes
         // 40 = previous_outpoint (36) + sequence (4)
         val newLength = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
-        adjustLength(newLength - oldLength)
+//        adjustLength(newLength - oldLength)
     }
-*/
 
     enum class ConnectionResult {
         NO_SUCH_TX,
@@ -289,10 +288,10 @@ open class TransactionInput {
      *
      * @return The TransactionOutput or null if the transactions map doesn't contain the referenced tx.
      */
-    internal fun getConnectedOutput(transactions: Map<Sha256Hash, Transaction>): TransactionOutput? {
-        val tx = transactions[outpoint!!.hash] ?: return null
-        return tx.getOutputs()[outpoint!!.index.toInt()]
-    }
+//    internal fun getConnectedOutput(transactions: Map<Sha256Hash, Transaction>): TransactionOutput? {
+//        val tx = transactions[outpoint!!.hash] ?: return null
+//        return tx.getOutputs()[outpoint!!.index.toInt()]
+//    }
 
     /**
      * Alias for getOutpoint().getConnectedRedeemData(keyBag)

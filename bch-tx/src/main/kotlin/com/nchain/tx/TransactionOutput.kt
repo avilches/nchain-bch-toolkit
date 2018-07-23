@@ -21,11 +21,17 @@ import org.slf4j.*
 
 import com.google.common.base.Preconditions.*
 import com.nchain.address.CashAddress
+import com.nchain.key.ECKey
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
+import com.nchain.shared.VarInt
+import com.nchain.tools.ByteUtils
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
+import org.bitcoinj.script.ScriptBuilder
 import org.bitcoinj.script.ScriptException
+import java.io.IOException
+import java.io.OutputStream
 
 /**
  *
@@ -35,7 +41,7 @@ import org.bitcoinj.script.ScriptException
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-open class TransactionOutput {
+open class TransactionOutput(val params:NetworkParameters) {
 
     // The output's value is kept as a native type in order to save class instances.
     private var value: Long = 0
@@ -63,15 +69,17 @@ open class TransactionOutput {
      * the spending transaction wasn't downloaded yet, and it can be marked as spent when in reality the rest of the
      * network believes it to be unspent if the signature or script connecting to it was not actually valid.
      */
-    var isAvailableForSpending: Boolean = false
-        private set
+//    var isAvailableForSpending: Boolean = false
+//        private set
     /**
      * Returns the connected input.
      */
-    var spentBy: TransactionInput? = null
-        private set
+//    var spentBy: TransactionInput? = null
+//        private set
 
     private var scriptLen: Int = 0
+
+    var length: Int = 0
 
     /**
      * Gets the index of this output in the parent transaction, or throws if this output is free standing. Iterates
@@ -188,28 +196,26 @@ open class TransactionOutput {
      * something like [Coin.valueOf]. Typically you would use
      * [Transaction.addOutput] instead of creating a TransactionOutput directly.
      */
-//    constructor(params: NetworkParameters, parent: Transaction?, value: Coin, to: CashAddress) : this(params, parent, value, ScriptBuilder.createOutputScript(to).listProgram()) {}
+    constructor(params: NetworkParameters, parent: Transaction?, value: Coin, to: CashAddress) : this(params, parent, value, ScriptBuilder.createOutputScript(to).listProgram()) {}
 
     /**
      * Creates an output that sends 'value' to the given public key using a simple CHECKSIG script (no addresses). The
      * amount should be created with something like [Coin.valueOf]. Typically you would use
      * [Transaction.addOutput] instead of creating an output directly.
      */
-//    constructor(params: NetworkParameters, parent: Transaction?, value: Coin, to: ECKey) : this(params, parent, value, ScriptBuilder.createOutputScript(to).listProgram()) {}
+    constructor(params: NetworkParameters, parent: Transaction?, value: Coin, to: ECKey) : this(params, parent, value, ScriptBuilder.createOutputScript(to).listProgram()) {}
 
-/*
-    constructor(params: NetworkParameters, parent: Transaction?, value: Coin, scriptBytes: ByteArray) : super(params) {
+    constructor(params: NetworkParameters, parent: Transaction?, value: Coin, scriptBytes: ByteArray) : this(params) {
         // Negative values obviously make no sense, except for -1 which is used as a sentinel value when calculating
         // SIGHASH_SINGLE signatures, so unfortunately we have to allow that here.
-        checkArgument(value.signum >= 0 || value == Coin.NEGATIVE_SATOSHI, "Negative values not allowed")
-        checkArgument(!params.hasMaxMoney() || value.compareTo(params.maxMoney) <= 0, "Values larger than MAX_MONEY not allowed")
+        check(value.signum >= 0 || value == Coin.NEGATIVE_SATOSHI, {"Negative values not allowed"})
+        check(value.compareTo(Transaction.MAX_MONEY) <= 0, {"Values larger than MAX_MONEY not allowed"})
         this.value = value.value
         this.scriptBytes = scriptBytes
-        this.parent = (parent)
-        isAvailableForSpending = true
+//        this.parent = (parent)
+//        isAvailableForSpending = true
         length = 8 + VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
     }
-*/
 
     @Throws(ScriptException::class)
     fun getScriptPubKey(): Script {
@@ -263,16 +269,16 @@ open class TransactionOutput {
         length = cursor - offset + scriptLen
         scriptBytes = readBytes(scriptLen)
     }
-
+*/
     @Throws(IOException::class)
-    public override fun bitcoinSerializeToStream(stream: OutputStream) {
+    fun bitcoinSerializeToStream(stream: OutputStream) {
         checkNotNull<ByteArray>(scriptBytes)
-        Utils.int64ToByteStreamLE(value, stream)
+        ByteUtils.int64ToByteStreamLE(value, stream)
         // TODO: Move script serialization into the Script class, where it belongs.
         stream.write(VarInt(scriptBytes!!.size.toLong()).encode())
         stream.write(scriptBytes!!)
     }
-*/
+
 
     /**
      * Returns the value of this output. This is the amount of currency that the destination address

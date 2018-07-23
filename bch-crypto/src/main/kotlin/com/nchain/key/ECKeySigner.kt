@@ -4,6 +4,7 @@ import com.nchain.keycrypter.KeyCrypterException
 import com.nchain.tools.ByteUtils
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
+import com.nchain.tools.DER
 import com.nchain.tools.loggerFor
 import org.spongycastle.crypto.digests.SHA256Digest
 import org.spongycastle.crypto.params.ECPrivateKeyParameters
@@ -83,7 +84,7 @@ class ECKeySigner {
          * @param pub       The public key bytes to use.
          */
         fun verify(data: ByteArray, signature: ByteArray, pub: ByteArray): Boolean {
-            return verify(data, ECKey.ECDSASignature.decodeFromDER(signature), pub)
+            return verify(data, DER.decodeSignature(signature), pub)
         }
 
         /**

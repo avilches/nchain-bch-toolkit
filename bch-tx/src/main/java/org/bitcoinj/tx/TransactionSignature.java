@@ -19,11 +19,15 @@ package org.bitcoinj.tx;
 import com.google.common.base.Preconditions;
 import com.nchain.key.ECKey;
 import com.nchain.key.VerificationException;
+import com.nchain.tools.DER;
 import com.nchain.tx.Transaction;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 
 /**
- * A TransactionSignature wraps an {@link org.bitcoinj.core.ECKey.ECDSASignature} and adds methods for handling
+ * A TransactionSignature wraps an {@link ECKey.ECDSASignature} and adds methods for handling
  * the additional SIGHASH mode byte that is used.
  */
 public class TransactionSignature {
@@ -177,17 +181,15 @@ public class TransactionSignature {
      * of the type used by Bitcoin we have to encode them using DER encoding, which is just a way to pack the two
      * components into a structure, and then we append a byte to the end for the sighash flags.
      */
-/*
     public byte[] encodeToBitcoin() {
         try {
-            ByteArrayOutputStream bos = derByteStream();
+            ByteArrayOutputStream bos = DER.createByteStream(signature);
             bos.write(sighashFlags);
             return bos.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);  // Cannot happen.
         }
     }
-*/
 
     public ECKey.ECDSASignature toCanonicalised() {
         return new TransactionSignature(signature.toCanonicalised(), sigHashMode(), anyoneCanPay(), useForkId()).signature;
@@ -224,7 +226,7 @@ public class TransactionSignature {
             throw new VerificationException("Signature encoding is not canonical.");
         ECKey.ECDSASignature sig;
         try {
-            sig = ECKey.ECDSASignature.decodeFromDER(bytes);
+            sig = DER.decodeSignature(bytes);
         } catch (IllegalArgumentException e) {
             throw new VerificationException("Could not decode DER: "+e.getMessage());
         }
