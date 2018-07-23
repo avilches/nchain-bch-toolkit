@@ -17,8 +17,10 @@ repositories {
 dependencies {
     compile(kotlin("stdlib-jdk8"))
     implementation("org.slf4j", "slf4j-api", "1.7.25")
+    implementation(project(":bch-crypto"))
     implementation("com.madgag.spongycastle", "core", "1.58.0.0")
-    implementation("com.lambdaworks", "scrypt", "1.4.0")
+//    implementation("com.lambdaworks", "scrypt", "1.4.0")
+    implementation("com.google.guava", "guava", "24.1-jre")
     testCompile("junit", "junit", "4.12")
     testCompile("org.codehaus.groovy", "groovy", "2.4.15")
     testCompile("org.spockframework", "spock-core", "1.1-groovy-2.4")

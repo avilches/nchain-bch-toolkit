@@ -72,6 +72,8 @@ class CashAddress(@Transient var parameters: NetworkParameters,
 
     companion object {
 
+        const val LENGTH = 20
+
         @Throws(AddressFormatException::class)
         @JvmStatic fun fromHash160(params: NetworkParameters, hash160: ByteArray): CashAddress {
             return CashAddress(params, params.addressHeader, hash160)
@@ -242,5 +244,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
             }
             throw AddressFormatException("Invalid Cash address version: $version")
         }
+
+
     }
 }

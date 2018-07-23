@@ -459,13 +459,13 @@ class ECKey constructor(val priv: BigInteger?, val pub: LazyECPoint) {
         private val CURVE_PARAMS = CustomNamedCurves.getByName("secp256k1")
 
         /** The parameters of the secp256k1 curve that Bitcoin uses.  */
-        val CURVE: ECDomainParameters
+        @JvmStatic val CURVE: ECDomainParameters
 
         /**
          * Equal to CURVE.getN().shiftRight(1), used for canonicalising the S value of a signature. If you aren't
          * sure what this is about, you can ignore it.
          */
-        val HALF_CURVE_ORDER: BigInteger
+        @JvmStatic val HALF_CURVE_ORDER: BigInteger
 
         init {
             // Init proper random number generator, as some old Android installations have bugs that make it unsecure.

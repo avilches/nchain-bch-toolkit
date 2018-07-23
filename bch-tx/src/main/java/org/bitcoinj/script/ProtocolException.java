@@ -1,6 +1,5 @@
 /*
  * Copyright 2011 Google Inc.
- * Copyright 2018 nChain Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +12,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * This file has been modified for the bitcoinkt project.
- * The original file was from the bitcoinj-cash project (https://github.com/bitcoinj-cash/bitcoinj).
  */
 
-package com.nchain.key
+package org.bitcoinj.script;
 
-open class VerificationException : RuntimeException {
-    constructor(msg: String) : super(msg) {}
-    constructor(msg:String, e: Exception) : super(msg, e) {}
-    constructor(e: Exception) : super(e) {}
+import com.nchain.key.VerificationException;
 
-    class SignatureFormatError : VerificationException {
-        constructor(msg: String) : super(msg) {}
-        constructor(e: Exception) : super(e) {}
+@SuppressWarnings("serial")
+public class ProtocolException extends VerificationException {
+
+    public ProtocolException(String msg) {
+        super(msg);
     }
 
+    public ProtocolException(Exception e) {
+        super(e);
+    }
+
+    public ProtocolException(String msg, Exception e) {
+        super(msg, e);
+    }
 }

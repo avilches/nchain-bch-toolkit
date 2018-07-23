@@ -1,4 +1,5 @@
 rootProject.name = "bitcoincash-toolkit"
 
 
-include("bch-crypto")
+include(":bch-crypto")
+include(":bch-tx")
