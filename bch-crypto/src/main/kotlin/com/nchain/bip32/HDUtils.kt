@@ -87,7 +87,10 @@ object HDUtils {
      * Where a letter "H" means hardened key. Spaces are ignored.
      */
     fun parsePath(path: String): List<ChildNumber> {
-        val parsedNodes = path.replace("M", "").split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        val pathClean = if (path.startsWith("m") || path.startsWith("M")) {
+            path.substring(1)
+        } else { path }
+        val parsedNodes = pathClean.split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         val nodes = ArrayList<ChildNumber>()
 
         for (node in parsedNodes) {

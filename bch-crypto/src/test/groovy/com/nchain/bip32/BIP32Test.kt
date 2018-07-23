@@ -148,7 +148,10 @@ class BIP32Test {
         for (i in tv.derived.indices) {
             val tc = tv.derived[i]
             log.info(tc.name)
-            assertEquals(tc.name, String.format(Locale.US, "Test%d %s", testCase + 1, tc.pathDescription))
+            assertEquals(tc.name,  "Test${testCase + 1} ${tc.pathDescription}")
+            val list = HDUtils.parsePath(tc.pathDescription)
+            assertEquals(list, tc.path.toList())
+
             val depth = tc.path.size - 1
             val ehkey = dh.deriveChild(Arrays.asList(*tc.path).subList(0, depth), false, true, tc.path[depth])
             assertEquals(testEncode(tc.priv), testEncode(ehkey.serializePrivB58(params)))
