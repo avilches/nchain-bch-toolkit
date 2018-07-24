@@ -87,7 +87,8 @@ public class ScriptDataDrivenTest {
 
         //FIXED_EXPECTED_RESULT = "ERROR"
         //FIXED_EXPECTED_RESULT = "OK"
-
+        String scriptSigString = null;
+        String scriptPubKeyString = null;
         try {
 
 
@@ -101,8 +102,8 @@ public class ScriptDataDrivenTest {
             }
 
 
-            String scriptSigString = jsonData.get(i++).asText();
-            String scriptPubKeyString = jsonData.get(i++).asText();
+            scriptSigString = jsonData.get(i++).asText();
+            scriptPubKeyString = jsonData.get(i++).asText();
             String flagString = jsonData.get(i++).asText();
 
             if (FIXED_EXPECTED_RESULT == null) {
@@ -146,7 +147,7 @@ public class ScriptDataDrivenTest {
         }
 
         if (!result.equals(expected)) {
-            fail(String.format("FAILED: result=%s, expected=%s", result,expected));
+            fail(String.format("\n"+scriptSigString+"\n"+scriptPubKeyString+"\nFAILED: result=%s, expected=%s", result,expected));
         }
     }
 
