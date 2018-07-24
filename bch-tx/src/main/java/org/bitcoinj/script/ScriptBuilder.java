@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import com.nchain.address.CashAddress;
 import com.nchain.key.ECKey;
 import com.nchain.tools.ByteUtils;
+import com.nchain.tx.Transaction;
 import org.bitcoinj.tx.TransactionSignature;
 
 import javax.annotation.Nullable;
@@ -32,7 +33,7 @@ import static org.bitcoinj.script.ScriptOpCodes.*;
 
 /**
  * <p>Tools for the construction of commonly used script types. You don't normally need this as it's hidden behind
- * convenience methods on {@link org.bitcoinj.core.Transaction}, but they are useful when working with the
+ * convenience methods on {@link Transaction}, but they are useful when working with the
  * protocol at a lower level.</p>
  */
 public class ScriptBuilder {
@@ -273,7 +274,7 @@ public class ScriptBuilder {
     }
 
     /** Create a program that satisfies an OP_CHECKMULTISIG program. */
-/*
+
     public static Script createMultiSigInputScript(List<TransactionSignature> signatures) {
         List<byte[]> sigs = new ArrayList<byte[]>(signatures.size());
         for (TransactionSignature signature : signatures) {
@@ -282,23 +283,23 @@ public class ScriptBuilder {
 
         return createMultiSigInputScriptBytes(sigs, null);
     }
-*/
+
 
     /** Create a program that satisfies an OP_CHECKMULTISIG program. */
-//    public static Script createMultiSigInputScript(TransactionSignature... signatures) {
-//        return createMultiSigInputScript(Arrays.asList(signatures));
-//    }
+    public static Script createMultiSigInputScript(TransactionSignature... signatures) {
+        return createMultiSigInputScript(Arrays.asList(signatures));
+    }
 
     /** Create a program that satisfies an OP_CHECKMULTISIG program, using pre-encoded signatures. */
-//    public static Script createMultiSigInputScriptBytes(List<byte[]> signatures) {
-//        return createMultiSigInputScriptBytes(signatures, null);
-//    }
+    public static Script createMultiSigInputScriptBytes(List<byte[]> signatures) {
+        return createMultiSigInputScriptBytes(signatures, null);
+    }
 
     /**
      * Create a program that satisfies a pay-to-script hashed OP_CHECKMULTISIG program.
      * If given signature list is null, incomplete scriptSig will be created with OP_0 instead of signatures
      */
-/*
+
     public static Script createP2SHMultiSigInputScript(@Nullable List<TransactionSignature> signatures,
                                                        Script multisigProgram) {
         List<byte[]> sigs = new ArrayList<byte[]>();
@@ -314,7 +315,7 @@ public class ScriptBuilder {
         }
         return createMultiSigInputScriptBytes(sigs, multisigProgram.getProgram());
     }
-*/
+
 
     /**
      * Create a program that satisfies an OP_CHECKMULTISIG program, using pre-encoded signatures. 
