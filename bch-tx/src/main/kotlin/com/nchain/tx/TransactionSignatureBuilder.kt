@@ -52,8 +52,9 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             redeemScript: ByteArray,
             value: Coin,
             hashType: Transaction.SigHash,
-            anyoneCanPay: Boolean): TransactionSignature {
-        val hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay)
+            anyoneCanPay: Boolean,
+            verifyFlags: Set<Script.VerifyFlag>): TransactionSignature {
+        val hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay, verifyFlags)
         return TransactionSignature(key.sign(hash), hashType, anyoneCanPay, true)
     }
 
@@ -82,8 +83,9 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             redeemScript: Script,
             value: Coin,
             hashType: Transaction.SigHash,
-            anyoneCanPay: Boolean): TransactionSignature {
-        val hash = hashForSignatureWitness(inputIndex, redeemScript.listProgram(), value, hashType, anyoneCanPay)
+            anyoneCanPay: Boolean,
+                        verifyFlags:Set<Script.VerifyFlag>): TransactionSignature {
+        val hash = hashForSignatureWitness(inputIndex, redeemScript.listProgram(), value, hashType, anyoneCanPay, verifyFlags)
         return TransactionSignature(key.sign(hash), hashType, anyoneCanPay, true)
     }
 
@@ -327,9 +329,10 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             scriptCode: Script,
             prevValue: Coin,
             type: Transaction.SigHash,
-            anyoneCanPay: Boolean): Sha256Hash {
+            anyoneCanPay: Boolean,
+            verifyFlags: Set<Script.VerifyFlag>): Sha256Hash {
         val connectedScript = scriptCode.listProgram()
-        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay)
+        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay, verifyFlags)
     }
 
     @Synchronized
@@ -338,11 +341,29 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             connectedScript: ByteArray,
             prevValue: Coin,
             type: Transaction.SigHash,
-            anyoneCanPay: Boolean): Sha256Hash {
+            anyoneCanPay: Boolean,
+            verifyFlags: Set<Script.VerifyFlag>): Sha256Hash {
         var anyoneCanPay = anyoneCanPay
         val sigHashType = TransactionSignature.calcSigHashValue(type, anyoneCanPay, true).toByte()
         val bos = UnsafeByteArrayOutputStream() // if (transaction.length == Message.UNKNOWN_LENGTH) 256 else transaction.length + 4)
         try {
+            // Replay Protection Implementation:
+            // If the "REPLAY PRIOTECTION" Flag is activated, we implement the Replay Protection Algorithm, which
+            // allows us the use different Fork IDS in the future. The Fork ID will be stored in the 24 more significant
+            // bits of nSigHashType (which is not a single byte now, but a 32 one).
+            // The following implementation is based on the one from bitcoin-abc:
+
+            var nSigHashType = sigHashType.toInt()
+            if (verifyFlags != null && verifyFlags.contains(Script.VerifyFlag.REPLAY_PROTECTION)) {
+                // Legacy chain's value for fork id must be of the form 0xffxxxx.
+                // By xoring with 0xdead, we ensure that the value will be different
+                // from the original one, even if it already starts with 0xff.
+
+                val forkId = 0 // for now, the forkID is ZERO.
+                val newForkValue = forkId xor 0xdead
+                nSigHashType = nSigHashType or ((0xff0000 or newForkValue) shl 8)
+            }
+
             var hashPrevouts = ByteArray(32)
             var hashSequence = ByteArray(32)
             var hashOutputs = ByteArray(32)
@@ -398,6 +419,7 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             bos.write(hashOutputs)
             ByteUtils.uint32ToByteStreamLE(transaction.getLockTime(), bos)
             ByteUtils.uint32ToByteStreamLE((0x000000ff and sigHashType.toInt()).toLong(), bos)
+            ByteUtils.uint32ToByteStreamLE(nSigHashType.toLong(), bos)
         } catch (e: IOException) {
             throw RuntimeException(e)  // Cannot happen.
         }

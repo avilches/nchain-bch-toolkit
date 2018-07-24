@@ -454,14 +454,14 @@ public class ScriptBuilder {
 
     public static Script createCLTVPaymentChannelRefund(TransactionSignature signature) {
         ScriptBuilder builder = new ScriptBuilder();
-//        builder.data(signature.encodeToBitcoin());
+        builder.data(signature.encodeToBitcoin());
         builder.data(new byte[] { 0 }); // Use the CHECKLOCKTIMEVERIFY if branch
         return builder.build();
     }
 
     public static Script createCLTVPaymentChannelP2SHRefund(TransactionSignature signature, Script redeemScript) {
         ScriptBuilder builder = new ScriptBuilder();
-//        builder.data(signature.encodeToBitcoin());
+        builder.data(signature.encodeToBitcoin());
         builder.data(new byte[] { 0 }); // Use the CHECKLOCKTIMEVERIFY if branch
         builder.data(redeemScript.getProgram());
         return builder.build();

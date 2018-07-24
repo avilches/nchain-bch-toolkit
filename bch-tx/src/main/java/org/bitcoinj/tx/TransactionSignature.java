@@ -122,11 +122,6 @@ public class TransactionSignature {
         if (signature.length < 9 || signature.length > 73)
             return false;
 
-        // Hashtype verification has been removed from here,
-        // and put in the "isValidHashType" function.
-
-        if (!isValidHashType(signature)) return false;
-
         //                   "wrong type"                  "wrong length marker"
         if ((signature[0] & 0xff) != 0x30 || (signature[1] & 0xff) != signature.length-3)
             return false;

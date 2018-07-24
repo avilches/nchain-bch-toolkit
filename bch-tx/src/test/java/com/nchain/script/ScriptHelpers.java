@@ -97,9 +97,9 @@ public class ScriptHelpers {
         Transaction transaction = new Transaction(unitTestParameters);
         transaction.setVersion(1);
         transaction.setLockTime(0);
-//        transaction.addInput(new TransactionInput(unitTestParameters,null,
-//                new ScriptBuilder().number(0).number(0).build().getProgram()));
-//        transaction.addOutput(new TransactionOutput(unitTestParameters, null, value, scriptPubKey.getProgram()));
+        transaction.addInput(new TransactionInput(unitTestParameters,transaction,
+                new ScriptBuilder().number(0).number(0).build().getProgram()));
+        transaction.addOutput(new TransactionOutput(unitTestParameters, transaction, value, scriptPubKey.getProgram()));
         return transaction;
     }
 
@@ -108,10 +108,10 @@ public class ScriptHelpers {
         Transaction txSpend = new Transaction(unitTestParameters);
         txSpend.setVersion(1);
         txSpend.setLockTime(0);
-//        txSpend.addInput(new TransactionInput(unitTestParameters, null, scriptSig.getProgram(),
-//                new TransactionOutPoint(unitTestParameters, txCredit.getOutput(0))));
-//        txSpend.addOutput(new TransactionOutput(unitTestParameters, null, txCredit.getOutput(0).getValue(),
-//                new ScriptBuilder().number(0).number(0).build().getProgram()));
+        txSpend.addInput(new TransactionInput(unitTestParameters, txSpend, scriptSig.getProgram(),
+                new TransactionOutPoint(unitTestParameters, txCredit.getOutput(0))));
+        txSpend.addOutput(new TransactionOutput(unitTestParameters, txSpend, txCredit.getOutput(0).getValue(),
+                new ScriptBuilder().number(0).number(0).build().getProgram()));
         return txSpend;
     }
 }

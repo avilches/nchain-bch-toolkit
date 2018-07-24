@@ -296,10 +296,10 @@ open class TransactionInput(val params:NetworkParameters) {
      *
      * @return The TransactionOutput or null if the transactions map doesn't contain the referenced tx.
      */
-//    internal fun getConnectedOutput(transactions: Map<Sha256Hash, Transaction>): TransactionOutput? {
-//        val tx = transactions[outpoint!!.hash] ?: return null
-//        return tx.getOutputs()[outpoint!!.index.toInt()]
-//    }
+    internal fun getConnectedOutput(transactions: Map<Sha256Hash, Transaction>): TransactionOutput? {
+        val tx = transactions[outpoint!!.hash] ?: return null
+        return tx.getOutputs()[outpoint!!.index.toInt()]
+    }
 
     /**
      * Alias for getOutpoint().getConnectedRedeemData(keyBag)
@@ -425,21 +425,24 @@ open class TransactionInput(val params:NetworkParameters) {
      * @throws ScriptException If the script doesn't verify.
      * @throws VerificationException If the outpoint doesn't match the given output.
      */
-/*
+    /*
     @Throws(VerificationException::class)
     fun verify(output: TransactionOutput) {
+        var inputValue = Coin.ZERO
         if (output.parent != null) {
             if (outpoint!!.hash != output.parentTransaction!!.hash)
                 throw VerificationException("This input does not refer to the tx containing the output.")
             if (outpoint!!.index != output.index.toLong())
                 throw VerificationException("This input refers to a different output on the given tx.")
+            if (outpoint!!.getConnectedOutput() != null)
+                inputValue = outpoint!!.getConnectedOutput().getValue()
         }
         val pubKey = output.getScriptPubKey()
         val myIndex = parentTransaction.getInputs().indexOf(this)
-        getScriptSig().correctlySpends(parentTransaction, myIndex.toLong(), pubKey)
+        getScriptSig().correctlySpends(parentTransaction, myIndex.toLong(), pubKey, inputValue, Script.ALL_VERIFY_FLAGS)
     }
-*/
 
+    */
     /** Returns a copy of the input detached from its containing transaction, if need be.  */
 //    fun duplicateDetached(): TransactionInput {
 //        return TransactionInput(params!!, null, bitcoinSerialize(), 0)

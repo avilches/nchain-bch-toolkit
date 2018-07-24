@@ -52,7 +52,7 @@ class TransactionOutPoint(val params:NetworkParameters) {
     internal var fromTx: Transaction? = null
 
     // The connected output.
-    private var connectedOutput: TransactionOutput? = null
+    var connectedOutput: TransactionOutput? = null
 
     /**
      * Returns the pubkey script from the connected output.
@@ -125,15 +125,17 @@ class TransactionOutPoint(val params:NetworkParameters) {
      * sides in memory, and they have been linked together, this returns a pointer to the connected output, or null
      * if there is no such connection.
      */
-//    fun getConnectedOutput(): TransactionOutput? {
-//        if (fromTx != null) {
-//            return fromTx!!.getOutputs().get(index.toInt())
-//        } else if (connectedOutput != null) {
-//            return connectedOutput
-//        }
-//        return null
-//    }
+    /*
+    fun getConnectedOutput(): TransactionOutput? {
+        if (fromTx != null) {
+            return fromTx!!.getOutputs().get(index.toInt())
+        } else if (connectedOutput != null) {
+            return connectedOutput
+        }
+        return null
+    }
 
+*/
     /**
      * Returns the ECKey identified in the connected output, for either pay-to-address scripts or pay-to-key scripts.
      * For P2SH scripts you can use [.getConnectedRedeemData] and then get the
