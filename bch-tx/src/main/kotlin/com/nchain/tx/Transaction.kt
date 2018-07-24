@@ -30,6 +30,7 @@ import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
+import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
 import org.bitcoinj.script.ScriptBuilder
@@ -62,7 +63,7 @@ import java.math.BigInteger
 class Transaction(val params:NetworkParameters) {
 
     // These are bitcoinkt serialized.
-    var version: Long = 0
+    var version: Long = 1
         private set
     private var inputs: MutableList<TransactionInput> = mutableListOf()
     private var outputs: MutableList<TransactionOutput> = mutableListOf()
@@ -86,6 +87,16 @@ class Transaction(val params:NetworkParameters) {
      * No verification is performed on this hash.
      */
      var hash: Sha256Hash? = null
+        get() {
+            if (field == null) {
+                field = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(bitcoinSerialize()))
+            }
+            return field
+        }
+         set(value: Sha256Hash?) {
+            field = value
+        }
+
 
     // Data about how confirmed this tx is. Serialized, may be null.
 //    private var confidence: TransactionConfidence? = null
@@ -747,9 +758,9 @@ class Transaction(val params:NetworkParameters) {
      * off. Otherwise it won't be accepted by the network.
      * @return the newly created input.
      */
-//    fun addInput(from: TransactionOutput): TransactionInput {
-//        return addInput(TransactionInput(params!!, this, from))
-//    }
+    fun addInput(from: TransactionOutput): TransactionInput {
+        return addInput(TransactionInput(params!!, this, from))
+    }
 
     /**
      * Adds an input directly, with no checking that it's valid.
@@ -902,6 +913,14 @@ class Transaction(val params:NetworkParameters) {
         return addOutput(TransactionOutput(params!!, this, Coin.ZERO, script.listProgram()))
     }
 
+
+    @Throws(IOException::class)
+    fun bitcoinSerialize():ByteArray {
+        val stream = UnsafeByteArrayOutputStream()
+        bitcoinSerializeToStream(stream)
+        stream.close()
+        return stream.toByteArray()
+    }
 
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {
@@ -1087,9 +1106,10 @@ class Transaction(val params:NetworkParameters) {
         if (inputs.size == 0 || outputs.size == 0)
             throw VerificationException.EmptyInputsOrOutputs()
 
-        // TODO:
-//        if (this.messageSize > Block.MAX_BLOCK_SIZE)
-//            throw VerificationException.LargerThanMaxBlockSize()
+        var length:Int = bitcoinSerialize().size
+        System.err.println("length: ${length}")
+        if (length > NetworkParameters.MAX_BLOCK_SIZE)
+            throw VerificationException.LargerThanMaxBlockSize()
 
         var valueOut = Coin.ZERO
         val outpoints = HashSet<TransactionOutPoint>()

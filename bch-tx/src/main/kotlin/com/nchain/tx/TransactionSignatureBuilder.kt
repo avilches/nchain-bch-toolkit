@@ -249,7 +249,7 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
 
             if (sigHashType and 0x1f == Transaction.SigHash.NONE.value.toByte()) {
                 // SIGHASH_NONE means no outputs are signed at all - the signature is effectively for a "blank cheque".
-//                transaction.clearOutputs()
+                transaction.clearOutputs()
                 // The signature isn't broken by new versions of the transaction issued by other parties.
                 for (i in inputs.indices)
                     if (i != inputIndex)
@@ -265,7 +265,7 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
 
                     // Bitcoin Core's bug is that SignatureHash was supposed to return a hash and on this codepath it
                     // actually returns the constant "1" to indicate an error, which is never checked for. Oops.
-//                    return Sha256Hash.wrap("0100000000000000000000000000000000000000000000000000000000000000")
+                    return Sha256Hash.wrap("0100000000000000000000000000000000000000000000000000000000000000")
                 }
                 // In SIGHASH_SINGLE the outputs after the matching input index are deleted, and the outputs before
                 // that position are "nulled out". Unintuitively, the value in a "null" transaction is set to -1.

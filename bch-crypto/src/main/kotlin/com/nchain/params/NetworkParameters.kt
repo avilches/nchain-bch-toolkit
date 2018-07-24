@@ -385,6 +385,11 @@ abstract class NetworkParameters protected constructor(
         const val MAX_COINS: Long = 21000000
 
         /**
+         * A constant shared by the entire network: how large in bytes a block is allowed to be.
+         */
+        const val MAX_BLOCK_SIZE = 32 * 1000 * 1000
+
+        /**
          * The maximum money to be generated
          */
 //        val MAX_MONEY = Coin.COIN.multiply(MAX_COINS)

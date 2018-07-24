@@ -61,7 +61,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
     }
 
     override fun toString(): String {
-        return toCashAddress()
+        return toBase58()
     }
 
 

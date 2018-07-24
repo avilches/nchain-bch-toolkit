@@ -26,19 +26,17 @@ import java.util.*
  * @date 18/07/2018
  */
 
-class ECKeySigner {
-    companion object {
-
+object ECKeySigner {
         private val log = loggerFor(ECKeySigner::class.java)
 
 
         /** The string that prefixes all text messages signed using Bitcoin keys.  */
-        val BITCOIN_SIGNED_MESSAGE_HEADER = "Bitcoin Signed Message:\n"
-        val BITCOIN_SIGNED_MESSAGE_HEADER_BYTES = BITCOIN_SIGNED_MESSAGE_HEADER.toByteArray(Charsets.UTF_8)
+        const val BITCOIN_SIGNED_MESSAGE_HEADER = "Bitcoin Signed Message:\n"
+        @JvmStatic val BITCOIN_SIGNED_MESSAGE_HEADER_BYTES = BITCOIN_SIGNED_MESSAGE_HEADER.toByteArray(Charsets.UTF_8)
 
 
         @Throws(KeyCrypterException::class)
-        fun sign(input: Sha256Hash, priv: BigInteger): ECKey.ECDSASignature {
+        @JvmStatic fun sign(input: Sha256Hash, priv: BigInteger): ECKey.ECDSASignature {
             val signer = ECDSASigner(HMacDSAKCalculator(SHA256Digest()))
             val privKey = ECPrivateKeyParameters(priv, ECKey.CURVE)
             signer.init(true, privKey)
@@ -58,7 +56,7 @@ class ECKeySigner {
          * @param signature ASN.1 encoded signature.
          * @param pub       The public key bytes to use.
          */
-        fun verify(data: ByteArray, signature: ECKey.ECDSASignature, pub: ByteArray): Boolean {
+        @JvmStatic fun verify(data: ByteArray, signature: ECKey.ECDSASignature, pub: ByteArray): Boolean {
             val signer = ECDSASigner()
             try {
                 val params = ECPublicKeyParameters(ECKey.CURVE.curve.decodePoint(pub), ECKey.CURVE)
@@ -83,7 +81,7 @@ class ECKeySigner {
          * @param signature ASN.1 encoded signature.
          * @param pub       The public key bytes to use.
          */
-        fun verify(data: ByteArray, signature: ByteArray, pub: ByteArray): Boolean {
+        @JvmStatic fun verify(data: ByteArray, signature: ByteArray, pub: ByteArray): Boolean {
             return verify(data, DER.decodeSignature(signature), pub)
         }
 
@@ -95,7 +93,7 @@ class ECKeySigner {
          *
          *[24] "Bitcoin Signed Message:\n" [message.length as a varint] message</tt>
          */
-        fun formatMessageForSigning(message: String): ByteArray {
+        @JvmStatic fun formatMessageForSigning(message: String): ByteArray {
 
             try {
                 val bos = ByteArrayOutputStream()
@@ -136,7 +134,7 @@ class ECKeySigner {
          * @param compressed Whether or not the original pubkey was compressed.
          * @return An ECKey containing only the public part, or null if recovery wasn't possible.
          */
-        fun recoverFromSignature(recId: Int, sig: ECKey.ECDSASignature, message: Sha256Hash, compressed: Boolean): ECKey? {
+        @JvmStatic fun recoverFromSignature(recId: Int, sig: ECKey.ECDSASignature, message: Sha256Hash, compressed: Boolean): ECKey? {
             check(recId >= 0) {"recId must be positive"}
             check(sig.r.signum() >= 0) {"r must be positive"}
             check(sig.s.signum() >= 0) {"s must be positive"}
@@ -197,7 +195,7 @@ class ECKeySigner {
          */
 
         @Throws(SignatureException::class)
-        fun signedMessageToKey(message: String, signatureBase64: String): ECKey {
+        @JvmStatic fun signedMessageToKey(message: String, signatureBase64: String): ECKey {
             val signatureEncoded: ByteArray
             try {
                 signatureEncoded = Base64.decode(signatureBase64)
@@ -239,7 +237,7 @@ class ECKeySigner {
          */
 
         @Throws(KeyCrypterException::class)
-        fun signMessage(ecKey: ECKey, message: String): String {
+        @JvmStatic fun signMessage(ecKey: ECKey, message: String): String {
             val data = formatMessageForSigning(message)
             val hash = Sha256Hash.twiceOf(data)
             val sig = sign(hash, ecKey.priv!!)
@@ -268,13 +266,10 @@ class ECKeySigner {
          */
 
         @Throws(SignatureException::class)
-        fun verifyMessage(ecKey: ECKey, message: String, signatureBase64: String) {
+        @JvmStatic fun verifyMessage(ecKey: ECKey, message: String, signatureBase64: String) {
             val key = signedMessageToKey(message, signatureBase64)
             if (key.pub != ecKey.pub)
                 throw SignatureException("Signature did not match for message")
         }
-
-
-    }
 
 }

@@ -83,9 +83,9 @@ class TransactionOutPoint(val params:NetworkParameters) {
 //        length = MESSAGE_LENGTH
     }
 //
-//    constructor(params: NetworkParameters, connectedOutput: TransactionOutput) : this(params, connectedOutput.index.toLong(), connectedOutput.parentTransactionHash) {
-//        this.connectedOutput = connectedOutput
-//    }
+    constructor(params: NetworkParameters, connectedOutput: TransactionOutput) : this(params, connectedOutput.index.toLong(), connectedOutput.parentTransaction!!.hash) {
+        this.connectedOutput = connectedOutput
+    }
 
     /**
      *

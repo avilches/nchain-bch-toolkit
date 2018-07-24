@@ -476,9 +476,9 @@ public class ScriptBuilder {
         return builder.build();
     }
 
-//    public static Script createCLTVPaymentChannelInput(TransactionSignature from, TransactionSignature to) {
-//        return createCLTVPaymentChannelInput(from.encodeToBitcoin(), to.encodeToBitcoin());
-//    }
+    public static Script createCLTVPaymentChannelInput(TransactionSignature from, TransactionSignature to) {
+        return createCLTVPaymentChannelInput(from.encodeToBitcoin(), to.encodeToBitcoin());
+    }
 
     public static Script createCLTVPaymentChannelInput(byte[] from, byte[] to) {
         ScriptBuilder builder = new ScriptBuilder();

@@ -626,8 +626,7 @@ class ECKey constructor(val priv: BigInteger?, val pub: LazyECPoint) {
         /**
          * Returns true if the given pubkey is canonical, i.e. the correct length taking into account compression.
          */
-/*
-        fun isPubKeyCanonical(pubkey: ByteArray): Boolean {
+        @JvmStatic fun isPubKeyCanonical(pubkey: ByteArray): Boolean {
             if (pubkey.size < 33)
                 return false
             if (pubkey[0].toInt() == 0x04) {
@@ -642,7 +641,6 @@ class ECKey constructor(val priv: BigInteger?, val pub: LazyECPoint) {
                 return false
             return true
         }
-*/
 
         /* To understand this code, see the definition of the ASN.1 format for EC private keys in the OpenSSL source
          code in ec_asn1.c:

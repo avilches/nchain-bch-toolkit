@@ -24,7 +24,9 @@ package org.bitcoinj.script;
 
 import com.google.common.collect.Lists;
 import com.nchain.address.CashAddress;
+import com.nchain.bitcoinkt.core.TransactionSignatureBuilder;
 import com.nchain.key.ECKey;
+import com.nchain.key.ECKeySigner;
 import com.nchain.key.VerificationException;
 import com.nchain.params.NetworkParameters;
 import com.nchain.shared.Sha256Hash;
@@ -67,6 +69,10 @@ import static org.bitcoinj.script.ScriptOpCodes.*;
  * static methods for building scripts.</p>
  */
 public class Script {
+
+    public static Set<VerifyFlag> getALL_VERIFY_FLAGS() {
+        return ALL_VERIFY_FLAGS;
+    }
 
     @NotNull
     public byte[] listProgram() {
@@ -1905,20 +1911,18 @@ public class Script {
 
                 // We check the Public Key encoding and compression.
                 // In case of failed verification, and Exception is thrown
-//                checkPubKeyEncoding(pubKey, verifyFlags);
+                checkPubKeyEncoding(pubKey, verifyFlags);
 
                 // Signature is well-structured...
                 TransactionSignature sig = TransactionSignature.decodeFromBitcoin(sigBytes, requireCanonical,
                         verifyFlags.contains(VerifyFlag.LOW_S));
 
                 // TODO: Should check hash type is known
-/*
                 Sha256Hash hash = sig.useForkId() ?
-                        txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
-                        txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
+                        new TransactionSignatureBuilder(txContainingThis).hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
+                        new TransactionSignatureBuilder(txContainingThis).hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
 
-                sigValid = ECKey.verify(hash.getBytes(), sig, pubKey);
-*/
+                sigValid = ECKeySigner.verify(hash.getBytes(), sig.signature, pubKey);
 
             }
 
@@ -2021,19 +2025,17 @@ public class Script {
 
                     // We check the Public Key encoding and compression.
                     // In case of failed verification, and Exception is thrown
-//                    checkPubKeyEncoding(pubKey, verifyFlags);
+                    checkPubKeyEncoding(pubKey, verifyFlags);
 
 
                     // Signature is well-structured, but it can still be Empty, so we control that situations...
                     if (sigsCopy.getFirst().length > 0) {
                         sig = TransactionSignature.decodeFromBitcoin(sigsCopy.getFirst(), requireCanonical);
-/*
                         Sha256Hash hash = sig.useForkId() ?
-                                txContainingThis.hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
-                                txContainingThis.hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
-                        if (ECKey.verify(hash.getBytes(), sig, pubKey))
+                                new TransactionSignatureBuilder(txContainingThis).hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay()) :
+                                new TransactionSignatureBuilder(txContainingThis).hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
+                        if (ECKeySigner.verify(hash.getBytes(), sig.signature, pubKey))
                             sigsCopy.pollFirst();
-*/
                     }
                 }
 
@@ -2267,7 +2269,6 @@ public class Script {
      * @param flags                 verification flags
      * @throws ScriptException      Exception
      */
-/*
     private static void checkPubKeyEncoding(byte[] sigBytes, Set<VerifyFlag> flags) throws ScriptException {
 
         if ((flags.contains(VerifyFlag.STRICTENC))
@@ -2282,8 +2283,6 @@ public class Script {
 
         // If we reach this far, Signature is OK...
     }
-
-*/
     /**
      * Checks if the public key given is properly compressed.
      *

@@ -26,6 +26,8 @@ import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
+import com.nchain.tools.HEX
+import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
 import org.bitcoinj.script.ScriptBuilder
@@ -85,7 +87,6 @@ open class TransactionOutput(val params:NetworkParameters) {
      * Gets the index of this output in the parent transaction, or throws if this output is free standing. Iterates
      * over the parents list to discover this.
      */
-/*
     open val index: Int
         get() {
             val outputs = parentTransaction!!.getOutputs()
@@ -95,7 +96,6 @@ open class TransactionOutput(val params:NetworkParameters) {
             }
             throw IllegalStateException("Output linked to wrong parent transaction?")
         }
-*/
 
     /**
      * Will this transaction be relayable and mined by default miners?
@@ -115,7 +115,7 @@ open class TransactionOutput(val params:NetworkParameters) {
     /**
      * Returns the transaction that owns this output.
      */
-//    val parentTransaction: Transaction?
+    var parentTransaction: Transaction? = null
 //        get() = parent as Transaction?
 
     val isOpReturn: Boolean
@@ -212,7 +212,7 @@ open class TransactionOutput(val params:NetworkParameters) {
         check(value.compareTo(Transaction.MAX_MONEY) <= 0, {"Values larger than MAX_MONEY not allowed"})
         this.value = value.value
         this.scriptBytes = scriptBytes
-//        this.parent = (parent)
+        this.parentTransaction = parent
 //        isAvailableForSpending = true
         length = 8 + VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
     }
@@ -270,6 +270,16 @@ open class TransactionOutput(val params:NetworkParameters) {
         scriptBytes = readBytes(scriptLen)
     }
 */
+
+    @Throws(IOException::class)
+    fun bitcoinSerialize():ByteArray {
+        val stream = UnsafeByteArrayOutputStream()
+        bitcoinSerializeToStream(stream)
+        stream.close()
+        return stream.toByteArray()
+    }
+
+
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {
         checkNotNull<ByteArray>(scriptBytes)

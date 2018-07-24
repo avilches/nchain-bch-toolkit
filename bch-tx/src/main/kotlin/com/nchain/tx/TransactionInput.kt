@@ -33,6 +33,8 @@ import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
+import com.nchain.tools.HEX
+import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
 import org.bitcoinj.script.ScriptException
@@ -123,7 +125,7 @@ open class TransactionInput(val params:NetworkParameters) {
     /**
      * @return The Transaction that owns this input.
      */
-//    val parentTransaction: Transaction
+    var parentTransaction: Transaction? = null
 //        get() = parent as Transaction
 //
     /**
@@ -160,15 +162,14 @@ open class TransactionInput(val params:NetworkParameters) {
         this.outpoint = outpoint
         this.sequence = NO_SEQUENCE
         this.value = value
-//        this.parentTransaction = parentTransaction
+        this.parentTransaction = parentTransaction
         length = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
     }
 
     /**
      * Creates an UNSIGNED input that links to the given output
      */
-/*
-    internal constructor(params: NetworkParameters, parentTransaction: Transaction, output: TransactionOutput) : super(params) {
+    internal constructor(params: NetworkParameters, parentTransaction: Transaction, output: TransactionOutput) : this(params) {
         val outputIndex = output.index.toLong()
         if (output.parentTransaction != null) {
             outpoint = TransactionOutPoint(params, outputIndex, output.parentTransaction)
@@ -177,11 +178,10 @@ open class TransactionInput(val params:NetworkParameters) {
         }
         scriptBytes = EMPTY_ARRAY
         sequence = NO_SEQUENCE
-        parent = (parentTransaction)
+        this.parentTransaction = parentTransaction
         this.value = output.getValue()
         length = 41
     }
-*/
 
     /**
      * Deserializes an input message. This is usually part of a transaction message.
@@ -215,7 +215,15 @@ open class TransactionInput(val params:NetworkParameters) {
 //        sequence = readUint32()
 //    }
 //
-//    @Throws(IOException::class)
+    @Throws(IOException::class)
+    fun bitcoinSerialize():ByteArray {
+        val stream = UnsafeByteArrayOutputStream()
+        bitcoinSerializeToStream(stream)
+        stream.close()
+        return stream.toByteArray()
+    }
+
+    @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {
         outpoint!!.bitcoinSerializeToStream(stream)
         stream.write(VarInt(scriptBytes!!.size.toLong()).encode())
