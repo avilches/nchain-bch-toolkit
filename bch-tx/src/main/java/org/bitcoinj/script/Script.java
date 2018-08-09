@@ -185,7 +185,11 @@ public class Script {
      */
     @Override
     public String toString() {
-        return ""; //Utils.join(chunks);
+         StringBuilder stringBuilder = new StringBuilder();
+         for (ScriptChunk chunk : chunks) {
+             stringBuilder.append(chunk.toString());
+         }
+         return stringBuilder.toString();
     }
 
     /** Returns the serialized program as a newly created byte array. */
@@ -2117,6 +2121,7 @@ public class Script {
                                 Set<VerifyFlag> verifyFlags) {
         // Clone the transaction because executing the script involves editing it, and if we die, we'll leave
         // the tx half broken (also it's not so thread safe to work on it directly.
+        // TODO: make the transaxtion inmutable?
 //        try {
 //            txContainingThis = txContainingThis.getParams().getDefaultSerializer().makeTransaction(txContainingThis.bitcoinSerialize());
 //        } catch (ProtocolException e) {
@@ -2141,13 +2146,13 @@ public class Script {
         LinkedList<byte[]> p2shStack = null;
 
         executeScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags);
-        //executeDebugScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags, ScriptLogManager.getListener(ScriptLogListener.ScriptType.scriptSig));
+//        executeDebugScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags, new InteractiveScriptStateListener());
 
         if (verifyFlags.contains(VerifyFlag.P2SH))
             p2shStack = new LinkedList<byte[]>(stack);
 
         executeScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags);
-        //executeDebugScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags, ScriptLogManager.getListener(ScriptLogListener.ScriptType.scriptPubKey));
+//        executeDebugScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags, new InteractiveScriptStateListener());
 
         if (stack.isEmpty())
             throw new ScriptException(ScriptError.SCRIPT_ERR_EVAL_FALSE, "script evaluated false");

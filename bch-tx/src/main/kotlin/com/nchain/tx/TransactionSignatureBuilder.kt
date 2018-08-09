@@ -418,7 +418,6 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             ByteUtils.uint32ToByteStreamLE(transaction.getInputs()[inputIndex].sequenceNumber, bos)
             bos.write(hashOutputs)
             ByteUtils.uint32ToByteStreamLE(transaction.getLockTime(), bos)
-            ByteUtils.uint32ToByteStreamLE((0x000000ff and sigHashType.toInt()).toLong(), bos)
             ByteUtils.uint32ToByteStreamLE(nSigHashType.toLong(), bos)
         } catch (e: IOException) {
             throw RuntimeException(e)  // Cannot happen.

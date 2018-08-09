@@ -6,6 +6,7 @@ import org.spongycastle.asn1.ASN1InputStream
 import org.spongycastle.asn1.ASN1Integer
 import org.spongycastle.asn1.DERSequenceGenerator
 import org.spongycastle.asn1.DLSequence
+import org.spongycastle.util.Properties
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.math.BigInteger
@@ -38,6 +39,9 @@ object DER {
     fun decodeSignature(bytes: ByteArray): ECKey.ECDSASignature {
         var decoder = ASN1InputStream(bytes)
         try {
+            // BouncyCastle by default is strict about parsing ASN.1 integers. We relax this check, because some
+            // Bitcoin signatures would not parse.
+            Properties.setThreadOverride("org.spongycastle.asn1.allow_unsafe_integer", true)
             val seq = decoder.readObject() as DLSequence
                     ?: throw VerificationException.SignatureFormatError("Reached past end of ASN.1 stream.")
             val r: ASN1Integer
@@ -55,6 +59,7 @@ object DER {
         } catch (e: Exception) {
             throw VerificationException.SignatureFormatError(e)
         } finally {
+            Properties.removeThreadOverride("org.spongycastle.asn1.allow_unsafe_integer")
             try {
                 decoder.close()
             } catch (x: IOException) {

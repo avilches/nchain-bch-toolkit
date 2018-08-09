@@ -111,7 +111,7 @@ public class ScriptHelpers {
         txSpend.addInput(new TransactionInput(unitTestParameters, txSpend, scriptSig.getProgram(),
                 new TransactionOutPoint(unitTestParameters, txCredit.getOutput(0))));
         txSpend.addOutput(new TransactionOutput(unitTestParameters, txSpend, txCredit.getOutput(0).getValue(),
-                new ScriptBuilder().number(0).number(0).build().getProgram()));
+                new ScriptBuilder().build().getProgram()));
         return txSpend;
     }
 }

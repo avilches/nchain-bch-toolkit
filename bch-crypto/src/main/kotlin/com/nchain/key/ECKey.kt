@@ -154,6 +154,7 @@ class ECKey constructor(val priv: BigInteger?, val pub: LazyECPoint) {
 
     constructor(priv: BigInteger?, pub: ECPoint) : this(priv, LazyECPoint(pub)) {
         if (priv != null) {
+            check(priv.bitLength() <= 32 * 8, {"private key exceeds 32 bytes: ${priv.bitLength()} bits"})
             // Try and catch buggy callers or bad key imports, etc. Zero and one are special because these are often
             // used as sentinel values and because scripting languages have a habit of auto-casting true and false to
             // 1 and 0 or vice-versa. Type confusion bugs could therefore result in private keys with these values.
@@ -337,9 +338,7 @@ class ECKey constructor(val priv: BigInteger?, val pub: LazyECPoint) {
     }
 
     override fun hashCode(): Int {
-        // Public keys are random already so we can just use a part of them as the hashcode. Read from the start to
-        // avoid picking up the type code (compressed vs uncompressed) which is tacked on the end.
-        return readUint32BE(byteArrayOf(pubKey[0], pubKey[1], pubKey[2], pubKey[3]), 0).toInt()
+        return pubKey.hashCode()
     }
 
 
