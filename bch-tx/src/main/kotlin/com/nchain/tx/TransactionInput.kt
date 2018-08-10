@@ -58,7 +58,7 @@ open class TransactionInput(val params:NetworkParameters) {
      * @return The previous output transaction reference, as an OutPoint structure.  This contains the
      * data needed to connect to the output of the transaction we're gathering coins from.
      */
-    var outpoint: TransactionOutPoint? = null
+    lateinit var outpoint: TransactionOutPoint
         private set
     // The "script bytes" might not actually be a script. In coinbase transactions where new coins are minted there
     // is no input transaction, so instead the scriptBytes contains some extra stuff (like a rollover nonce) that we
@@ -225,7 +225,7 @@ open class TransactionInput(val params:NetworkParameters) {
 
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {
-        outpoint!!.bitcoinSerializeToStream(stream)
+        outpoint.bitcoinSerializeToStream(stream)
         stream.write(VarInt(scriptBytes!!.size.toLong()).encode())
         stream.write(scriptBytes!!)
         ByteUtils.uint32ToByteStreamLE(sequence, stream)
@@ -297,8 +297,8 @@ open class TransactionInput(val params:NetworkParameters) {
      * @return The TransactionOutput or null if the transactions map doesn't contain the referenced tx.
      */
     internal fun getConnectedOutput(transactions: Map<Sha256Hash, Transaction>): TransactionOutput? {
-        val tx = transactions[outpoint!!.hash] ?: return null
-        return tx.getOutputs()[outpoint!!.index.toInt()]
+        val tx = transactions[outpoint.hash] ?: return null
+        return tx.getOutputs()[outpoint.index.toInt()]
     }
 
     /**

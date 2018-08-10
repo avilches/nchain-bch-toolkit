@@ -26,7 +26,7 @@ import com.google.common.primitives.Longs
 import java.io.Serializable
 import java.math.BigDecimal
 
-import com.google.common.base.Preconditions.checkArgument
+import java.text.DecimalFormat
 
 /**
  * Represents a monetary Bitcoin Cash value. Coin objects are immutable.
@@ -129,9 +129,9 @@ class Coin private constructor(val value: Long): Comparable<Coin>, Serializable 
      * Returns the value as a 0.12 type string. More digits after the decimal place will be used
      * if necessary, but two will always be present.
      */
-//    fun toFriendlyString(): String {
-//        return FRIENDLY_FORMAT.format(this).toString()
-//    }
+    fun toFriendlyString(): String {
+        return DecimalFormat("0.00######").format(value)
+    }
 
     /**
      * Returns the value as a plain string denominated in BCH.

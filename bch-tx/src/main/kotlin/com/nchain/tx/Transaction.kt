@@ -30,6 +30,7 @@ import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
+import com.nchain.tools.HEX
 import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
@@ -628,22 +629,18 @@ class Transaction(val params:NetworkParameters) {
     }
 */
 
-//    override fun toString(): String {
-//        return toString(null)
-//    }
-
     /**
      * A human readable version of the transaction useful for debugging. The format is not guaranteed to be stable.
      * @param chain If provided, will be used to estimate lock times (if set). Can be null.
      */
-/*
-    fun toString(chain: AbstractBlockChain?): String {
+    override fun toString(): String {
         val s = StringBuilder()
         s.append("  ").append(hashAsString).append('\n')
-        if (updatedAt != null)
-            s.append("  updated: ").append(Utils.dateTimeFormat(updatedAt as Date)).append('\n')
+//        if (updatedAt != null)
+//            s.append("  updated: ").append(Utils.dateTimeFormat(updatedAt as Date)).append('\n')
         if (version != 1L)
             s.append("  version ").append(version).append('\n')
+/*
         if (isTimeLocked) {
             s.append("  time locked until ")
             if (lockTime < LOCKTIME_THRESHOLD) {
@@ -657,6 +654,7 @@ class Transaction(val params:NetworkParameters) {
             }
             s.append('\n')
         }
+*/
         if (inputs.size == 0) {
             s.append("  INCOMPLETE: No inputs!\n")
             return s.toString()
@@ -689,12 +687,12 @@ class Transaction(val params:NetworkParameters) {
                 s.append("outpoint:")
                 val outpoint = `in`.outpoint
                 s.append(outpoint!!.toString())
-                val connectedOutput = outpoint.getConnectedOutput()
+                val connectedOutput = outpoint.connectedOutput
                 if (connectedOutput != null) {
                     val scriptPubKey = connectedOutput.getScriptPubKey()
                     if (scriptPubKey.isSentToAddress || scriptPubKey.isPayToScriptHash) {
                         s.append(" hash160:")
-                        s.append(Utils.HEX.encode(scriptPubKey.pubKeyHash))
+                        s.append(HEX.encode(scriptPubKey.pubKeyHash))
                     }
                 }
                 if (`in`.hasSequence()) s.append("\n          sequence:").append(java.lang.Long.toHexString(`in`.sequenceNumber))
@@ -712,13 +710,13 @@ class Transaction(val params:NetworkParameters) {
                 s.append(scriptPubKey)
                 s.append(" ")
                 s.append(out.getValue().toFriendlyString())
-                if (!out.isAvailableForSpending) {
-                    s.append(" Spent")
-                }
-                if (out.spentBy != null) {
-                    s.append(" by ")
-                    s.append(out.spentBy!!.parentTransaction.hashAsString)
-                }
+//                if (!out.isAvailableForSpending) {
+//                    s.append(" Spent")
+//                }
+//                if (out.spentBy != null) {
+//                    s.append(" by ")
+//                    s.append(out.spentBy!!.parentTransaction.hashAsString)
+//                }
             } catch (e: Exception) {
                 s.append("[exception: ").append(e.message).append("]")
             }
@@ -727,15 +725,14 @@ class Transaction(val params:NetworkParameters) {
         }
         val fee = fee
         if (fee != null) {
-            val size = unsafeBitcoinSerialize().size
+            val size = bitcoinSerialize().size
             s.append("     fee  ").append(fee.multiply(1000).divide(size.toLong()).toFriendlyString()).append("/kB, ")
                     .append(fee.toFriendlyString()).append(" for ").append(size).append(" bytes\n")
         }
-        if (purpose != null)
-            s.append("     prps ").append(purpose).append('\n')
-        return s.toString()
+//        if (purpose != null)
+//            s.append("     prps ").append(purpose).append('\n')
+        return s.toString()                   
     }
-*/
 
     /**
      * Removes all the inputs from this transaction.
@@ -1107,7 +1104,6 @@ class Transaction(val params:NetworkParameters) {
             throw VerificationException.EmptyInputsOrOutputs()
 
         var length:Int = bitcoinSerialize().size
-        System.err.println("length: ${length}")
         if (length > NetworkParameters.MAX_BLOCK_SIZE)
             throw VerificationException.LargerThanMaxBlockSize()
 

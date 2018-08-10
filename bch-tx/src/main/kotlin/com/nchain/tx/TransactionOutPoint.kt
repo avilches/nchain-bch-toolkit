@@ -18,18 +18,13 @@
 package com.nchain.tx
 
 import com.google.common.base.Objects
-import com.google.common.base.Preconditions.checkNotNull
-import com.google.common.base.Preconditions.checkState
-import com.nchain.key.ECKey
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.tools.ByteUtils
 import org.bitcoinj.script.ProtocolException
-import org.bitcoinj.script.ScriptException
 import java.io.IOException
 import java.io.OutputStream
 
-//TODO I dont think this file converted from java correctly
 /**
  *
  * This message is a reference or pointer to an output of a different transaction.
@@ -38,6 +33,10 @@ import java.io.OutputStream
  * Instances of this class are not safe for use by multiple threads.
  */
 class TransactionOutPoint(val params:NetworkParameters) {
+
+    companion object {
+        internal val MESSAGE_LENGTH = 36
+    }
 
     /** Hash of the transaction to which we refer.  */
     /**
@@ -51,20 +50,30 @@ class TransactionOutPoint(val params:NetworkParameters) {
     // This is not part of bitcoinkt serialization. It points to the connected transaction.
     internal var fromTx: Transaction? = null
 
-    // The connected output.
-    var connectedOutput: TransactionOutput? = null
+    private var _connectedOutput: TransactionOutput? = null
+    val connectedOutput: TransactionOutput?
+        get() {
+            if (fromTx != null) {
+                return fromTx!!.getOutput(index)
+            } else if (_connectedOutput != null) {
+                return _connectedOutput
+            }
+            return null
+        }
 
     /**
      * Returns the pubkey script from the connected output.
      * @throws java.lang.NullPointerException if there is no connected output.
      */
-//    val connectedPubKeyScript: ByteArray
-//        get() {
-//            val result = checkNotNull<TransactionOutput>(connectedOutput).scriptBytes
-//            checkState(result!!.size > 0)
-//            return result
-//        }
-//
+    val connectedPubKeyScript: ByteArray
+        get() {
+            val connectedOutput = checkNotNull(this.connectedOutput)
+            val result = connectedOutput.scriptBytes
+            check(result!!.size > 0)
+            return result
+
+        }
+
     constructor(params: NetworkParameters, index: Long, fromTx: Transaction?):this(params) {
         this.index = index
         if (fromTx != null) {
@@ -84,7 +93,7 @@ class TransactionOutPoint(val params:NetworkParameters) {
     }
 //
     constructor(params: NetworkParameters, connectedOutput: TransactionOutput) : this(params, connectedOutput.index.toLong(), connectedOutput.parentTransaction!!.hash) {
-        this.connectedOutput = connectedOutput
+        _connectedOutput = connectedOutput
     }
 
     /**
@@ -120,22 +129,7 @@ class TransactionOutPoint(val params:NetworkParameters) {
         ByteUtils.uint32ToByteStreamLE(index, stream)
     }
 
-    /**
-     * An outpoint is a part of a transaction input that points to the output of another transaction. If we have both
-     * sides in memory, and they have been linked together, this returns a pointer to the connected output, or null
-     * if there is no such connection.
-     */
-    /*
-    fun getConnectedOutput(): TransactionOutput? {
-        if (fromTx != null) {
-            return fromTx!!.getOutputs().get(index.toInt())
-        } else if (connectedOutput != null) {
-            return connectedOutput
-        }
-        return null
-    }
 
-*/
     /**
      * Returns the ECKey identified in the connected output, for either pay-to-address scripts or pay-to-key scripts.
      * For P2SH scripts you can use [.getConnectedRedeemData] and then get the
@@ -205,7 +199,4 @@ class TransactionOutPoint(val params:NetworkParameters) {
         return Objects.hashCode(index, hash)
     }
 
-    companion object {
-        internal val MESSAGE_LENGTH = 36
-    }
 }
