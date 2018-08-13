@@ -27,7 +27,7 @@ import com.nchain.address.CashAddress;
 import com.nchain.bitcoinkt.core.TransactionSignatureBuilder;
 import com.nchain.key.ECKey;
 import com.nchain.key.ECKeySigner;
-import com.nchain.key.VerificationException;
+import com.nchain.shared.VerificationException;
 import com.nchain.params.NetworkParameters;
 import com.nchain.shared.Sha256Hash;
 import com.nchain.tools.ByteUtils;

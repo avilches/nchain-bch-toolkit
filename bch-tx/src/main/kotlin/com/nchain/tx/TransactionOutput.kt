@@ -27,6 +27,7 @@ import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.HEX
+import com.nchain.tools.MessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
@@ -261,15 +262,22 @@ open class TransactionOutput(val params:NetworkParameters) {
 
     }
 
-/*
     @Throws(ProtocolException::class)
-    override fun parse() {
-        value = readInt64()
-        scriptLen = readVarInt().toInt()
-        length = cursor - offset + scriptLen
-        scriptBytes = readBytes(scriptLen)
+    fun parse(payload:ByteArray, offset:Int = 0) {
+        parse(MessageReader(payload, offset))
     }
-*/
+
+    @Throws(ProtocolException::class)
+    fun parse(reader:MessageReader) {
+        val offset = reader.cursor
+        value = reader.readInt64()
+        scriptLen = reader.readVarInt().toInt()
+        length = reader.cursor - offset + scriptLen
+        scriptBytes = reader.readBytes(scriptLen)
+        var otherLength = reader.cursor - offset
+        check(otherLength == length)
+        // es igual a length?
+    }
 
     @Throws(IOException::class)
     fun bitcoinSerialize():ByteArray {

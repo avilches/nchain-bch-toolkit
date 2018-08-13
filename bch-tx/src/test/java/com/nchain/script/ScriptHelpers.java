@@ -109,7 +109,7 @@ public class ScriptHelpers {
         txSpend.setVersion(1);
         txSpend.setLockTime(0);
         txSpend.addInput(new TransactionInput(unitTestParameters, txSpend, scriptSig.getProgram(),
-                new TransactionOutPoint(unitTestParameters, txCredit.getOutput(0))));
+                TransactionOutPoint.create(unitTestParameters, txCredit.getOutput(0))));
         txSpend.addOutput(new TransactionOutput(unitTestParameters, txSpend, txCredit.getOutput(0).getValue(),
                 new ScriptBuilder().build().getProgram()));
         return txSpend;

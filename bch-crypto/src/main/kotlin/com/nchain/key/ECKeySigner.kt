@@ -4,6 +4,7 @@ import com.nchain.keycrypter.KeyCrypterException
 import com.nchain.tools.ByteUtils
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
+import com.nchain.shared.VerificationException
 import com.nchain.tools.DER
 import com.nchain.tools.loggerFor
 import org.spongycastle.crypto.digests.SHA256Digest

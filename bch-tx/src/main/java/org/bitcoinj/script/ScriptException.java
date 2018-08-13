@@ -21,7 +21,7 @@
 package org.bitcoinj.script;
 
 
-import com.nchain.key.VerificationException;
+import com.nchain.shared.VerificationException;
 
 public class ScriptException extends VerificationException {
 

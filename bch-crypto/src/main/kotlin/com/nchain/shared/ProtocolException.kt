@@ -14,22 +14,13 @@
  * limitations under the License.
  */
 
-package org.bitcoinj.script;
+package com.nchain.shared
 
-import com.nchain.shared.VerificationException;
+class ProtocolException : VerificationException {
 
-@SuppressWarnings("serial")
-public class ProtocolException extends VerificationException {
+    constructor(msg: String) : super(msg) {}
 
-    public ProtocolException(String msg) {
-        super(msg);
-    }
+    constructor(e: Exception) : super(e) {}
 
-    public ProtocolException(Exception e) {
-        super(e);
-    }
-
-    public ProtocolException(String msg, Exception e) {
-        super(msg, e);
-    }
+    constructor(msg: String, e: Exception) : super(msg, e) {}
 }

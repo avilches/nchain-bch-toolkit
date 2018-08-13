@@ -18,7 +18,7 @@ package org.bitcoinj.tx;
 
 import com.google.common.base.Preconditions;
 import com.nchain.key.ECKey;
-import com.nchain.key.VerificationException;
+import com.nchain.shared.VerificationException;
 import com.nchain.tools.DER;
 import com.nchain.tx.Transaction;
 

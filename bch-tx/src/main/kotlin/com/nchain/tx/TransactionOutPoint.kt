@@ -17,13 +17,14 @@
 
 package com.nchain.tx
 
-import com.google.common.base.Objects
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.tools.ByteUtils
+import com.nchain.tools.MessageReader
 import org.bitcoinj.script.ProtocolException
 import java.io.IOException
 import java.io.OutputStream
+import java.util.*
 
 /**
  *
@@ -32,34 +33,43 @@ import java.io.OutputStream
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-class TransactionOutPoint(val params:NetworkParameters) {
+class TransactionOutPoint(val params: NetworkParameters, val index: Long, val hash: Sha256Hash, val connectedOutput:TransactionOutput? = null) {
+
+    val length = MESSAGE_LENGTH
 
     companion object {
-        internal val MESSAGE_LENGTH = 36
+        const val MESSAGE_LENGTH = 36
+        // Magic outpoint index that indicates the input is in fact unconnected.
+        const val UNCONNECTED = 0xFFFFFFFFL
+
+        @JvmStatic fun createUnconnected(params: NetworkParameters): TransactionOutPoint {
+            return TransactionOutPoint(params, UNCONNECTED, Sha256Hash.ZERO_HASH)
+        }
+
+        @JvmStatic fun create(params: NetworkParameters, index:Long, fromTx: Transaction): TransactionOutPoint {
+            return TransactionOutPoint(params, index, fromTx.hash, fromTx.getOutput(index))
+        }
+
+        @JvmStatic fun create(params: NetworkParameters, connectedOutput: TransactionOutput) : TransactionOutPoint {
+            return TransactionOutPoint(params, connectedOutput.index.toLong(), connectedOutput.parentTransaction!!.hash, connectedOutput)
+        }
+
+        @Throws(ProtocolException::class)
+        @JvmStatic fun parse(params: NetworkParameters, payload: ByteArray, offset: Int = 0): TransactionOutPoint {
+            return parse(params, MessageReader(payload, offset))
+        }
+
+        @Throws(ProtocolException::class)
+        @JvmStatic fun parse(params: NetworkParameters, reader: MessageReader): TransactionOutPoint {
+            val offset = reader.cursor
+            val hash = reader.readHash()
+            val index = reader.readUint32()
+            check(MESSAGE_LENGTH == reader.cursor - offset)
+            return TransactionOutPoint(params, index, hash, null)
+        }
     }
 
-    /** Hash of the transaction to which we refer.  */
-    /**
-     * Returns the hash of the transaction this outpoint references/spends/is connected to.
-     */
-    var hash: Sha256Hash? = null
 
-    /** Which output of that transaction we are talking about.  */
-    var index: Long = 0
-
-    // This is not part of bitcoinkt serialization. It points to the connected transaction.
-    internal var fromTx: Transaction? = null
-
-    private var _connectedOutput: TransactionOutput? = null
-    val connectedOutput: TransactionOutput?
-        get() {
-            if (fromTx != null) {
-                return fromTx!!.getOutput(index)
-            } else if (_connectedOutput != null) {
-                return _connectedOutput
-            }
-            return null
-        }
 
     /**
      * Returns the pubkey script from the connected output.
@@ -67,42 +77,11 @@ class TransactionOutPoint(val params:NetworkParameters) {
      */
     val connectedPubKeyScript: ByteArray
         get() {
-            val connectedOutput = checkNotNull(this.connectedOutput)
-            val result = connectedOutput.scriptBytes
+            val result = connectedOutput!!.scriptBytes
             check(result!!.size > 0)
             return result
 
         }
-
-    constructor(params: NetworkParameters, index: Long, fromTx: Transaction?):this(params) {
-        this.index = index
-        if (fromTx != null) {
-            this.hash = fromTx.hash
-            this.fromTx = fromTx
-        } else {
-            // This happens when constructing the genesis block.
-            hash = Sha256Hash.ZERO_HASH
-        }
-//        length = MESSAGE_LENGTH
-    }
-//
-    constructor(params: NetworkParameters, index: Long, hash: Sha256Hash?) : this(params) {
-        this.index = index
-        this.hash = hash
-//        length = MESSAGE_LENGTH
-    }
-//
-    constructor(params: NetworkParameters, connectedOutput: TransactionOutput) : this(params, connectedOutput.index.toLong(), connectedOutput.parentTransaction!!.hash) {
-        _connectedOutput = connectedOutput
-    }
-
-    /**
-     *
-     * Deserializes the message. This is usually part of a transaction message.
-     */
-
-//    @Throws(ProtocolException::class)
-//    constructor(params: NetworkParameters, payload: ByteArray, offset: Int) : super(params, payload, offset)
 
     /**
      * Deserializes the message. This is usually part of a transaction message.
@@ -113,15 +92,6 @@ class TransactionOutPoint(val params:NetworkParameters) {
      */
 //    @Throws(ProtocolException::class)
 //    constructor(params: NetworkParameters, payload: ByteArray, offset: Int, parent: Message, serializer: MessageSerializer) : super(params, payload, offset, parent, serializer, MESSAGE_LENGTH)
-
-/*
-    @Throws(ProtocolException::class)
-    override fun parse() {
-        length = MESSAGE_LENGTH
-        hash = readHash()
-        index = readUint32()
-    }
-*/
 
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {
@@ -190,13 +160,12 @@ class TransactionOutPoint(val params:NetworkParameters) {
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        if (o == null || javaClass != o.javaClass) return false
-        val other = o as TransactionOutPoint?
-        return index == other!!.index && hash == other.hash
+        if (o == null || o !is TransactionOutPoint) return false
+        return index == o.index && hash == o.hash
     }
 
     override fun hashCode(): Int {
-        return Objects.hashCode(index, hash)
+        return Arrays.hashCode(arrayOf(index, hash))
     }
 
 }

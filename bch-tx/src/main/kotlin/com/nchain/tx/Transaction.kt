@@ -17,20 +17,19 @@
 
 package com.nchain.tx
 
-import com.google.common.collect.ImmutableMap
-import com.google.common.primitives.Longs
 import com.nchain.address.CashAddress
 import com.nchain.bitcoinkt.core.TransactionSignatureBuilder
 import com.nchain.key.ECKey
 import org.slf4j.LoggerFactory
 import java.util.*
 
-import com.nchain.key.VerificationException
+import com.nchain.shared.VerificationException
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.HEX
+import com.nchain.tools.MessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
@@ -87,16 +86,8 @@ class Transaction(val params:NetworkParameters) {
      *
      * No verification is performed on this hash.
      */
-     var hash: Sha256Hash? = null
-        get() {
-            if (field == null) {
-                field = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(bitcoinSerialize()))
-            }
-            return field
-        }
-         set(value: Sha256Hash?) {
-            field = value
-        }
+     val hash: Sha256Hash
+        get() = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(bitcoinSerialize()))
 
 
     // Data about how confirmed this tx is. Serialized, may be null.
@@ -288,7 +279,7 @@ class Transaction(val params:NetworkParameters) {
             if (!isCoinBase)
                 return true
 
-            return if (getConfidence().getConfidenceType() != ConfidenceType.BUILDING) false else getConfidence().depthInBlocks >= params!!.spendableCoinbaseDepth
+            return if (getConfidence().getConfidenceType() != ConfidenceType.BUILDING) false else getConfidence().depthInBlocks >= params.spendableCoinbaseDepth
 
         }
 */
@@ -369,15 +360,9 @@ class Transaction(val params:NetworkParameters) {
         // and WalletProtobufSerializer.readTransaction()!
     }
 
-/*
-    constructor(params: NetworkParameters) : super(params) {
-        version = 1
-        inputs = ArrayList()
-        outputs = ArrayList()
-        // We don't initialize appearsIn deliberately as it's only useful for transactions stored in the wallet.
-//        length = 8 // 8 for std fields
+    constructor(params: NetworkParameters, rawHex:String) : this(params) {
+        parse(HEX.decode(rawHex), 0)
     }
-*/
 
     /**
      * Creates a transaction from the given serialized bytes, eg, from a block or a tx network message.
@@ -583,42 +568,45 @@ class Transaction(val params:NetworkParameters) {
         this.hash = null
     }
 */
-/*
-
     @Throws(ProtocolException::class)
-    override fun parse() {
-        cursor = offset
+    @JvmOverloads fun parse(payload: ByteArray, offset:Int = 0) {
+        val reader = MessageReader(payload, offset)
 
-        version = readUint32()
-        optimalEncodingMessageSize = 4
+        version = reader.readUint32()
+        var optimalEncodingMessageSize = 4
 
         // First come the inputs.
-        val numInputs = readVarInt()
+        val numInputs = reader.readVarInt()
+
         optimalEncodingMessageSize += VarInt.sizeOf(numInputs)
+
         inputs = ArrayList(numInputs.toInt())
         for (i in 0 until numInputs) {
-            val input = TransactionInput(params!!, this, payload!!, cursor, serializer!!)
+            val input = TransactionInput.parse(params, reader)
             inputs.add(input)
-            val scriptLen = readVarInt(TransactionOutPoint.MESSAGE_LENGTH)
-            optimalEncodingMessageSize += (TransactionOutPoint.MESSAGE_LENGTH.toLong() + VarInt.sizeOf(scriptLen).toLong() + scriptLen + 4).toInt()
-            cursor += (scriptLen + 4).toInt()
+            optimalEncodingMessageSize += input.length
         }
         // Now the outputs
-        val numOutputs = readVarInt()
+        val numOutputs = reader.readVarInt()
         optimalEncodingMessageSize += VarInt.sizeOf(numOutputs)
         outputs = ArrayList(numOutputs.toInt())
         for (i in 0 until numOutputs) {
-            val output = TransactionOutput(params!!, this, payload!!, cursor, serializer!!)
+            val output = TransactionOutput(params)
+            output.parse(reader)
             outputs.add(output)
-            val scriptLen = readVarInt(8)
+            val scriptLen = output.scriptBytes?.size?.toLong()?:0L
             optimalEncodingMessageSize += (8 + VarInt.sizeOf(scriptLen).toLong() + scriptLen).toInt()
-            cursor += scriptLen.toInt()
         }
-        lockTime = readUint32()
+        lockTime = reader.readUint32()
         optimalEncodingMessageSize += 4
-        length = cursor - offset
+        var length = reader.cursor - offset
+        println(length)
+        println(optimalEncodingMessageSize)
+        check(length == optimalEncodingMessageSize)
+        // es igual a optimalEncodingMessageSize?
+
     }
-*/
+
 
 /*
     fun getOptimalEncodingMessageSize(): Int {
@@ -756,7 +744,7 @@ class Transaction(val params:NetworkParameters) {
      * @return the newly created input.
      */
     fun addInput(from: TransactionOutput): TransactionInput {
-        return addInput(TransactionInput(params!!, this, from))
+        return addInput(TransactionInput(params, this, from))
     }
 
     /**
@@ -776,7 +764,7 @@ class Transaction(val params:NetworkParameters) {
      * @return the newly created input.
      */
     fun addInput(spendTxHash: Sha256Hash, outputIndex: Long, script: Script): TransactionInput {
-        return addInput(TransactionInput(params!!, this, script.listProgram(), TransactionOutPoint(params!!, outputIndex, spendTxHash)))
+        return addInput(TransactionInput(params, this, script.listProgram(), TransactionOutPoint(params, outputIndex, spendTxHash)))
     }
 
     /**
@@ -793,7 +781,7 @@ class Transaction(val params:NetworkParameters) {
                        sigHash: SigHash = SigHash.ALL, anyoneCanPay: Boolean = false): TransactionInput {
         // Verify the API user didn't try to do operations out of order.
         check(!outputs.isEmpty(), {"Attempting to sign tx without outputs."})
-        val input = TransactionInput(params!!, this, byteArrayOf(), prevOut)
+        val input = TransactionInput(params, this, byteArrayOf(), prevOut)
         addInput(input)
         val hash = TransactionSignatureBuilder(this).hashForSignature(inputs.size - 1, scriptPubKey, sigHash, anyoneCanPay)
         val ecSig = sigKey.sign(hash)
@@ -822,7 +810,7 @@ class Transaction(val params:NetworkParameters) {
                        sigHash: SigHash, anyoneCanPay: Boolean, forkId: Boolean): TransactionInput {
         // Verify the API user didn't try to do operations out of order.
         checkState(!outputs.isEmpty(), "Attempting to sign tx without outputs.")
-        val input = TransactionInput(params!!, this, byteArrayOf(), prevOut)
+        val input = TransactionInput(params, this, byteArrayOf(), prevOut)
         addInput(input)
         val hash = if (forkId)
             TransactionSignatureBuilder(this).hashForSignatureWitness(inputs.size - 1, scriptPubKey, prevOut.getConnectedOutput()!!.getValue(), sigHash, anyoneCanPay)
@@ -886,7 +874,7 @@ class Transaction(val params:NetworkParameters) {
      * Creates an output based on the given address and value, adds it to this transaction, and returns the new output.
      */
     fun addOutput(value: Coin, address: CashAddress): TransactionOutput {
-        return addOutput(TransactionOutput(params!!, this, value, address))
+        return addOutput(TransactionOutput(params, this, value, address))
     }
 
     /**
@@ -894,7 +882,7 @@ class Transaction(val params:NetworkParameters) {
      * transaction, and returns the new output.
      */
     fun addOutput(value: Coin, pubkey: ECKey): TransactionOutput {
-        return addOutput(TransactionOutput(params!!, this, value, pubkey))
+        return addOutput(TransactionOutput(params, this, value, pubkey))
     }
 
     /**
@@ -902,20 +890,23 @@ class Transaction(val params:NetworkParameters) {
      * you won't normally need to use it unless you're doing unusual things.
      */
     fun addOutput(value: Coin, script: Script): TransactionOutput {
-        return addOutput(TransactionOutput(params!!, this, value, script.listProgram()))
+        return addOutput(TransactionOutput(params, this, value, script.listProgram()))
     }
 
     fun addData(data:ByteArray): TransactionOutput {
         val script = ScriptBuilder.createOpReturnScript(data)
-        return addOutput(TransactionOutput(params!!, this, Coin.ZERO, script.listProgram()))
+        return addOutput(TransactionOutput(params, this, Coin.ZERO, script.listProgram()))
     }
 
 
-    @Throws(IOException::class)
     fun bitcoinSerialize():ByteArray {
         val stream = UnsafeByteArrayOutputStream()
-        bitcoinSerializeToStream(stream)
-        stream.close()
+        try {
+            bitcoinSerializeToStream(stream)
+            stream.close()
+        } catch (e: IOException) {
+            // It will never happen
+        }
         return stream.toByteArray()
     }
 
@@ -1051,7 +1042,7 @@ class Transaction(val params:NetworkParameters) {
     }
 
     override fun hashCode(): Int {
-        return hash!!.hashCode()
+        return hash.hashCode()
     }
 
     /**

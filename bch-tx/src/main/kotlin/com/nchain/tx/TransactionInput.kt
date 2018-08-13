@@ -18,22 +18,19 @@
 package com.nchain.tx
 
 
-import com.google.common.base.Joiner
 import com.google.common.base.Objects
 import java.io.IOException
 import java.io.OutputStream
 import java.lang.ref.WeakReference
 import java.util.Arrays
 
-import com.google.common.base.Preconditions.checkElementIndex
 import com.google.common.base.Preconditions.checkNotNull
-import com.nchain.address.CashAddress
-import com.nchain.key.VerificationException
+import com.nchain.shared.VerificationException
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
-import com.nchain.tools.HEX
+import com.nchain.tools.MessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
@@ -49,7 +46,7 @@ import org.bitcoinj.script.ScriptException
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-open class TransactionInput(val params:NetworkParameters) {
+open class TransactionInput(val params:NetworkParameters, val parentTransaction: Transaction? = null) {
 
     // Allows for altering transactions after they were broadcast. Values below NO_SEQUENCE-1 mean it can be altered.
     private var sequence: Long = 0
@@ -67,6 +64,54 @@ open class TransactionInput(val params:NetworkParameters) {
     // The Script object obtained from parsing scriptBytes. Only filled in on demand and if the transaction is not
     // coinbase.
     private var scriptSig: WeakReference<Script>? = null
+
+
+
+    companion object {
+        /** Magic sequence number that indicates there is no sequence number.  */
+        const val NO_SEQUENCE = 0xFFFFFFFFL
+
+        /**
+         * BIP68: If this flag set, sequence is NOT interpreted as a relative lock-time.
+         */
+        const val SEQUENCE_LOCKTIME_DISABLE_FLAG = 1L shl 31
+        /**
+         * BIP68: If sequence encodes a relative lock-time and this flag is set, the relative lock-time has units of 512
+         * seconds, otherwise it specifies blocks with a granularity of 1.
+         */
+        const val SEQUENCE_LOCKTIME_TYPE_FLAG = 1L shl 22
+        /**
+         * BIP68: If sequence encodes a relative lock-time, this mask is applied to extract that lock-time from the sequence
+         * field.
+         */
+        const val SEQUENCE_LOCKTIME_MASK: Long = 0x0000ffff
+
+
+        @Throws(ProtocolException::class)
+        fun parse(params:NetworkParameters, payload:ByteArray, offset:Int = 0):TransactionInput {
+            return parse(params, MessageReader(payload, offset))
+        }
+
+        @Throws(ProtocolException::class)
+        fun parse(params:NetworkParameters, reader:MessageReader):TransactionInput {
+            val offset = reader.cursor
+
+            val outpoint = TransactionOutPoint.parse(params, reader)
+
+            val scriptLen = reader.readVarInt().toInt()
+            val length = reader.cursor - offset + scriptLen + 4
+            val scriptBytes = reader.readBytes(scriptLen)
+            val sequence = reader.readUint32()
+
+            var otherLength = reader.cursor - offset
+            check(otherLength == length)
+            // es igual a length?
+            return TransactionInput(params, null, scriptBytes, outpoint, null, sequence)
+        }
+    }
+
+
+
     /** Value of the output connected to the input, if known. This field does not participate in equals()/hashCode().  */
     /**
      * @return Value of the output connected to this input, if known. Null if unknown.
@@ -75,8 +120,6 @@ open class TransactionInput(val params:NetworkParameters) {
         private set
 
     var length: Int = 0
-
-//    var parentTransaction: Transaction? = null
 
     /**
      * Coinbase transactions have special inputs with hashes of zero. If this is such an input, returns true.
@@ -109,12 +152,6 @@ open class TransactionInput(val params:NetworkParameters) {
      * in nodes memory pools if the existing version is time locked. See the Contracts page on the Bitcoin wiki for
      * examples of how you can use this feature to build contract protocols.
      */
-    /**
-     * Sequence numbers allow participants in a multi-party transaction signing protocol to create new versions of the
-     * transaction independently of each other. Newer versions of a transaction can replace an existing version that's
-     * in nodes memory pools if the existing version is time locked. See the Contracts page on the Bitcoin wiki for
-     * examples of how you can use this feature to build contract protocols.
-     */
     var sequenceNumber: Long
         get() = sequence
         set(sequence) {
@@ -123,19 +160,13 @@ open class TransactionInput(val params:NetworkParameters) {
         }
 
     /**
-     * @return The Transaction that owns this input.
-     */
-    var parentTransaction: Transaction? = null
-//        get() = parent as Transaction
-//
-    /**
      * Returns the connected output, assuming the input was connected with
      * [TransactionInput.connect] or variants at some point. If it wasn't connected, then
      * this method returns null.
      */
-//    val connectedOutput: TransactionOutput?
-//        get() = outpoint!!.getConnectedOutput()
-//
+    val connectedOutput: TransactionOutput?
+        get() = outpoint!!.connectedOutput
+
     /**
      * Returns the connected transaction, assuming the input was connected with
      * [TransactionInput.connect] or variants at some point. If it wasn't connected, then
@@ -157,40 +188,30 @@ open class TransactionInput(val params:NetworkParameters) {
 //        get() = DefaultRiskAnalysis.isInputStandard(this)
 
     @JvmOverloads constructor(params: NetworkParameters, parentTransaction: Transaction?, scriptBytes: ByteArray?,
-                              outpoint: TransactionOutPoint = TransactionOutPoint(params, UNCONNECTED, null as Transaction?), value: Coin? = null) : this(params) {
+                              outpoint: TransactionOutPoint = TransactionOutPoint.createUnconnected(params), value: Coin? = null, sequence: Long = NO_SEQUENCE) : this(params, parentTransaction) {
         this.scriptBytes = scriptBytes
         this.outpoint = outpoint
-        this.sequence = NO_SEQUENCE
+        this.sequence = sequence
         this.value = value
-        this.parentTransaction = parentTransaction
         length = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
     }
 
     /**
      * Creates an UNSIGNED input that links to the given output
      */
-    internal constructor(params: NetworkParameters, parentTransaction: Transaction, output: TransactionOutput) : this(params) {
+    internal constructor(params: NetworkParameters, parentTransaction: Transaction, output: TransactionOutput) : this(params, parentTransaction) {
         val outputIndex = output.index.toLong()
         if (output.parentTransaction != null) {
-            outpoint = TransactionOutPoint(params, outputIndex, output.parentTransaction)
+            outpoint = TransactionOutPoint.create(params, outputIndex, output.parentTransaction!!)
         } else {
-            outpoint = TransactionOutPoint(params, output)
+            outpoint = TransactionOutPoint.create(params, output)
         }
-        scriptBytes = EMPTY_ARRAY
+        scriptBytes = ByteUtils.EMPTY_BYTE_ARRAY
         sequence = NO_SEQUENCE
-        this.parentTransaction = parentTransaction
         this.value = output.getValue()
         length = 41
     }
 
-    /**
-     * Deserializes an input message. This is usually part of a transaction message.
-     */
-//    @Throws(ProtocolException::class)
-//    constructor(params: NetworkParameters, parentTransaction: Transaction?, payload: ByteArray, offset: Int) : super(params, payload, offset) {
-//        parent = (parentTransaction)
-//        this.value = null
-//    }
 
     /**
      * Deserializes an input message. This is usually part of a transaction message.
@@ -203,16 +224,6 @@ open class TransactionInput(val params:NetworkParameters) {
 //    @Throws(ProtocolException::class)
 //    constructor(params: NetworkParameters, parentTransaction: Transaction, payload: ByteArray, offset: Int, serializer: MessageSerializer) : super(params, payload, offset, parentTransaction, serializer, Message.UNKNOWN_LENGTH) {
 //        this.value = null
-//    }
-//
-//    @Throws(ProtocolException::class)
-//    override fun parse() {
-//        outpoint = TransactionOutPoint(params!!, payload!!, cursor, this, serializer!!)
-//        cursor += outpoint!!.messageSize
-//        val scriptLen = readVarInt().toInt()
-//        length = cursor - offset + scriptLen + 4
-//        scriptBytes = readBytes(scriptLen)
-//        sequence = readUint32()
 //    }
 //
     @Throws(IOException::class)
@@ -266,7 +277,7 @@ open class TransactionInput(val params:NetworkParameters) {
 
     /** Clear input scripts, e.g. in preparation for signing.  */
     fun clearScriptBytes() {
-        setScriptBytes(TransactionInput.EMPTY_ARRAY)
+        setScriptBytes(ByteUtils.EMPTY_BYTE_ARRAY)
     }
 
     /**
@@ -481,30 +492,4 @@ open class TransactionInput(val params:NetworkParameters) {
 
     }
 
-    companion object {
-        /** Magic sequence number that indicates there is no sequence number.  */
-        const val NO_SEQUENCE = 0xFFFFFFFFL
-        private val EMPTY_ARRAY = ByteArray(0)
-        // Magic outpoint index that indicates the input is in fact unconnected.
-        private val UNCONNECTED = 0xFFFFFFFFL
-
-        /**
-         * BIP68: If this flag set, sequence is NOT interpreted as a relative lock-time.
-         */
-        const val SEQUENCE_LOCKTIME_DISABLE_FLAG = 1L shl 31
-        /**
-         * BIP68: If sequence encodes a relative lock-time and this flag is set, the relative lock-time has units of 512
-         * seconds, otherwise it specifies blocks with a granularity of 1.
-         */
-        const val SEQUENCE_LOCKTIME_TYPE_FLAG = 1L shl 22
-        /**
-         * BIP68: If sequence encodes a relative lock-time, this mask is applied to extract that lock-time from the sequence
-         * field.
-         */
-        const val SEQUENCE_LOCKTIME_MASK: Long = 0x0000ffff
-
-    }
 }
-/**
- * Creates an input that connects to nothing - used only in creation of coinbase transactions.
- */

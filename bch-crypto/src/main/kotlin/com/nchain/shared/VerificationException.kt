@@ -18,7 +18,7 @@
  * The original file was from the bitcoinj-cash project (https://github.com/bitcoinj-cash/bitcoinj).
  */
 
-package com.nchain.key
+package com.nchain.shared
 
 open class VerificationException : RuntimeException {
     constructor(msg: String) : super(msg) {}

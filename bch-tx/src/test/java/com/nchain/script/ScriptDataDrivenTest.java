@@ -19,7 +19,7 @@ package com.nchain.script;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Charsets;
-import com.nchain.key.VerificationException;
+import com.nchain.shared.VerificationException;
 import com.nchain.tx.Coin;
 import com.nchain.tx.Transaction;
 import org.bitcoinj.script.Script;

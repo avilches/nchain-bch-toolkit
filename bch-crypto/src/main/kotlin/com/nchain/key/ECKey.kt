@@ -334,7 +334,7 @@ class ECKey constructor(val priv: BigInteger?, val pub: LazyECPoint) {
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
         if (o == null || o !is ECKey) return false
-        return Objects.equals(this.priv, o.priv) && Objects.equals(this.pub, o.pub)
+        return priv == o.priv && pub == o.pub
     }
 
     override fun hashCode(): Int {

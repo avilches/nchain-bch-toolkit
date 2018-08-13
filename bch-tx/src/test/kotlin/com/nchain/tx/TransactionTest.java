@@ -21,7 +21,7 @@ import com.nchain.address.CashAddress;
 import com.nchain.bitcoinkt.core.TransactionSignatureBuilder;
 import com.nchain.key.DumpedPrivateKey;
 import com.nchain.key.ECKey;
-import com.nchain.key.VerificationException;
+import com.nchain.shared.VerificationException;
 import com.nchain.params.MainNetParams;
 import com.nchain.params.NetworkParameters;
 import com.nchain.params.UnitTestParams;
@@ -31,7 +31,6 @@ import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.tx.TransactionSignature;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -396,7 +395,7 @@ public class TransactionTest {
         }
     }
     */
-/*
+
     @Test
     public void testHashForSignature()
     {
@@ -404,19 +403,20 @@ public class TransactionTest {
         DumpedPrivateKey dumpedPrivateKey1 = DumpedPrivateKey.fromBase58(MainNetParams.INSTANCE, dumpedPrivateKey);
         ECKey key = dumpedPrivateKey1.getKey();
 
-        String txData = "0200000001411d29708a0b4165910fbc73b6efbd3d183b1bf457d8840beb23874714c41f61010000006a47304402204b3b868a9a966c44fb05f2cfb3c888b5617435d00ebe1dfe4bd452fd538592d90220626adfb79def08c0375de226b77cefbd3c659aad299dfe950539d01d2770132a41210354662c29cec7074ad26af8664bffdb7f540990ece13a872da5fdfa8be019563efeffffff027f5a1100000000001976a914dcbfe1b282c167c1942a2bdc927de8b4a368146588ac400d0300000000001976a914fb57314db46dd11b4a99c16779a5e160858df43888acd74f0700";
         String txConnectedData = "020000000284ff1fbdee5aeeaf7976ddfb395e00066c150d4ed90da089f5b47e46215dc23c010000006b4830450221008e1f85698b5130f2dd56236541f2b2c1f7676721acebbbdc3c8711a345d2f96b022065f1f2ea915b8844319b3e81e33cb6a26ecee838dc0060248b10039e994ab1e641210248dd879c54147390a12f8e8a7aa8f23ce2659a996fa7bf756d6b2187d8ed624ffeffffffefd0db693d73d8087eb1f44916be55ee025f25d7a3dbcf82e3318e56e6ccded9000000006a4730440221009c6ba90ca215ce7ad270e6688940aa6d97be6c901a430969d9d88bef7c8dc607021f51d088dadcaffbd88e5514afedfa9e2cac61a1024aaa4c88873361193e4da24121039cc4a69e1e93ebadab2870c69cb4feb0c1c2bfad38be81dda2a72c57d8b14e11feffffff0230c80700000000001976a914517abefd39e71c633bd5a23fd75b5dbd47bc461b88acc8911400000000001976a9147b983c4efaf519e9caebde067b6495e5dcc491cb88acba4f0700";
-        Transaction txConnected = new Transaction(MainNetParams.INSTANCE, HEX.decode(txConnectedData));
-        Transaction tx = new Transaction(MainNetParams.INSTANCE, HEX.decode(txData));
+        Transaction txConnected = new Transaction(MainNetParams.INSTANCE, txConnectedData);
+
+        String txData = "0200000001411d29708a0b4165910fbc73b6efbd3d183b1bf457d8840beb23874714c41f61010000006a47304402204b3b868a9a966c44fb05f2cfb3c888b5617435d00ebe1dfe4bd452fd538592d90220626adfb79def08c0375de226b77cefbd3c659aad299dfe950539d01d2770132a41210354662c29cec7074ad26af8664bffdb7f540990ece13a872da5fdfa8be019563efeffffff027f5a1100000000001976a914dcbfe1b282c167c1942a2bdc927de8b4a368146588ac400d0300000000001976a914fb57314db46dd11b4a99c16779a5e160858df43888acd74f0700";
+        Transaction tx = new Transaction(MainNetParams.INSTANCE, txData);
 
         Script sig = tx.getInput(0).getScriptSig();
 
         EnumSet<Script.VerifyFlag> flags = EnumSet.of(Script.VerifyFlag.STRICTENC, Script.VerifyFlag.SIGHASH_FORKID);
-        sig.correctlySpends(tx, 0, txConnected.getOutput(1).getScriptPubKey(), txConnected.getOutput(1).getValue(), flags;
+        sig.correctlySpends(tx, 0, txConnected.getOutput(1).getScriptPubKey(), txConnected.getOutput(1).getValue(), flags);
 
 
     }
-    */
+
   /*
 
     @Test
@@ -435,4 +435,31 @@ public class TransactionTest {
 
     }
 */
+
+    @Test
+    public void testRawParseAndExport() {
+        NetworkParameters params = PARAMS;
+
+        // https://blockchain.info/tx/ed27cf72886af7c830faeff136b3859185310334330a4856f60c768ab46b9c1c
+        String rawTx1 = "010000000193e3073ecc1d27f17e3d287ccefdfdba5f7d8c160242dbcd547b18baef12f9b31a0000006b483045022100af501dc9ef2907247d28a5169b8362ca494e1993f833928b77264e604329eec40220313594f38f97c255bcea6d5a4a68e920508ef93fd788bcf5b0ad2fa5d34940180121034bb555cc39ba30561793cf39a35c403fe8cf4a89403b02b51e058960520bd1e3ffffffff02b3bb0200000000001976a914f7d52018971f4ab9b56f0036958f84ae0325ccdc88ac98100700000000001976a914f230f0a16a98433eca0fa70487b85fb83f7b61cd88ac00000000";
+
+        Transaction tx1 = new Transaction(params, rawTx1);
+        assertEquals(rawTx1, HEX.encode(tx1.bitcoinSerialize()));
+
+        // https://blockchain.info/tx/0024db8e11da76b2344e0722bf9488ba2aed611913f9803a62ac3b41f5603946
+        String rawTx2 = "01000000011c9c6bb48a760cf656480a33340331859185b336f1effa30c8f76a8872cf27ed000000006a47304402201c999cf44dc6576783c0f55b8ff836a1e22db87ed67dc3c39515a6676cfb58e902200b4a925f9c8d6895beed841db135051f8664ab349f2e3ea9f8523a6f47f93883012102e58d7b931b5d43780fda0abc50cfd568fcc26fb7da6a71591a43ac8e0738b9a4ffffffff029b010100000000001976a9140f0fcdf818c0c88df6860c85c9cc248b9f37eaff88ac95300100000000001976a9140663d2403f560f8d053a25fbea618eb47071617688ac00000000";
+        Transaction tx2 = new Transaction(params, rawTx2);
+        assertEquals(rawTx2, HEX.encode(tx2.bitcoinSerialize()));
+
+//        https://blockchair.com/bitcoin-cash/transaction/0eab89a271380b09987bcee5258fca91f28df4dadcedf892658b9bc261050d96
+        String rawTx3 = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff2c03ccec051f4d696e656420627920416e74506f6f6c20626a3515d2158520566e53850b00110000008c7a0900ffffffff01e170f895000000001976a9149524440a5b54cca9c46ef277c34739e9b521856d88ac00000000";
+        Transaction tx3 = new Transaction(params, rawTx3);
+        assertEquals(rawTx3, HEX.encode(tx3.bitcoinSerialize()));
+
+//        https://blockchair.com/bitcoin-cash/transaction/1e24eaaa72b6c10a4d57084ab3acb612bd123bbf64c2a5746b6221b02202090e
+        String rawTx4 = "0200000001a73374e059d610c0f8ee6fcbc1f89b54ebf7b109426b38d8e3e744e698abf8a5010000006a47304402200dfc3bacafb825c0c457ff3756e9c243965be45d5d490e70c5dfb2f6060445870220431e3d9f852d4b5803ab0d189d8931dc6c35f3724d6be3e8928043b7c789f66a4121022e46d40245e27e8ef260f8d724838c850a5447b81ae9f77d2d5e28fd2640a36a0000000001d4092800000000001976a9147775f3423eb410a4184d9d3ef93f7ed4d1c1d4e988ac00000000";
+        Transaction tx4 = new Transaction(params, rawTx4);
+        assertEquals(rawTx4, HEX.encode(tx4.bitcoinSerialize()));
+    }
+
 }

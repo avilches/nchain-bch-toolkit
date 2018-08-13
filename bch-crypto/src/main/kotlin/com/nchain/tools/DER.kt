@@ -1,7 +1,7 @@
 package com.nchain.tools
 
 import com.nchain.key.ECKey
-import com.nchain.key.VerificationException
+import com.nchain.shared.VerificationException
 import org.spongycastle.asn1.ASN1InputStream
 import org.spongycastle.asn1.ASN1Integer
 import org.spongycastle.asn1.DERSequenceGenerator
@@ -9,7 +9,6 @@ import org.spongycastle.asn1.DLSequence
 import org.spongycastle.util.Properties
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.math.BigInteger
 
 /*
  * @author Alberto Vilches
