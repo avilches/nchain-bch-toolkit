@@ -73,7 +73,7 @@ public class TransactionTest {
     @Test(expected = VerificationException.LargerThanMaxBlockSize.class)
     public void tooHuge() throws Exception {
         Transaction tx = FakeTxBuilder.createFakeTx(PARAMS);
-        tx.getInput(0).setScriptBytes(new byte[NetworkParameters.MAX_BLOCK_SIZE]);
+        tx.addInput(new TransactionInput(PARAMS, null, new byte[NetworkParameters.MAX_BLOCK_SIZE]));
         tx.verify();
     }
 
@@ -81,7 +81,8 @@ public class TransactionTest {
     public void duplicateOutPoint() throws Exception {
         Transaction tx = FakeTxBuilder.createFakeTx(PARAMS);
         TransactionInput input = tx.getInput(0);
-        input.setScriptBytes(new byte[1]);
+        // TODO: review
+//        input.setScriptBytes(new byte[1]);
 //        tx.addInput(input.duplicateDetached());
         tx.addInput(input);
         tx.verify();

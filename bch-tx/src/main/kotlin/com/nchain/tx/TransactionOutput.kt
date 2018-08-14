@@ -35,6 +35,7 @@ import org.bitcoinj.script.ScriptBuilder
 import org.bitcoinj.script.ScriptException
 import java.io.IOException
 import java.io.OutputStream
+import java.util.*
 
 /**
  *
@@ -44,7 +45,7 @@ import java.io.OutputStream
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-open class TransactionOutput(val params:NetworkParameters) {
+class TransactionOutput(val params:NetworkParameters) {
 
     // The output's value is kept as a native type in order to save class instances.
     private var value: Long = 0
@@ -79,8 +80,6 @@ open class TransactionOutput(val params:NetworkParameters) {
      */
 //    var spentBy: TransactionInput? = null
 //        private set
-
-    private var scriptLen: Int = 0
 
     var length: Int = 0
 
@@ -260,23 +259,6 @@ open class TransactionOutput(val params:NetworkParameters) {
     fun getAddressFromP2SH(networkParameters: NetworkParameters): CashAddress? {
         return if (getScriptPubKey().isPayToScriptHash) getScriptPubKey().getToAddress(networkParameters) else null
 
-    }
-
-    @Throws(ProtocolException::class)
-    fun parse(payload:ByteArray, offset:Int = 0) {
-        parse(MessageReader(payload, offset))
-    }
-
-    @Throws(ProtocolException::class)
-    fun parse(reader:MessageReader) {
-        val offset = reader.cursor
-        value = reader.readInt64()
-        scriptLen = reader.readVarInt().toInt()
-        length = reader.cursor - offset + scriptLen
-        scriptBytes = reader.readBytes(scriptLen)
-        var otherLength = reader.cursor - offset
-        check(otherLength == length)
-        // es igual a length?
     }
 
     @Throws(IOException::class)
@@ -459,21 +441,36 @@ open class TransactionOutput(val params:NetworkParameters) {
     }
 */
 
-/*
+    // TODO:
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
         if (o == null || javaClass != o.javaClass) return false
         val other = o as TransactionOutput?
-        return (value == other!!.value && (parent == null || parent === other.parent && index == other.index)
+        return (value == other!!.value && (parentTransaction == null || parentTransaction === other.parentTransaction && index == other.index)
                 && Arrays.equals(scriptBytes, other.scriptBytes))
     }
 
+    // TODO:
     override fun hashCode(): Int {
-        return Objects.hashCode(value, parent, Arrays.hashCode(scriptBytes))
+        return Objects.hash(value, parentTransaction, scriptBytes)
     }
-*/
 
     companion object {
         private val log = LoggerFactory.getLogger(TransactionOutput::class.java!!)
+
+        @Throws(ProtocolException::class)
+        fun parse(params:NetworkParameters, payload:ByteArray, offset:Int = 0):TransactionOutput {
+            return parse(params, MessageReader(payload, offset))
+        }
+
+        @Throws(ProtocolException::class)
+        fun parse(params:NetworkParameters, reader:MessageReader):TransactionOutput {
+            val value = reader.readInt64()
+            val scriptLen = reader.readVarInt().toInt()
+            val scriptBytes = reader.readBytes(scriptLen)
+            return TransactionOutput(params, null, Coin.valueOf(value), scriptBytes)
+        }
+
+
     }
 }

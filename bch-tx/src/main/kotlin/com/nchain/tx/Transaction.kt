@@ -292,7 +292,7 @@ class Transaction(val params:NetworkParameters) {
         get() {
             var sigOps = 0
             for (input in inputs)
-                sigOps += Script.getSigOpCount(input.getScriptBytes()!!)
+                sigOps += Script.getSigOpCount(input.scriptBytes!!)
             for (output in outputs)
                 sigOps += Script.getSigOpCount(output.scriptBytes!!)
             return sigOps
@@ -591,8 +591,7 @@ class Transaction(val params:NetworkParameters) {
         optimalEncodingMessageSize += VarInt.sizeOf(numOutputs)
         outputs = ArrayList(numOutputs.toInt())
         for (i in 0 until numOutputs) {
-            val output = TransactionOutput(params)
-            output.parse(reader)
+            val output = TransactionOutput.parse(params, reader)
             outputs.add(output)
             val scriptLen = output.scriptBytes?.size?.toLong()?:0L
             optimalEncodingMessageSize += (8 + VarInt.sizeOf(scriptLen).toLong() + scriptLen).toInt()
@@ -744,7 +743,7 @@ class Transaction(val params:NetworkParameters) {
      * @return the newly created input.
      */
     fun addInput(from: TransactionOutput): TransactionInput {
-        return addInput(TransactionInput(params, this, from))
+        return addInput(TransactionInput.create(params, this, from))
     }
 
     /**
@@ -781,17 +780,19 @@ class Transaction(val params:NetworkParameters) {
                        sigHash: SigHash = SigHash.ALL, anyoneCanPay: Boolean = false): TransactionInput {
         // Verify the API user didn't try to do operations out of order.
         check(!outputs.isEmpty(), {"Attempting to sign tx without outputs."})
-        val input = TransactionInput(params, this, byteArrayOf(), prevOut)
-        addInput(input)
         val hash = TransactionSignatureBuilder(this).hashForSignature(inputs.size - 1, scriptPubKey, sigHash, anyoneCanPay)
         val ecSig = sigKey.sign(hash)
         val txSig = TransactionSignature(ecSig, sigHash, anyoneCanPay, false)
-        if (scriptPubKey.isSentToRawPubKey)
-            input.setScriptSig( ScriptBuilder.createInputScript(txSig) )
+        val scriptBytes = if (scriptPubKey.isSentToRawPubKey)
+            ScriptBuilder.createInputScript(txSig).listProgram()
         else if (scriptPubKey.isSentToAddress)
-            input.setScriptSig( ScriptBuilder.createInputScript(txSig, sigKey) )
+            ScriptBuilder.createInputScript(txSig, sigKey).listProgram()
         else
             throw ScriptException("Don't know how to sign for this kind of scriptPubKey: " + scriptPubKey)
+
+        val input = TransactionInput(params, this, scriptBytes, prevOut)
+        addInput(input)
+
         return input
     }
 
@@ -1121,7 +1122,7 @@ class Transaction(val params:NetworkParameters) {
         }
 
         if (isCoinBase) {
-            if (inputs[0].getScriptBytes()!!.size < 2 || inputs[0].getScriptBytes()!!.size > 100)
+            if (inputs[0].scriptBytes!!.size < 2 || inputs[0].scriptBytes!!.size > 100)
                 throw VerificationException.CoinbaseScriptSizeOutOfRange()
         } else {
             for (input in inputs)

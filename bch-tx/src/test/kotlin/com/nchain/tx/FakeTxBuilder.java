@@ -59,7 +59,7 @@ public class FakeTxBuilder {
     /** Create a fake coinbase transaction. */
     public static Transaction createFakeCoinbaseTx(final NetworkParameters params) {
         TransactionOutPoint outpoint = TransactionOutPoint.createUnconnected(params);
-        TransactionInput input = new TransactionInput(params, null, new byte[0], outpoint);
+        TransactionInput input = new TransactionInput(params, null, new byte[0], outpoint, null, TransactionInput.NO_SEQUENCE);
         Transaction tx = new Transaction(params);
         tx.addInput(input);
         TransactionOutput outputToMe = new TransactionOutput(params, tx, FIFTY_COINS,
@@ -86,7 +86,9 @@ public class FakeTxBuilder {
         TransactionOutput prevOut = new TransactionOutput(params, prevTx, value, to);
         prevTx.addOutput(prevOut);
         // Connect it.
-        t.addInput(prevOut).setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+        t.addInput(prevOut);
+                // TODO: removed. lets see if it works without the dummy script
+//                .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
         // Fake signature.
         // Serialize/deserialize to ensure internal state is stripped, as if it had been read from the wire.
         return roundTripTransaction(params, t);
@@ -141,14 +143,14 @@ public class FakeTxBuilder {
         TransactionOutput prevOut1 = new TransactionOutput(params, prevTx1, Coin.Companion.valueOf(split), to);
         prevTx1.addOutput(prevOut1);
         // Connect it.
-        t.addInput(prevOut1).setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+        t.addInput(prevOut1); // TODO: removed .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
         // Fake signature.
 
         // Do it again
         Transaction prevTx2 = new Transaction(params);
         TransactionOutput prevOut2 = new TransactionOutput(params, prevTx2, Coin.Companion.valueOf(value.getValue() - split), to);
         prevTx2.addOutput(prevOut2);
-        t.addInput(prevOut2).setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+        t.addInput(prevOut2); // TODO: removed  .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
 
         // Serialize/deserialize to ensure internal state is stripped, as if it had been read from the wire.
         return roundTripTransaction(params, t);

@@ -33,7 +33,12 @@ import java.util.*
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-class TransactionOutPoint(val params: NetworkParameters, val index: Long, val hash: Sha256Hash, val connectedOutput:TransactionOutput? = null) {
+class TransactionOutPoint
+    @JvmOverloads
+    constructor(
+            val params: NetworkParameters,
+            val index: Long, val hash: Sha256Hash,
+            val connectedOutput:TransactionOutput? = null) {
 
     val length = MESSAGE_LENGTH
 
@@ -82,16 +87,6 @@ class TransactionOutPoint(val params: NetworkParameters, val index: Long, val ha
             return result
 
         }
-
-    /**
-     * Deserializes the message. This is usually part of a transaction message.
-     * @param params NetworkParameters object.
-     * @param offset The location of the first payload byte within the array.
-     * @param serializer the serializer to use for this message.
-     * @throws ProtocolException
-     */
-//    @Throws(ProtocolException::class)
-//    constructor(params: NetworkParameters, payload: ByteArray, offset: Int, parent: Message, serializer: MessageSerializer) : super(params, payload, offset, parent, serializer, MESSAGE_LENGTH)
 
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {

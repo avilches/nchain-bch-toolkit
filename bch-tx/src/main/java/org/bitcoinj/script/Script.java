@@ -186,7 +186,12 @@ public class Script {
     @Override
     public String toString() {
          StringBuilder stringBuilder = new StringBuilder();
+         boolean first = true;
          for (ScriptChunk chunk : chunks) {
+             if (!first) {
+                 stringBuilder.append(" ");
+             }
+             first = false;
              stringBuilder.append(chunk.toString());
          }
          return stringBuilder.toString();

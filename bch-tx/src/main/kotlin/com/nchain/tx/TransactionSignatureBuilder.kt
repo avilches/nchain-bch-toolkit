@@ -222,6 +222,8 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
         //   https://en.bitcoin.it/wiki/Contracts
 
         try {
+
+            // TODO WARNING! this mus be inmutbale
             // Create a copy of this transaction to operate upon because we need make changes to the inputs and outputs.
             // It would not be thread-safe to change the attributes of the transaction object itself.
             val transaction = transaction // .params!!.defaultSerializer!!.makeTransaction(transaction.bitcoinSerialize())
@@ -231,6 +233,7 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             // EC math so we'll do it anyway.
             val inputs = transaction.getInputs()
             for (i in inputs.indices) {
+                // TODO WARNING! this mus be inmutbale
                 inputs[i].clearScriptBytes()
             }
 
@@ -247,15 +250,17 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
             // the signature covers the hash of the prevout transaction which obviously includes the output script
             // already. Perhaps it felt safer to him in some way, or is another leftover from how the code was written.
             val input = inputs[inputIndex]
-            input.setScriptBytes(connectedScript)
+            // TODO WARNING! this mus be inmutbale
+//            input.setScriptBytes(connectedScript)
+            input.scriptBytes = connectedScript
 
             if (sigHashType and 0x1f == Transaction.SigHash.NONE.value.toByte()) {
                 // SIGHASH_NONE means no outputs are signed at all - the signature is effectively for a "blank cheque".
                 transaction.clearOutputs()
                 // The signature isn't broken by new versions of the transaction issued by other parties.
-                for (i in inputs.indices)
-                    if (i != inputIndex)
-                        inputs[i].sequenceNumber = 0
+//                for (i in inputs.indices)
+//                    if (i != inputIndex)
+//                        inputs[i].sequenceNumber = 0
             } else if (sigHashType and 0x1f == Transaction.SigHash.SINGLE.value.toByte()) {
                 // SIGHASH_SINGLE means only sign the output at the same index as the input (ie, my output).
                 if (inputIndex >= transaction.getOutputs().size) {
@@ -275,9 +280,10 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
                 for (i in 0 until inputIndex)
                     outputs!![i] = TransactionOutput(transaction.params!!, transaction, Coin.NEGATIVE_SATOSHI, byteArrayOf())
                 // The signature isn't broken by new versions of the transaction issued by other parties.
-                for (i in inputs.indices)
-                    if (i != inputIndex)
-                        inputs[i].sequenceNumber = 0
+//                for (i in inputs.indices)
+//                    if (i != inputIndex)
+                    // TODO WARNING! this mus be inmutbale
+//                        inputs[i].sequenceNumber = 0
                 transaction.clearOutputs()
                 outputs.forEach { transaction.addOutput(it) }
             }

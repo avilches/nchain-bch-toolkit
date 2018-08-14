@@ -46,26 +46,27 @@ import org.bitcoinj.script.ScriptException
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-open class TransactionInput(val params:NetworkParameters, val parentTransaction: Transaction? = null) {
 
-    // Allows for altering transactions after they were broadcast. Values below NO_SEQUENCE-1 mean it can be altered.
-    private var sequence: Long = 0
-    // Data needed to connect to the output of the transaction we're gathering coins from.
-    /**
-     * @return The previous output transaction reference, as an OutPoint structure.  This contains the
-     * data needed to connect to the output of the transaction we're gathering coins from.
-     */
-    lateinit var outpoint: TransactionOutPoint
-        private set
+open class TransactionInput
+    @JvmOverloads constructor(val params: NetworkParameters,
+        val parentTransaction: Transaction?,
+        var scriptBytes: ByteArray?,
+        val outpoint: TransactionOutPoint = TransactionOutPoint.createUnconnected(params),
+        val value: Coin? = null,
+        var sequence: Long = NO_SEQUENCE) {
+
+    val length:Int
+    init {
+        length = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes?.size?.toLong()?:0) + scriptBytes!!.size?:1
+    }
+
+
     // The "script bytes" might not actually be a script. In coinbase transactions where new coins are minted there
     // is no input transaction, so instead the scriptBytes contains some extra stuff (like a rollover nonce) that we
     // don't care about much. The bytes are turned into a Script object (cached below) on demand via a getter.
-    private var scriptBytes: ByteArray? = null
     // The Script object obtained from parsing scriptBytes. Only filled in on demand and if the transaction is not
     // coinbase.
     private var scriptSig: WeakReference<Script>? = null
-
-
 
     companion object {
         /** Magic sequence number that indicates there is no sequence number.  */
@@ -85,6 +86,21 @@ open class TransactionInput(val params:NetworkParameters, val parentTransaction:
          * field.
          */
         const val SEQUENCE_LOCKTIME_MASK: Long = 0x0000ffff
+
+        /**
+         * Creates an UNSIGNED input that links to the given output
+         */
+        fun create(params: NetworkParameters, parentTransaction: Transaction, output: TransactionOutput): TransactionInput {
+            val outputIndex = output.index.toLong()
+            val outpoint = if (output.parentTransaction != null) {
+                TransactionOutPoint.create(params, outputIndex, output.parentTransaction!!)
+            } else {
+                TransactionOutPoint.create(params, output)
+            }
+            val input = TransactionInput(params, parentTransaction, ByteUtils.EMPTY_BYTE_ARRAY, outpoint, output.getValue(), NO_SEQUENCE)
+            check(input.length == 41)
+            return input
+        }
 
 
         @Throws(ProtocolException::class)
@@ -111,15 +127,6 @@ open class TransactionInput(val params:NetworkParameters, val parentTransaction:
     }
 
 
-
-    /** Value of the output connected to the input, if known. This field does not participate in equals()/hashCode().  */
-    /**
-     * @return Value of the output connected to this input, if known. Null if unknown.
-     */
-    var value: Coin? = null
-        private set
-
-    var length: Int = 0
 
     /**
      * Coinbase transactions have special inputs with hashes of zero. If this is such an input, returns true.
@@ -187,32 +194,6 @@ open class TransactionInput(val params:NetworkParameters, val parentTransaction:
 //    val isStandard: DefaultRiskAnalysis.RuleViolation
 //        get() = DefaultRiskAnalysis.isInputStandard(this)
 
-    @JvmOverloads constructor(params: NetworkParameters, parentTransaction: Transaction?, scriptBytes: ByteArray?,
-                              outpoint: TransactionOutPoint = TransactionOutPoint.createUnconnected(params), value: Coin? = null, sequence: Long = NO_SEQUENCE) : this(params, parentTransaction) {
-        this.scriptBytes = scriptBytes
-        this.outpoint = outpoint
-        this.sequence = sequence
-        this.value = value
-        length = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
-    }
-
-    /**
-     * Creates an UNSIGNED input that links to the given output
-     */
-    internal constructor(params: NetworkParameters, parentTransaction: Transaction, output: TransactionOutput) : this(params, parentTransaction) {
-        val outputIndex = output.index.toLong()
-        if (output.parentTransaction != null) {
-            outpoint = TransactionOutPoint.create(params, outputIndex, output.parentTransaction!!)
-        } else {
-            outpoint = TransactionOutPoint.create(params, output)
-        }
-        scriptBytes = ByteUtils.EMPTY_BYTE_ARRAY
-        sequence = NO_SEQUENCE
-        this.value = output.getValue()
-        length = 41
-    }
-
-
     /**
      * Deserializes an input message. This is usually part of a transaction message.
      * @param params NetworkParameters object.
@@ -258,12 +239,15 @@ open class TransactionInput(val params:NetworkParameters, val parentTransaction:
         return script
     }
 
-    /** Set the given program as the scriptSig that is supposed to satisfy the connected output script.  */
+/*
+* Set the given program as the scriptSig that is supposed to satisfy the connected output script.
+
     fun setScriptSig(scriptSig: Script) {
         this.scriptSig = WeakReference(checkNotNull(scriptSig))
         // TODO: This should all be cleaned up so we have a consistent internal representation.
         setScriptBytes(scriptSig.listProgram())
     }
+*/
 
     /**
      * The "script bytes" might not actually be a script. In coinbase transactions where new coins are minted there
@@ -271,19 +255,24 @@ open class TransactionInput(val params:NetworkParameters, val parentTransaction:
      * don't care about much. The bytes are turned into a Script object (cached below) on demand via a getter.
      * @return the scriptBytes
      */
+/*
     fun getScriptBytes(): ByteArray? {
         return scriptBytes
     }
+*/
 
+    // TODO no allow this
     /** Clear input scripts, e.g. in preparation for signing.  */
     fun clearScriptBytes() {
-        setScriptBytes(ByteUtils.EMPTY_BYTE_ARRAY)
+//        setScriptBytes(ByteUtils.EMPTY_BYTE_ARRAY)
+        scriptBytes = ByteUtils.EMPTY_BYTE_ARRAY
     }
 
     /**
      * @param scriptBytes the scriptBytes to set
      */
-    // TODO: when all Java removed, make this internal
+    // TODO: no allow this
+/*
     fun setScriptBytes(scriptBytes: ByteArray?) {
 //        unCache()
         this.scriptSig = null
@@ -293,6 +282,7 @@ open class TransactionInput(val params:NetworkParameters, val parentTransaction:
         val newLength = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
 //        adjustLength(newLength - oldLength)
     }
+*/
 
     enum class ConnectionResult {
         NO_SUCH_TX,
