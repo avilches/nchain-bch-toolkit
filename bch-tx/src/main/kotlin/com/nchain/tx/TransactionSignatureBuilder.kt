@@ -223,10 +223,10 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
 
         try {
 
-            // TODO WARNING! this mus be inmutbale
+            // TODO WARNING! this must be inmutbale. So, instead of clone, create new objects
             // Create a copy of this transaction to operate upon because we need make changes to the inputs and outputs.
             // It would not be thread-safe to change the attributes of the transaction object itself.
-            val transaction = transaction // .params!!.defaultSerializer!!.makeTransaction(transaction.bitcoinSerialize())
+            val transaction = transaction.clone()
 
             // Clear input scripts in preparation for signing. If we're signing a fresh
             // transaction that step isn't very helpful, but it doesn't add much cost relative to the actual
@@ -258,9 +258,9 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
                 // SIGHASH_NONE means no outputs are signed at all - the signature is effectively for a "blank cheque".
                 transaction.clearOutputs()
                 // The signature isn't broken by new versions of the transaction issued by other parties.
-//                for (i in inputs.indices)
-//                    if (i != inputIndex)
-//                        inputs[i].sequenceNumber = 0
+                for (i in inputs.indices)
+                    if (i != inputIndex)
+                        inputs[i].sequenceNumber = 0
             } else if (sigHashType and 0x1f == Transaction.SigHash.SINGLE.value.toByte()) {
                 // SIGHASH_SINGLE means only sign the output at the same index as the input (ie, my output).
                 if (inputIndex >= transaction.getOutputs().size) {
@@ -280,10 +280,10 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
                 for (i in 0 until inputIndex)
                     outputs!![i] = TransactionOutput(transaction.params!!, transaction, Coin.NEGATIVE_SATOSHI, byteArrayOf())
                 // The signature isn't broken by new versions of the transaction issued by other parties.
-//                for (i in inputs.indices)
-//                    if (i != inputIndex)
+                for (i in inputs.indices)
+                    if (i != inputIndex)
                     // TODO WARNING! this mus be inmutbale
-//                        inputs[i].sequenceNumber = 0
+                        inputs[i].sequenceNumber = 0
                 transaction.clearOutputs()
                 outputs.forEach { transaction.addOutput(it) }
             }

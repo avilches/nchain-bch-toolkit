@@ -360,6 +360,10 @@ class Transaction(val params:NetworkParameters) {
         // and WalletProtobufSerializer.readTransaction()!
     }
 
+    constructor(params: NetworkParameters, bytes:ByteArray) : this(params) {
+        parse(bytes)
+    }
+
     constructor(params: NetworkParameters, rawHex:String) : this(params) {
         parse(HEX.decode(rawHex), 0)
     }
@@ -599,8 +603,8 @@ class Transaction(val params:NetworkParameters) {
         lockTime = reader.readUint32()
         optimalEncodingMessageSize += 4
         var length = reader.cursor - offset
-        println(length)
-        println(optimalEncodingMessageSize)
+//        println(length)
+//        println(optimalEncodingMessageSize)
         check(length == optimalEncodingMessageSize)
         // es igual a optimalEncodingMessageSize?
 
@@ -1159,6 +1163,10 @@ class Transaction(val params:NetworkParameters) {
             Date(getLockTime() * 1000)
     }
 */
+
+    fun clone():Transaction {
+        return Transaction(params, bitcoinSerialize())
+    }
 
     companion object {
 

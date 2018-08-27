@@ -139,6 +139,8 @@ public class ScriptTest {
         assertTrue(s.isSentToRawPubKey());
     }
 
+    // TODO:
+
 /*
     @Test
     public void testCreateMultiSigInputScript() {
@@ -301,17 +303,22 @@ public class ScriptTest {
         return scriptPubKeys;
     }
 
- /*   @Test
+    @Test
     public void dataDrivenValidTransactions() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(Thread.currentThread().getContextClassLoader().getResourceAsStream(
                 "tx_valid.json"), Charsets.UTF_8));
+        int x = 0;
         for (JsonNode test : json) {
-            if (test.isArray() && test.size() == 1 && test.get(0).isTextual())
+            if (test.isArray() && test.size() == 1 && test.get(0).isTextual()) {
+                System.err.println("#" + (x++) + " :" + test.get(0));
                 continue; // This is a comment.
+            }
             Transaction transaction = null;
             try {
                 Map<TransactionOutPoint, Script> scriptPubKeys = parseScriptPubKeys(test.get(0));
-                transaction = PARAMS.getDefaultSerializer().makeTransaction(HEX.decode(test.get(1).asText().toLowerCase()));
+                System.err.println("#"+(x++)+" :"+test.get(0));
+
+                transaction = new Transaction(PARAMS, test.get(1).asText().toLowerCase());
                 transaction.verify();
                 Set<VerifyFlag> verifyFlags = parseVerifyFlags(test.get(2).asText());
 
@@ -331,16 +338,22 @@ public class ScriptTest {
             }
         }
     }
-*/
-/*    @Test
+
+    @Test
     public void dataDrivenInvalidTransactions() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(Thread.currentThread().getContextClassLoader().getResourceAsStream(
                 "tx_invalid.json"), Charsets.UTF_8));
+        int x = 0;
         for (JsonNode test : json) {
-            if (test.isArray() && test.size() == 1 && test.get(0).isTextual())
+            if (test.isArray() && test.size() == 1 && test.get(0).isTextual()) {
+                System.err.println("#"+(x++)+" :"+test.get(0));
                 continue; // This is a comment.
+            }
             Map<TransactionOutPoint, Script> scriptPubKeys = parseScriptPubKeys(test.get(0));
-            Transaction transaction = PARAMS.getDefaultSerializer().makeTransaction(HEX.decode(test.get(1).asText().toLowerCase()));
+            System.err.println("#"+(x++)+" :"+test.get(0));
+            System.out.println(test.get(1).asText().toLowerCase());
+
+            Transaction transaction = new Transaction(PARAMS, test.get(1).asText().toLowerCase());
             Set<VerifyFlag> verifyFlags = parseVerifyFlags(test.get(2).asText());
 
             boolean valid = true;
@@ -375,7 +388,7 @@ public class ScriptTest {
         }
     }
 
- */
+
     @Test
     public void testCLTVPaymentChannelOutput() {
         Script script = ScriptBuilder.createCLTVPaymentChannelOutput(BigInteger.valueOf(20), ECKey.create(), ECKey.create());

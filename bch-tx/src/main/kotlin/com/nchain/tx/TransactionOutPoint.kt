@@ -37,7 +37,8 @@ class TransactionOutPoint
     @JvmOverloads
     constructor(
             val params: NetworkParameters,
-            val index: Long, val hash: Sha256Hash,
+            var index: Long, // TODO: inmutable!!
+            val hash: Sha256Hash,
             val connectedOutput:TransactionOutput? = null) {
 
     val length = MESSAGE_LENGTH

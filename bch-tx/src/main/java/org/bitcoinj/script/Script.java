@@ -2150,14 +2150,14 @@ public class Script {
         LinkedList<byte[]> stack = new LinkedList<byte[]>();
         LinkedList<byte[]> p2shStack = null;
 
-        executeScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags);
-//        executeDebugScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags, new InteractiveScriptStateListener());
+//        executeScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags);
+        executeDebugScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags, new InteractiveScriptStateListener());
 
         if (verifyFlags.contains(VerifyFlag.P2SH))
             p2shStack = new LinkedList<byte[]>(stack);
 
-        executeScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags);
-//        executeDebugScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags, new InteractiveScriptStateListener());
+//        executeScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags);
+        executeDebugScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags, new InteractiveScriptStateListener());
 
         if (stack.isEmpty())
             throw new ScriptException(ScriptError.SCRIPT_ERR_EVAL_FALSE, "script evaluated false");
