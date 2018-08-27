@@ -463,11 +463,12 @@ class TransactionOutput(val params:NetworkParameters) {
         }
 
         @Throws(ProtocolException::class)
-        fun parse(params:NetworkParameters, reader:MessageReader):TransactionOutput {
+        @JvmOverloads
+        fun parse(params:NetworkParameters, reader:MessageReader, parent: Transaction? = null):TransactionOutput {
             val value = reader.readInt64()
             val scriptLen = reader.readVarInt().toInt()
             val scriptBytes = reader.readBytes(scriptLen)
-            return TransactionOutput(params, null, Coin.valueOf(value), scriptBytes)
+            return TransactionOutput(params, parent, Coin.valueOf(value), scriptBytes)
         }
 
 

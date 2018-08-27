@@ -595,7 +595,7 @@ class Transaction(val params:NetworkParameters) {
         optimalEncodingMessageSize += VarInt.sizeOf(numOutputs)
         outputs = ArrayList(numOutputs.toInt())
         for (i in 0 until numOutputs) {
-            val output = TransactionOutput.parse(params, reader)
+            val output = TransactionOutput.parse(params, reader, this)
             outputs.add(output)
             val scriptLen = output.scriptBytes?.size?.toLong()?:0L
             optimalEncodingMessageSize += (8 + VarInt.sizeOf(scriptLen).toLong() + scriptLen).toInt()
