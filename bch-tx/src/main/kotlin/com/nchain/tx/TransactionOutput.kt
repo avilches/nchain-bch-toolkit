@@ -23,10 +23,8 @@ import com.google.common.base.Preconditions.*
 import com.nchain.address.CashAddress
 import com.nchain.key.ECKey
 import com.nchain.params.NetworkParameters
-import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
-import com.nchain.tools.HEX
 import com.nchain.tools.MessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.ProtocolException
@@ -42,25 +40,10 @@ import java.util.*
  * A TransactionOutput message contains a scriptPubKey that controls who is able to spend its value. It is a sub-part
  * of the Transaction message.
  *
- *
- * Instances of this class are not safe for use by multiple threads.
+ * Instances of this class thread safe
  */
-class TransactionOutput(val params:NetworkParameters) {
-
-    // The output's value is kept as a native type in order to save class instances.
-    private var value: Long = 0
-
-    // A transaction output has a script used for authenticating that the redeemer is allowed to spend
-    // this output.
-    /**
-     * The backing script bytes which can be turned into a Script object.
-     * @return the scriptBytes
-     */
-    var scriptBytes: ByteArray? = null
-        private set
-
-    // The script bytes are parsed and turned into a Script on demand.
-    private var scriptPubKey: Script? = null
+class TransactionOutput(val value: Coin = Coin.ZERO,
+                        val scriptBytes: ByteArray) {
 
     // These fields are not Bitcoin serialized. They are used for tracking purposes in our wallet
     // only. If set to true, this output is counted towards our balance. If false and spentBy is null the tx output
@@ -81,12 +64,33 @@ class TransactionOutput(val params:NetworkParameters) {
 //    var spentBy: TransactionInput? = null
 //        private set
 
-    var length: Int = 0
+    val length: Int
+    init {
+        length = 8 + VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
+    }
+
+
+
+    /**
+     * Creates an output that sends 'value' to the given address (public key hash). The amount should be created with
+     * something like [Coin.valueOf]. Typically you would use
+     * [Transaction.addOutput] instead of creating a TransactionOutput directly.
+     */
+    constructor(value: Coin, to: CashAddress) : this(value, ScriptBuilder.createOutputScript(to).listProgram()) {}
+
+    /**
+     * Creates an output that sends 'value' to the given public key using a simple CHECKSIG script (no addresses). The
+     * amount should be created with something like [Coin.valueOf]. Typically you would use
+     * [Transaction.addOutput] instead of creating an output directly.
+     */
+    constructor(value: Coin, to: ECKey) : this(value, ScriptBuilder.createOutputScript(to).listProgram()) {}
+
 
     /**
      * Gets the index of this output in the parent transaction, or throws if this output is free standing. Iterates
      * over the parents list to discover this.
      */
+/*
     open val index: Int
         get() {
             val outputs = parentTransaction!!.getOutputs()
@@ -96,13 +100,14 @@ class TransactionOutput(val params:NetworkParameters) {
             }
             throw IllegalStateException("Output linked to wrong parent transaction?")
         }
+*/
 
     /**
      * Will this transaction be relayable and mined by default miners?
      */
     // Transactions that are OP_RETURN can't be dust regardless of their value.
 //    val isDust: Boolean
-//        get() = if (getScriptPubKey().isOpReturn) false else getValue().isLessThan(minNonDustValue)
+//        get() = if (scriptPubKey.isOpReturn) false else getValue().isLessThan(minNonDustValue)
 
     /**
      * Returns the minimum value for this output to be considered "not dust", i.e. the transaction will be relayable
@@ -115,16 +120,16 @@ class TransactionOutput(val params:NetworkParameters) {
     /**
      * Returns the transaction that owns this output.
      */
-    var parentTransaction: Transaction? = null
+//    var parentTransaction: Transaction? = null
 //        get() = parent as Transaction?
 
     val isOpReturn: Boolean
-        get() = getScriptPubKey().isOpReturn == true
+        get() = scriptPubKey.isOpReturn == true
 
-//    val opReturnData: ByteArray?
-//        get() {
-//            return if (isOpReturn) getScriptPubKey().listChunks().get(1).data else null
-//        }
+    val opReturnData: ByteArray?
+        get() {
+            return if (isOpReturn) scriptPubKey.chunks.get(1).data else null
+        }
 
 
     /**
@@ -191,38 +196,16 @@ class TransactionOutput(val params:NetworkParameters) {
     }
 */
 
-    /**
-     * Creates an output that sends 'value' to the given address (public key hash). The amount should be created with
-     * something like [Coin.valueOf]. Typically you would use
-     * [Transaction.addOutput] instead of creating a TransactionOutput directly.
-     */
-    constructor(params: NetworkParameters, parent: Transaction?, value: Coin, to: CashAddress) : this(params, parent, value, ScriptBuilder.createOutputScript(to).listProgram()) {}
-
-    /**
-     * Creates an output that sends 'value' to the given public key using a simple CHECKSIG script (no addresses). The
-     * amount should be created with something like [Coin.valueOf]. Typically you would use
-     * [Transaction.addOutput] instead of creating an output directly.
-     */
-    constructor(params: NetworkParameters, parent: Transaction?, value: Coin, to: ECKey) : this(params, parent, value, ScriptBuilder.createOutputScript(to).listProgram()) {}
-
-    constructor(params: NetworkParameters, parent: Transaction?, value: Coin, scriptBytes: ByteArray) : this(params) {
-        // Negative values obviously make no sense, except for -1 which is used as a sentinel value when calculating
-        // SIGHASH_SINGLE signatures, so unfortunately we have to allow that here.
-        check(value.signum >= 0 || value == Coin.NEGATIVE_SATOSHI, {"Negative values not allowed"})
-        this.value = value.value
-        this.scriptBytes = scriptBytes
-        this.parentTransaction = parent
-//        isAvailableForSpending = true
-        length = 8 + VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
-    }
-
-    @Throws(ScriptException::class)
-    fun getScriptPubKey(): Script {
-        if (scriptPubKey == null) {
-            scriptPubKey = Script(scriptBytes!!)
+    private var _scriptPubKey: Script? = null
+    
+    val scriptPubKey: Script
+        @Throws(ScriptException::class)
+        get() {
+            if (_scriptPubKey == null) {
+                _scriptPubKey = Script(scriptBytes)
+            }
+            return _scriptPubKey!!
         }
-        return scriptPubKey as Script
-    }
 
     /**
      *
@@ -236,7 +219,7 @@ class TransactionOutput(val params:NetworkParameters) {
      */
     @Throws(ScriptException::class)
     fun getAddressFromP2PKHScript(networkParameters: NetworkParameters): CashAddress? {
-        return if (getScriptPubKey().isSentToAddress) getScriptPubKey().getToAddress(networkParameters) else null
+        return if (scriptPubKey.isSentToAddress) scriptPubKey.getToAddress(networkParameters) else null
 
     }
 
@@ -256,7 +239,7 @@ class TransactionOutput(val params:NetworkParameters) {
      */
     @Throws(ScriptException::class)
     fun getAddressFromP2SH(networkParameters: NetworkParameters): CashAddress? {
-        return if (getScriptPubKey().isPayToScriptHash) getScriptPubKey().getToAddress(networkParameters) else null
+        return if (scriptPubKey.isPayToScriptHash) scriptPubKey.getToAddress(networkParameters) else null
 
     }
 
@@ -272,34 +255,12 @@ class TransactionOutput(val params:NetworkParameters) {
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {
         checkNotNull<ByteArray>(scriptBytes)
-        ByteUtils.int64ToByteStreamLE(value, stream)
+        ByteUtils.int64ToByteStreamLE(value.value, stream)
         // TODO: Move script serialization into the Script class, where it belongs.
-        stream.write(VarInt(scriptBytes!!.size.toLong()).encode())
-        stream.write(scriptBytes!!)
+        stream.write(VarInt(scriptBytes.size.toLong()).encode())
+        stream.write(scriptBytes)
     }
 
-
-    /**
-     * Returns the value of this output. This is the amount of currency that the destination address
-     * receives.
-     */
-    fun getValue(): Coin {
-        try {
-            return Coin.valueOf(value)
-        } catch (e: IllegalArgumentException) {
-            throw IllegalStateException(e.message, e)
-        }
-
-    }
-
-    /**
-     * Sets the value of this output.
-     */
-    fun setValue(value: Coin) {
-        checkNotNull(value)
-//        unCache()
-        this.value = value.value
-    }
 
     /**
      *
@@ -372,7 +333,7 @@ class TransactionOutput(val params:NetworkParameters) {
 /*
     fun isWatched(transactionBag: TransactionBag): Boolean {
         try {
-            val script = getScriptPubKey()
+            val script = scriptPubKey
             return transactionBag.isWatchedScript(script)
         } catch (e: ScriptException) {
             // Just means we didn't understand the output of this transaction: ignore it.
@@ -388,7 +349,7 @@ class TransactionOutput(val params:NetworkParameters) {
 /*
     fun isMine(transactionBag: TransactionBag): Boolean {
         try {
-            val script = getScriptPubKey()
+            val script = scriptPubKey
             if (script.isSentToRawPubKey) {
                 val pubkey = script.pubKey
                 return transactionBag.isPubKeyMine(pubkey)
@@ -413,7 +374,7 @@ class TransactionOutput(val params:NetworkParameters) {
 /*
     override fun toString(): String {
         try {
-            val script = getScriptPubKey()
+            val script = scriptPubKey
             val buf = StringBuilder("TxOut of ")
             buf.append(Coin.valueOf(value).toFriendlyString())
             if (script.isSentToAddress || script.isPayToScriptHash)
@@ -445,30 +406,29 @@ class TransactionOutput(val params:NetworkParameters) {
         if (this === o) return true
         if (o == null || javaClass != o.javaClass) return false
         val other = o as TransactionOutput?
-        return (value == other!!.value && (parentTransaction == null || parentTransaction === other.parentTransaction && index == other.index)
-                && Arrays.equals(scriptBytes, other.scriptBytes))
+        return (value == other!!.value  && Arrays.equals(scriptBytes, other.scriptBytes))
     }
 
     // TODO:
     override fun hashCode(): Int {
-        return Objects.hash(value, parentTransaction, scriptBytes)
+        return Objects.hash(value, scriptBytes)
     }
 
     companion object {
         private val log = LoggerFactory.getLogger(TransactionOutput::class.java!!)
 
         @Throws(ProtocolException::class)
-        fun parse(params:NetworkParameters, payload:ByteArray, offset:Int = 0):TransactionOutput {
-            return parse(params, MessageReader(payload, offset))
+        fun parse(payload:ByteArray, offset:Int = 0):TransactionOutput {
+            return parse(MessageReader(payload, offset))
         }
 
         @Throws(ProtocolException::class)
         @JvmOverloads
-        fun parse(params:NetworkParameters, reader:MessageReader, parent: Transaction? = null):TransactionOutput {
+        fun parse(reader:MessageReader):TransactionOutput {
             val value = reader.readInt64()
             val scriptLen = reader.readVarInt().toInt()
             val scriptBytes = reader.readBytes(scriptLen)
-            return TransactionOutput(params, parent, Coin.valueOf(value), scriptBytes)
+            return TransactionOutput(Coin.valueOf(value), scriptBytes)
         }
 
 

@@ -94,24 +94,24 @@ public class ScriptHelpers {
     }
 
     public static Transaction buildCreditingTransaction(final Script scriptPubKey, final Coin value) {
-        Transaction transaction = new Transaction(unitTestParameters);
+        TransactionBuilder transaction = new TransactionBuilder();
         transaction.setVersion(1);
         transaction.setLockTime(0);
-        transaction.addInput(new TransactionInput(unitTestParameters,transaction,
-                new ScriptBuilder().number(0).number(0).build().getProgram()));
-        transaction.addOutput(new TransactionOutput(unitTestParameters, transaction, value, scriptPubKey.getProgram()));
-        return transaction;
+        transaction.addInput(new TransactionInput(new ScriptBuilder().number(0).number(0).build().getProgram()));
+        transaction.addOutput(new TransactionOutput(value, scriptPubKey.getProgram()));
+        return transaction.build();
     }
 
     public static Transaction buildSpendingTransaction(final Script scriptSig,
                          final Transaction txCredit) {
-        Transaction txSpend = new Transaction(unitTestParameters);
+        TransactionBuilder txSpend = new TransactionBuilder();
         txSpend.setVersion(1);
         txSpend.setLockTime(0);
-        txSpend.addInput(new TransactionInput(unitTestParameters, txSpend, scriptSig.getProgram(),
-                TransactionOutPoint.create(unitTestParameters, txCredit.getOutput(0))));
-        txSpend.addOutput(new TransactionOutput(unitTestParameters, txSpend, txCredit.getOutput(0).getValue(),
+        txSpend.addInput(new TransactionInput(scriptSig.getProgram(),
+                TransactionOutPoint.create(0, txCredit)));
+
+        txSpend.addOutput(new TransactionOutput(txCredit.getOutput(0).getValue(),
                 new ScriptBuilder().build().getProgram()));
-        return txSpend;
+        return txSpend.build();
     }
 }

@@ -105,12 +105,20 @@ class Coin private constructor(val value: Long): Comparable<Coin>, Serializable 
         return compareTo(other) > 0
     }
 
+    fun isGreaterThanOrEquals(other: Coin): Boolean {
+        return compareTo(other) >= 0
+    }
+
     /**
      * Returns true if the monetary value represented by this instance is less than that
      * of the given other Coin, otherwise false.
      */
     fun isLessThan(other: Coin): Boolean {
         return compareTo(other) < 0
+    }
+
+    fun isLessThanOrEquals(other: Coin): Boolean {
+        return compareTo(other) <= 0
     }
 
     fun shiftLeft(n: Int): Coin {

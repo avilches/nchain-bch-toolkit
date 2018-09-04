@@ -21,14 +21,9 @@ import com.nchain.address.CashAddress;
 import com.nchain.key.ECKey;
 import com.nchain.params.NetworkParameters;
 import com.nchain.shared.Randomizer;
-import com.nchain.shared.Sha256Hash;
-import org.bitcoinj.script.ProtocolException;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.tx.TransactionSignature;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -50,24 +45,24 @@ public class FakeTxBuilder {
     /** Create a fake transaction, without change. */
     public static Transaction createFakeTxWithoutChange(final NetworkParameters params, final TransactionOutput output) {
         Transaction prevTx = FakeTxBuilder.createFakeTx(params, COIN, ECKey.Companion.create().toCashAddress(params));
-        Transaction tx = new Transaction(params);
+        TransactionBuilder tx = new TransactionBuilder();
         tx.addOutput(output);
-        tx.addInput(prevTx.getOutput(0));
-        return tx;
+        tx.addInput(prevTx, 0);
+        return tx.build();
     }
 
     /** Create a fake coinbase transaction. */
     public static Transaction createFakeCoinbaseTx(final NetworkParameters params) {
-        TransactionOutPoint outpoint = TransactionOutPoint.createUnconnected(params);
-        TransactionInput input = new TransactionInput(params, null, new byte[0], outpoint, null, TransactionInput.NO_SEQUENCE);
-        Transaction tx = new Transaction(params);
+        TransactionInput input = new TransactionInput(new byte[0], TransactionOutPoint.getUNCONNECTED(), TransactionInput.NO_SEQUENCE);
+        TransactionBuilder tx = new TransactionBuilder();
         tx.addInput(input);
-        TransactionOutput outputToMe = new TransactionOutput(params, tx, FIFTY_COINS,
+        TransactionOutput outputToMe = new TransactionOutput(FIFTY_COINS,
                 ECKey.Companion.create().toCashAddress(params));
         tx.addOutput(outputToMe);
 
-        checkState(tx.isCoinBase());
-        return tx;
+        Transaction transaction = tx.build();
+        checkState(transaction.isCoinBase());
+        return transaction;
     }
 
     /**
@@ -75,49 +70,44 @@ public class FakeTxBuilder {
      * else to simulate change. There is one random input.
      */
     public static Transaction createFakeTxWithChangeAddress(NetworkParameters params, Coin value, CashAddress to, CashAddress changeOutput) {
-        Transaction t = new Transaction(params);
-        TransactionOutput outputToMe = new TransactionOutput(params, t, value, to);
+        TransactionBuilder t = new TransactionBuilder();
+        TransactionOutput outputToMe = new TransactionOutput(value, to);
         t.addOutput(outputToMe);
-        TransactionOutput change = new TransactionOutput(params, t, Coin.Companion.valueOf(1, 11), changeOutput);
+        TransactionOutput change = new TransactionOutput(Coin.Companion.valueOf(1, 11), changeOutput);
         t.addOutput(change);
         // Make a previous tx simply to send us sufficient coins. This prev tx is not really valid but it doesn't
         // matter for our purposes.
-        Transaction prevTx = new Transaction(params);
-        TransactionOutput prevOut = new TransactionOutput(params, prevTx, value, to);
+        TransactionBuilder prevTx = new TransactionBuilder();
+        TransactionOutput prevOut = new TransactionOutput(value, to);
         prevTx.addOutput(prevOut);
         // Connect it.
-        t.addInput(prevOut);
-                // TODO: removed. lets see if it works without the dummy script
-//                .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+        t.addInput(prevTx.build(), 0);
         // Fake signature.
-        // Serialize/deserialize to ensure internal state is stripped, as if it had been read from the wire.
-        return roundTripTransaction(params, t);
+        return t.build();
     }
 
     /**
      * Create a fake TX of sufficient realism to exercise the unit tests. Two outputs, one to nobody (return data, 0 coins) and other
      * to us (the change) with all the value expended from the UTXO
      */
-/*
+
     public static Transaction createFakeTxToMeWithReturnData(NetworkParameters params, Coin value, CashAddress to, byte[] data) {
-        Transaction t = new Transaction(params);
+        TransactionBuilder t = new TransactionBuilder();
         t.addData(data);
 
-        TransactionOutput change = new TransactionOutput(params, t, value, to);
+        TransactionOutput change = new TransactionOutput(value, to);
         t.addOutput(change);
 
         // Make a previous tx simply to send us sufficient coins. This prev tx is not really valid but it doesn't
         // matter for our purposes.
-        Transaction prevTx = new Transaction(params);
-        TransactionOutput prevOut = new TransactionOutput(params, prevTx, value, to);
-        prevTx.addOutput(prevOut);
+        TransactionBuilder prevTx = new TransactionBuilder();
+        prevTx.addOutput(new TransactionOutput(value, to));
         // Connect it.
-        t.addInput(prevOut).setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+        t.addInput(prevTx.build(), 0);
         // Fake signature.
-        // Serialize/deserialize to ensure internal state is stripped, as if it had been read from the wire.
-        return roundTripTransaction(params, t);
+        return t.build();
     }
-*/
+
 
     /**
      * Create a fake TX for unit tests, for use with unit tests that need greater control. One outputs, 2 random inputs,
@@ -125,8 +115,8 @@ public class FakeTxBuilder {
      */
 
     public static Transaction createFakeTxWithoutChangeAddress(NetworkParameters params, Coin value, CashAddress to) {
-        Transaction t = new Transaction(params);
-        TransactionOutput outputToMe = new TransactionOutput(params, t, value, to);
+        TransactionBuilder t = new TransactionBuilder();
+        TransactionOutput outputToMe = new TransactionOutput(value, to);
         t.addOutput(outputToMe);
 
         // Make a random split in the output value so we get a distinct hash when we call this multiple times with same args
@@ -139,21 +129,22 @@ public class FakeTxBuilder {
 
         // Make a previous tx simply to send us sufficient coins. This prev tx is not really valid but it doesn't
         // matter for our purposes.
-        Transaction prevTx1 = new Transaction(params);
-        TransactionOutput prevOut1 = new TransactionOutput(params, prevTx1, Coin.Companion.valueOf(split), to);
+        TransactionBuilder prevTx1 = new TransactionBuilder();
+        TransactionOutput prevOut1 = new TransactionOutput(Coin.Companion.valueOf(split), to);
         prevTx1.addOutput(prevOut1);
         // Connect it.
-        t.addInput(prevOut1); // TODO: removed .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+//        t.addInput(prevOut1); // TODO: removed .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+        t.addInput(prevTx1.build(), 0); // TODO: removed .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
         // Fake signature.
 
         // Do it again
-        Transaction prevTx2 = new Transaction(params);
-        TransactionOutput prevOut2 = new TransactionOutput(params, prevTx2, Coin.Companion.valueOf(value.getValue() - split), to);
+        TransactionBuilder prevTx2 = new TransactionBuilder();
+        TransactionOutput prevOut2 = new TransactionOutput(Coin.Companion.valueOf(value.getValue() - split), to);
         prevTx2.addOutput(prevOut2);
-        t.addInput(prevOut2); // TODO: removed  .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+//        t.addInput(prevOut2); // TODO: removed  .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
+        t.addInput(prevTx2.build(), 0); // TODO: removed  .setScriptSig(ScriptBuilder.createInputScript(TransactionSignature.dummy()));
 
-        // Serialize/deserialize to ensure internal state is stripped, as if it had been read from the wire.
-        return roundTripTransaction(params, t);
+        return t.build();
     }
 
 
@@ -183,7 +174,6 @@ public class FakeTxBuilder {
         prevTx.addOutput(prevOut);
         // Connect it.
         t.addInput(prevOut);
-        // Serialize/deserialize to ensure internal state is stripped, as if it had been read from the wire.
         return roundTripTransaction(params, t);
     }
 */
@@ -220,23 +210,6 @@ public class FakeTxBuilder {
         return new Transaction[]{roundTripTransaction(params, prevTx), roundTripTransaction(params,t)};
     }
 */
-
-    /**
-     * Roundtrip a transaction so that it appears as if it has just come from the wire
-     */
-    public static Transaction roundTripTransaction(NetworkParameters params, Transaction tx) {
-        return tx;
-/*
-        try {
-            MessageSerializer bs = params.getDefaultSerializer();
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            bs.serialize(tx, bos);
-            return (Transaction) bs.deserialize(ByteBuffer.wrap(bos.toByteArray()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);   // Should not happen.
-        }
-*/
-    }
 
     public static class DoubleSpends {
         public Transaction t1, t2, prevTx;

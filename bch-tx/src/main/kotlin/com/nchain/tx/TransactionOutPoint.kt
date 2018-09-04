@@ -25,19 +25,19 @@ import org.bitcoinj.script.ProtocolException
 import java.io.IOException
 import java.io.OutputStream
 import java.util.*
+import javax.annotation.concurrent.ThreadSafe
 
 /**
  *
- * This message is a reference or pointer to an output of a different transaction.
+ * Reference or pointer to an output of a different transaction.
  *
- *
- * Instances of this class are not safe for use by multiple threads.
+ * Instances of this class are thread safe.
  */
+@ThreadSafe
 class TransactionOutPoint
     @JvmOverloads
     constructor(
-            val params: NetworkParameters,
-            var index: Long, // TODO: inmutable!!
+            val index: Long,
             val hash: Sha256Hash,
             val connectedOutput:TransactionOutput? = null) {
 
@@ -46,36 +46,31 @@ class TransactionOutPoint
     companion object {
         const val MESSAGE_LENGTH = 36
         // Magic outpoint index that indicates the input is in fact unconnected.
-        const val UNCONNECTED = 0xFFFFFFFFL
+        const val UNCONNECTED_INDEX = 0xFFFFFFFFL
 
-        @JvmStatic fun createUnconnected(params: NetworkParameters): TransactionOutPoint {
-            return TransactionOutPoint(params, UNCONNECTED, Sha256Hash.ZERO_HASH)
-        }
+        @JvmStatic
+        val UNCONNECTED = TransactionOutPoint(UNCONNECTED_INDEX, Sha256Hash.ZERO_HASH)
 
-        @JvmStatic fun create(params: NetworkParameters, index:Long, fromTx: Transaction): TransactionOutPoint {
-            return TransactionOutPoint(params, index, fromTx.hash, fromTx.getOutput(index))
-        }
-
-        @JvmStatic fun create(params: NetworkParameters, connectedOutput: TransactionOutput) : TransactionOutPoint {
-            return TransactionOutPoint(params, connectedOutput.index.toLong(), connectedOutput.parentTransaction!!.hash, connectedOutput)
+        @JvmStatic fun create(index:Long, fromTx: Transaction): TransactionOutPoint {
+            return TransactionOutPoint(index, fromTx.hash, fromTx.getOutput(index))
         }
 
         @Throws(ProtocolException::class)
-        @JvmStatic fun parse(params: NetworkParameters, payload: ByteArray, offset: Int = 0): TransactionOutPoint {
-            return parse(params, MessageReader(payload, offset))
+        @JvmStatic fun parse(payload: ByteArray, offset: Int = 0): TransactionOutPoint {
+            return parse(MessageReader(payload, offset))
         }
 
         @Throws(ProtocolException::class)
-        @JvmStatic fun parse(params: NetworkParameters, reader: MessageReader): TransactionOutPoint {
+        @JvmStatic fun parse(reader: MessageReader): TransactionOutPoint {
             val offset = reader.cursor
             val hash = reader.readHash()
             val index = reader.readUint32()
             check(MESSAGE_LENGTH == reader.cursor - offset)
-            return TransactionOutPoint(params, index, hash, null)
+            return TransactionOutPoint(index, hash, null)
         }
     }
 
-
+    val isUnconnected:Boolean = index == UNCONNECTED_INDEX
 
     /**
      * Returns the pubkey script from the connected output.
@@ -156,8 +151,8 @@ class TransactionOutPoint
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        if (o == null || o !is TransactionOutPoint) return false
-        return index == o.index && hash == o.hash
+        return if (o == null || o !is TransactionOutPoint) false
+        else index == o.index && hash == o.hash
     }
 
     override fun hashCode(): Int {

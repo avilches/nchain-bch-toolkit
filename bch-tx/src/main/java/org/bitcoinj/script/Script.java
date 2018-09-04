@@ -2054,8 +2054,8 @@ public class Script {
                     // Signature is well-structured, but it can still be Empty, so we control that situations...
                     if (sigsCopy.getFirst().length > 0) {
                         sig = TransactionSignature.decodeFromBitcoin(sigsCopy.getFirst(), requireCanonical);
-                        Sha256Hash hash = sig.useForkId() ?
-                                new TransactionSignatureBuilder(txContainingThis).hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay(), verifyFlags) :
+                        Sha256Hash hash = /*sig.useForkId() ?
+                                new TransactionSignatureBuilder(txContainingThis).hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay(), verifyFlags) :*/
                                 new TransactionSignatureBuilder(txContainingThis).hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
                         if (ECKeySigner.verify(hash.getBytes(), sig.signature, pubKey))
                             sigsCopy.pollFirst();
@@ -2150,14 +2150,14 @@ public class Script {
         LinkedList<byte[]> stack = new LinkedList<byte[]>();
         LinkedList<byte[]> p2shStack = null;
 
-//        executeScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags);
-        executeDebugScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags, new InteractiveScriptStateListener());
+        executeScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags);
+//        executeDebugScript(txContainingThis, scriptSigIndex, this, stack, value, verifyFlags, new InteractiveScriptStateListener());
 
         if (verifyFlags.contains(VerifyFlag.P2SH))
             p2shStack = new LinkedList<byte[]>(stack);
 
-//        executeScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags);
-        executeDebugScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags, new InteractiveScriptStateListener());
+        executeScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags);
+//        executeDebugScript(txContainingThis, scriptSigIndex, scriptPubKey, stack, value, verifyFlags, new InteractiveScriptStateListener());
 
         if (stack.isEmpty())
             throw new ScriptException(ScriptError.SCRIPT_ERR_EVAL_FALSE, "script evaluated false");

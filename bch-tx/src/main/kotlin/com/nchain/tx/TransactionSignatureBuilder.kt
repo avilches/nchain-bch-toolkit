@@ -5,13 +5,10 @@ import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.UnsafeByteArrayOutputStream
-import com.nchain.tx.Coin
-import com.nchain.tx.Transaction
-import com.nchain.tx.TransactionOutput
+import com.nchain.tx.*
 import org.bitcoinj.script.Script
 import org.bitcoinj.script.ScriptOpCodes
 import org.bitcoinj.tx.TransactionSignature
-import org.spongycastle.crypto.params.KeyParameter
 import java.io.IOException
 import java.math.BigInteger
 import java.util.ArrayList
@@ -23,7 +20,7 @@ import kotlin.experimental.and
  */
 
 
-class TransactionSignatureBuilder(val transaction: Transaction) {
+class TransactionSignatureBuilder(val tx: Transaction) {
 
 
     /**
@@ -215,89 +212,27 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
      * See transaction c99c49da4c38af669dea436d3e73780dfdb6c1ecf9958baa52960e8baee30e73, which has sigHashType 0
      */
     fun hashForSignature(inputIndex: Int, connectedScript: ByteArray, sigHashType: Byte): Sha256Hash? {
-        var connectedScript = connectedScript
         // The SIGHASH flags are used in the design of contracts, please see this page for a further understanding of
         // the purposes of the code in this method:
         //
         //   https://en.bitcoin.it/wiki/Contracts
-
         try {
 
-            // TODO WARNING! this must be inmutbale. So, instead of clone, create new objects
-            // Create a copy of this transaction to operate upon because we need make changes to the inputs and outputs.
-            // It would not be thread-safe to change the attributes of the transaction object itself.
-            val transaction = transaction.clone()
+            if (sigHashType and 0x1f == Transaction.SigHash.SINGLE.value.toByte() &&
+                    inputIndex >= tx.outputs.size) {
+                // The input index is beyond the number of outputs, it's a buggy signature made by a broken
+                // Bitcoin implementation. Bitcoin Core also contains a bug in handling this case:
+                // any transaction output that is signed in this case will result in both the signed output
+                // and any future outputs to this public key being steal-able by anyone who has
+                // the resulting signature and the public key (both of which are part of the signed tx input).
 
-            // Clear input scripts in preparation for signing. If we're signing a fresh
-            // transaction that step isn't very helpful, but it doesn't add much cost relative to the actual
-            // EC math so we'll do it anyway.
-            val inputs = transaction.getInputs()
-            for (i in inputs.indices) {
-                // TODO WARNING! this mus be inmutbale
-                inputs[i].clearScriptBytes()
+                // Bitcoin Core's bug is that SignatureHash was supposed to return a hash and on this codepath it
+                // actually returns the constant "1" to indicate an error, which is never checked for. Oops.
+                return Sha256Hash.wrap("0100000000000000000000000000000000000000000000000000000000000000")
             }
 
-            // This step has no purpose beyond being synchronized with Bitcoin Core's bugs. OP_CODESEPARATOR
-            // is a legacy holdover from a previous, broken design of executing scripts that shipped in Bitcoin 0.1.
-            // It was seriously flawed and would have let anyone take anyone elses money. Later versions switched to
-            // the design we use today where scripts are executed independently but share a stack. This left the
-            // OP_CODESEPARATOR instruction having no purpose as it was only meant to be used internally, not actually
-            // ever put into scripts. Deleting OP_CODESEPARATOR is a step that should never be required but if we don't
-            // do it, we could split off the main chain.
-            connectedScript = Script.removeAllInstancesOfOp(connectedScript, ScriptOpCodes.OP_CODESEPARATOR)
-
-            // Set the input to the script of its output. Bitcoin Core does this but the step has no obvious purpose as
-            // the signature covers the hash of the prevout transaction which obviously includes the output script
-            // already. Perhaps it felt safer to him in some way, or is another leftover from how the code was written.
-            val input = inputs[inputIndex]
-            // TODO WARNING! this mus be inmutbale
-//            input.setScriptBytes(connectedScript)
-            input.scriptBytes = connectedScript
-
-            if (sigHashType and 0x1f == Transaction.SigHash.NONE.value.toByte()) {
-                // SIGHASH_NONE means no outputs are signed at all - the signature is effectively for a "blank cheque".
-                transaction.clearOutputs()
-                // The signature isn't broken by new versions of the transaction issued by other parties.
-                for (i in inputs.indices)
-                    if (i != inputIndex)
-                        inputs[i].sequenceNumber = 0
-            } else if (sigHashType and 0x1f == Transaction.SigHash.SINGLE.value.toByte()) {
-                // SIGHASH_SINGLE means only sign the output at the same index as the input (ie, my output).
-                if (inputIndex >= transaction.getOutputs().size) {
-                    // The input index is beyond the number of outputs, it's a buggy signature made by a broken
-                    // Bitcoin implementation. Bitcoin Core also contains a bug in handling this case:
-                    // any transaction output that is signed in this case will result in both the signed output
-                    // and any future outputs to this public key being steal-able by anyone who has
-                    // the resulting signature and the public key (both of which are part of the signed tx input).
-
-                    // Bitcoin Core's bug is that SignatureHash was supposed to return a hash and on this codepath it
-                    // actually returns the constant "1" to indicate an error, which is never checked for. Oops.
-                    return Sha256Hash.wrap("0100000000000000000000000000000000000000000000000000000000000000")
-                }
-                // In SIGHASH_SINGLE the outputs after the matching input index are deleted, and the outputs before
-                // that position are "nulled out". Unintuitively, the value in a "null" transaction is set to -1.
-                val outputs = ArrayList(transaction.getOutputs().subList(0, inputIndex + 1))
-                for (i in 0 until inputIndex)
-                    outputs!![i] = TransactionOutput(transaction.params!!, transaction, Coin.NEGATIVE_SATOSHI, byteArrayOf())
-                // The signature isn't broken by new versions of the transaction issued by other parties.
-                for (i in inputs.indices)
-                    if (i != inputIndex)
-                    // TODO WARNING! this mus be inmutbale
-                        inputs[i].sequenceNumber = 0
-                transaction.clearOutputs()
-                outputs.forEach { transaction.addOutput(it) }
-            }
-
-            if (sigHashType and Transaction.SigHash.ANYONECANPAY.value.toByte() == Transaction.SigHash.ANYONECANPAY.value.toByte()) {
-                // SIGHASH_ANYONECANPAY means the signature in the input is not broken by changes/additions/removals
-                // of other inputs. For example, this is useful for building assurance contracts.
-                transaction.clearInputs()
-                transaction.addInput(input)
-            }
-
-//            val bos = UnsafeByteArrayOutputStream(if (transaction.length == Message.UNKNOWN_LENGTH) 256 else transaction.length + 4)
             val bos = UnsafeByteArrayOutputStream()
-            transaction.bitcoinSerializeToStream(bos)
+            prepareTransactionForSigning(inputIndex, connectedScript, sigHashType).bitcoinSerializeToStream(bos)
             // We also have to write a hash type (sigHashType is actually an unsigned char)
             ByteUtils.uint32ToByteStreamLE((0x000000ff and sigHashType.toInt()).toLong(), bos)
             // Note that this is NOT reversed to ensure it will be signed correctly. If it were to be printed out
@@ -309,7 +244,65 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
         } catch (e: IOException) {
             throw RuntimeException(e)  // Cannot happen.
         }
+    }
 
+    fun prepareTransactionForSigning(inputIndex: Int, connectedScript: ByteArray, sigHashType: Byte): Transaction {
+        val tb = TransactionBuilder(tx)
+        val inputs = tb.inputs
+        for (i in inputs.indices) {
+            if (i == inputIndex) {
+                // This step has no purpose beyond being synchronized with Bitcoin Core's bugs. OP_CODESEPARATOR
+                // is a legacy holdover from a previous, broken design of executing scripts that shipped in Bitcoin 0.1.
+                // It was seriously flawed and would have let anyone take anyone elses money. Later versions switched to
+                // the design we use today where scripts are executed independently but share a stack. This left the
+                // OP_CODESEPARATOR instruction having no purpose as it was only meant to be used internally, not actually
+                // ever put into scripts. Deleting OP_CODESEPARATOR is a step that should never be required but if we don't
+                // do it, we could split off the main chain.
+                val cleanConnectedScript = Script.removeAllInstancesOfOp(connectedScript, ScriptOpCodes.OP_CODESEPARATOR)
+
+                // Set the input to the script of its output. Bitcoin Core does this but the step has no obvious purpose as
+                // the signature covers the hash of the prevout transaction which obviously includes the output script
+                // already. Perhaps it felt safer to him in some way, or is another leftover from how the code was written.
+                inputs[i] = TransactionInput(cleanConnectedScript, inputs[i].outpoint, inputs[i].sequenceNumber);
+            } else {
+                // Clear input scripts in preparation for signing. If we're signing a fresh
+                // transaction that step isn't very helpful, but it doesn't add much cost relative to the actual
+                // EC math so we'll do it anyway.
+                inputs[i] = TransactionInput(ByteUtils.EMPTY_BYTE_ARRAY, inputs[i].outpoint, inputs[i].sequenceNumber);
+            }
+        }
+
+        if (sigHashType and 0x1f == Transaction.SigHash.NONE.value.toByte()) {
+            // SIGHASH_NONE means no outputs are signed at all - the signature is effectively for a "blank cheque".
+            tb.clearOutputs()
+            // The signature isn't broken by new versions of the transaction issued by other parties.
+            for (i in inputs.indices)
+                if (i != inputIndex) {
+                    inputs[i] = TransactionInput(inputs[i].scriptBytes, inputs[i].outpoint, 0L);
+                }
+
+        } else if (sigHashType and 0x1f == Transaction.SigHash.SINGLE.value.toByte()) {
+            // In SIGHASH_SINGLE the outputs after the matching input index are deleted, and the outputs before
+            // that position are "nulled out". Unintuitively, the value in a "null" transaction is set to -1.
+            val outputs = ArrayList(tb.outputs.subList(0, inputIndex + 1))
+            for (i in 0 until inputIndex)
+                outputs[i] = TransactionOutput(Coin.NEGATIVE_SATOSHI, byteArrayOf())
+            // The signature isn't broken by new versions of the transaction issued by other parties.
+            for (i in inputs.indices)
+                if (i != inputIndex)
+                    inputs[i] = TransactionInput(inputs[i].scriptBytes, inputs[i].outpoint, 0L)
+
+            tb.clearOutputs().addOutputs(outputs)
+        }
+
+        if (sigHashType and Transaction.SigHash.ANYONECANPAY.value.toByte() == Transaction.SigHash.ANYONECANPAY.value.toByte()) {
+            // SIGHASH_ANYONECANPAY means the signature in the input is not broken by changes/additions/removals
+            // of other inputs. For example, this is useful for building assurance contracts.
+            val input = inputs[inputIndex]
+            tb.clearInputs().addInput(input)
+        }
+
+        return tb.build()
     }
 
     /**
@@ -377,53 +370,53 @@ class TransactionSignatureBuilder(val transaction: Transaction) {
 
             if (!anyoneCanPay) {
                 val bosHashPrevouts = UnsafeByteArrayOutputStream(256)
-                for (i in transaction.getInputs().indices) {
-                    bosHashPrevouts.write(transaction.getInputs()[i].outpoint!!.hash!!.reversedBytes)
-                    ByteUtils.uint32ToByteStreamLE(transaction.getInputs()[i].outpoint!!.index, bosHashPrevouts)
+                for (i in tx.inputs.indices) {
+                    bosHashPrevouts.write(tx.inputs[i].outpoint!!.hash!!.reversedBytes)
+                    ByteUtils.uint32ToByteStreamLE(tx.inputs[i].outpoint!!.index, bosHashPrevouts)
                 }
                 hashPrevouts = Sha256Hash.hashTwice(bosHashPrevouts.toByteArray())
             }
 
             if (!anyoneCanPay && type != Transaction.SigHash.SINGLE && type != Transaction.SigHash.NONE) {
                 val bosSequence = UnsafeByteArrayOutputStream(256)
-                for (i in transaction.getInputs().indices) {
-                    ByteUtils.uint32ToByteStreamLE(transaction.getInputs()[i].sequenceNumber, bosSequence)
+                for (i in tx.inputs.indices) {
+                    ByteUtils.uint32ToByteStreamLE(tx.inputs[i].sequenceNumber, bosSequence)
                 }
                 hashSequence = Sha256Hash.hashTwice(bosSequence.toByteArray())
             }
 
             if (type != Transaction.SigHash.SINGLE && type != Transaction.SigHash.NONE) {
                 val bosHashOutputs = UnsafeByteArrayOutputStream(256)
-                for (i in transaction.getOutputs().indices) {
+                for (i in tx.outputs.indices) {
                     ByteUtils.uint64ToByteStreamLE(
-                            BigInteger.valueOf(transaction.getOutputs()[i].getValue().value),
+                            BigInteger.valueOf(tx.outputs[i].value.value),
                             bosHashOutputs
                     )
-                    bosHashOutputs.write(VarInt(transaction.getOutputs()[i].scriptBytes!!.size.toLong()).encode())
-                    bosHashOutputs.write(transaction.getOutputs()[i].scriptBytes!!)
+                    bosHashOutputs.write(VarInt(tx.outputs[i].scriptBytes.size.toLong()).encode())
+                    bosHashOutputs.write(tx.outputs[i].scriptBytes)
                 }
                 hashOutputs = Sha256Hash.hashTwice(bosHashOutputs.toByteArray())
-            } else if (type == Transaction.SigHash.SINGLE && inputIndex < transaction.getOutputs().size) {
+            } else if (type == Transaction.SigHash.SINGLE && inputIndex < tx.outputs.size) {
                 val bosHashOutputs = UnsafeByteArrayOutputStream(256)
                 ByteUtils.uint64ToByteStreamLE(
-                        BigInteger.valueOf(transaction.getOutputs()[inputIndex].getValue().value),
+                        BigInteger.valueOf(tx.outputs[inputIndex].value.value),
                         bosHashOutputs
                 )
-                bosHashOutputs.write(VarInt(transaction.getOutputs()[inputIndex].scriptBytes!!.size.toLong()).encode())
-                bosHashOutputs.write(transaction.getOutputs()[inputIndex].scriptBytes!!)
+                bosHashOutputs.write(VarInt(tx.outputs[inputIndex].scriptBytes.size.toLong()).encode())
+                bosHashOutputs.write(tx.outputs[inputIndex].scriptBytes)
                 hashOutputs = Sha256Hash.hashTwice(bosHashOutputs.toByteArray())
             }
-            ByteUtils.uint32ToByteStreamLE(transaction.version, bos)
+            ByteUtils.uint32ToByteStreamLE(tx.version, bos)
             bos.write(hashPrevouts)
             bos.write(hashSequence)
-            bos.write(transaction.getInputs()[inputIndex].outpoint!!.hash!!.reversedBytes)
-            ByteUtils.uint32ToByteStreamLE(transaction.getInputs()[inputIndex].outpoint!!.index, bos)
+            bos.write(tx.inputs[inputIndex].outpoint!!.hash!!.reversedBytes)
+            ByteUtils.uint32ToByteStreamLE(tx.inputs[inputIndex].outpoint!!.index, bos)
             bos.write(VarInt(connectedScript.size.toLong()).encode())
             bos.write(connectedScript)
             ByteUtils.uint64ToByteStreamLE(BigInteger.valueOf(prevValue.value), bos)
-            ByteUtils.uint32ToByteStreamLE(transaction.getInputs()[inputIndex].sequenceNumber, bos)
+            ByteUtils.uint32ToByteStreamLE(tx.inputs[inputIndex].sequenceNumber, bos)
             bos.write(hashOutputs)
-            ByteUtils.uint32ToByteStreamLE(transaction.getLockTime(), bos)
+            ByteUtils.uint32ToByteStreamLE(tx.lockTime, bos)
             ByteUtils.uint32ToByteStreamLE(nSigHashType.toLong(), bos)
         } catch (e: IOException) {
             throw RuntimeException(e)  // Cannot happen.

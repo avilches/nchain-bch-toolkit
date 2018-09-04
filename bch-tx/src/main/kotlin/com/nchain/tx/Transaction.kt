@@ -17,28 +17,21 @@
 
 package com.nchain.tx
 
-import com.nchain.address.CashAddress
-import com.nchain.bitcoinkt.core.TransactionSignatureBuilder
-import com.nchain.key.ECKey
-import org.slf4j.LoggerFactory
-import java.util.*
-
-import com.nchain.shared.VerificationException
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
+import com.nchain.shared.VerificationException
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.HEX
-import com.nchain.tools.MessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
-import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
-import org.bitcoinj.script.ScriptBuilder
 import org.bitcoinj.script.ScriptException
-import org.bitcoinj.tx.TransactionSignature
+import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.io.OutputStream
 import java.math.BigInteger
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  *
@@ -60,38 +53,76 @@ import java.math.BigInteger
  *
  * Instances of this class are not safe for use by multiple threads.
  */
-class Transaction(val params:NetworkParameters) {
+class Transaction(val version: Long = 0L,
+                  val lockTime: Long = 1L,
+                  inputs:List<TransactionInput>? = null,
+                  outputs: List<TransactionOutput>? = null) {
 
-    // These are bitcoinkt serialized.
-    var version: Long = 1
-        private set
-    private var inputs: MutableList<TransactionInput> = mutableListOf()
-    private var outputs: MutableList<TransactionOutput> = mutableListOf()
+    private var _hash: Sha256Hash? = null
+    private var _inputSum: Coin? = null
+    private var _outputSum: Coin? = null
+    private var _fee: Coin? = null
 
-    private var lockTime: Long = 0
+    val inputs: List<TransactionInput>
+    val outputs: List<TransactionOutput>
 
-    // This is either the time the transaction was broadcast as measured from the local clock, or the time from the
-    // block in which it was included. Note that this can be changed by re-orgs so the wallet may update this field.
-    // Old serialized transactions don't have this field, thus null is valid. It is used for returning an ordered
-    // list of transactions from a wallet, which is helpful for presenting to users.
-//    private var updatedAt: Date? = null
+    init {
+        this.inputs = if (inputs != null) Collections.unmodifiableList(inputs) else Collections.EMPTY_LIST as List<TransactionInput>
+        this.outputs = if (outputs != null) Collections.unmodifiableList(outputs) else Collections.EMPTY_LIST as List<TransactionOutput>
+    }
 
-    // This is an in memory helper only.
+    val hash: Sha256Hash
+        get() {
+            if (_hash == null) {
+                _hash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(bitcoinSerialize()))
+            }
+            return _hash!!
+        }
+
+    val hashAsString: String
+        get() = hash.toString()
+
     /**
-     * Returns the transaction hash as you see them in the block explorer.
+     * Gets the sum of the inputs, regardless of who owns them.
      */
-    /**
-     * Used by BitcoinSerializer.  The serializer has to calculate a hash for checksumming so to
-     * avoid wasting the considerable effort a set method is provided so the serializer can set it.
-     *
-     * No verification is performed on this hash.
-     */
-     val hash: Sha256Hash
-        get() = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(bitcoinSerialize()))
+    val inputSum: Coin
+        get() {
+            if (_inputSum == null) {
+                var inputSum = Coin.ZERO
+                for (input in inputs) {
+                    // TODO: improve it, don't use add, use LongMath.checkedAdd and create a Coin at the end
+                    if (input.connectedOutput?.value != null) {
+                        inputSum = inputSum.add(input.connectedOutput!!.value)
+                    }
+                }
+                _inputSum = inputSum
+            }
+            return _inputSum!!
+        }
+
+    val outputSum: Coin
+        get() {
+            if (_outputSum == null) {
+                var outputSum = Coin.ZERO
+                for (output in outputs) {
+                    outputSum = outputSum.add(output.value)
+                }
+                _outputSum = outputSum
+            }
+            return _outputSum!!
+        }
+
+    val fee: Coin
+        get() {
+            if (_fee == null) {
+                _fee = inputSum.subtract(outputSum)
+            }
+            return _fee!!
+        }
 
 
     // Data about how confirmed this tx is. Serialized, may be null.
-//    private var confidence: TransactionConfidence? = null
+    //    private var confidence: TransactionConfidence? = null
 
     // Records a map of which blocks the transaction has appeared in (keys) to an index within that block (values).
     // The "index" is not a real index, instead the values are only meaningful relative to each other. For example,
@@ -143,21 +174,6 @@ class Transaction(val params:NetworkParameters) {
      */
 //    var memo: String? = null
 
-    val hashAsString: String
-        get() = hash.toString()
-
-    /**
-     * Gets the sum of the inputs, regardless of who owns them.
-     */
-    val inputSum: Coin
-        get() {
-            var inputTotal = Coin.ZERO
-            for (input in inputs) {
-                inputTotal = inputTotal.add(input.value?:Coin.ZERO)
-            }
-
-            return inputTotal
-        }
 
     /**
      * Convenience wrapper around getConfidence().getConfidenceType()
@@ -166,28 +182,6 @@ class Transaction(val params:NetworkParameters) {
 //    val isPending: Boolean
 //        get() = getConfidence().getConfidenceType() == TransactionConfidence.ConfidenceType.PENDING
 
-    /**
-     * Gets the sum of the outputs of the transaction. If the outputs are less than the inputs, it does not count the fee.
-     * @return the sum of the outputs regardless of who owns them.
-     */
-    val outputSum: Coin
-        get() {
-            var totalOut = Coin.ZERO
-             for (output in outputs) {
-                totalOut = totalOut.add(output.getValue())
-             }
-
-            return totalOut
-        }
-
-    /*
-    fun getOutputSum: Coin{
-        var totalOut = Coin.ZERO
-        for (output in outputs){
-            totalOut = totalOut.add(output.getValue())
-        }
-        return totalOut
-    }*/
 //    private var cachedValue: Coin? = null
 //    private var cachedForBag: TransactionBag? = null
 
@@ -197,17 +191,6 @@ class Transaction(val params:NetworkParameters) {
      *
      * @return fee, or null if it cannot be determined
      */
-    val fee: Coin?
-        get() {
-            var fee = Coin.ZERO
-            for (input in inputs) {
-                if (input.value == null)
-                    return null
-                fee = fee.add(input.value!!)
-            }
-            fee = fee.subtract(outputSum)
-            return fee
-        }
 
     /**
      * Returns true if any of the outputs is marked as spent.
@@ -253,7 +236,7 @@ class Transaction(val params:NetworkParameters) {
         get() {
             var size = messageSize
             for (input in inputs) {
-                val benefit = 41 + Math.min(110, input.getScriptSig().listProgram().size)
+                val benefit = 41 + Math.min(110, input.scriptSig.listProgram().size)
                 if (size > benefit)
                     size -= benefit
             }
@@ -292,9 +275,9 @@ class Transaction(val params:NetworkParameters) {
         get() {
             var sigOps = 0
             for (input in inputs)
-                sigOps += Script.getSigOpCount(input.scriptBytes!!)
+                sigOps += Script.getSigOpCount(input.scriptBytes)
             for (output in outputs)
-                sigOps += Script.getSigOpCount(output.scriptBytes!!)
+                sigOps += Script.getSigOpCount(output.scriptBytes)
             return sigOps
         }
 
@@ -306,19 +289,16 @@ class Transaction(val params:NetworkParameters) {
      * To check if this transaction is final at a given height and time, see [Transaction.isFinal]
      *
      */
-/*
     val isTimeLocked: Boolean
         get() {
-            if (getLockTime() == 0L)
+            if (lockTime == 0L)
                 return false
-            for (input in getInputs())
+            for (input in inputs)
                 if (input.hasSequence())
                     return true
             return false
         }
-*/
 
-/*
     val isOpReturn: Boolean
         get() = opReturnData != null
 
@@ -333,8 +313,6 @@ class Transaction(val params:NetworkParameters) {
             }
             return null
         }
-
-*/
 
     /**
      * This enum describes the underlying reason the transaction was created. It's useful for rendering wallet GUIs
@@ -360,55 +338,6 @@ class Transaction(val params:NetworkParameters) {
         // and WalletProtobufSerializer.readTransaction()!
     }
 
-    constructor(params: NetworkParameters, bytes:ByteArray) : this(params) {
-        parse(bytes)
-    }
-
-    constructor(params: NetworkParameters, rawHex:String) : this(params) {
-        parse(HEX.decode(rawHex), 0)
-    }
-
-    /**
-     * Creates a transaction from the given serialized bytes, eg, from a block or a tx network message.
-     */
-//    @Throws(ProtocolException::class)
-//    constructor(params: NetworkParameters, payloadBytes: ByteArray) : super(params, payloadBytes, 0) {
-//    }
-
-    /**
-     * Creates a transaction by reading payload starting from offset bytes in. Length of a transaction is fixed.
-     */
-//    @Throws(ProtocolException::class)
-//    constructor(params: NetworkParameters, payload: ByteArray, offset: Int) : super(params, payload, offset) {
-//         inputs/outputs will be created in parse()
-//    }
-
-    /**
-     * Creates a transaction by reading payload starting from offset bytes in. Length of a transaction is fixed.
-     * @param params NetworkParameters object.
-     * @param payload Bitcoin protocol formatted byte array containing message content.
-     * @param offset The location of the first payload byte within the array.
-     * @param parseRetain Whether to retain the backing byte array for quick reserialization.
-     * If true and the backing byte array is invalidated due to modification of a field then
-     * the cached bytes may be repopulated and retained if the message is serialized again in the future.
-     * @param length The length of message if known.  Usually this is provided when deserializing of the wire
-     * as the length will be provided as part of the header.  If unknown then set to Message.UNKNOWN_LENGTH
-     * @throws ProtocolException
-     */
-//    @Throws(ProtocolException::class)
-//    constructor(params: NetworkParameters?, payload: ByteArray?, offset: Int, parent: Message?, setSerializer: MessageSerializer, length: Int) : super(params, payload, offset, parent, setSerializer, length) {
-//    }
-
-    /**
-     * Creates a transaction by reading payload. Length of a transaction is fixed.
-     */
-//    @Throws(ProtocolException::class)
-//    constructor(params: NetworkParameters, payload: ByteArray, parent: Message?, setSerializer: MessageSerializer, length: Int) : super(params, payload, 0, parent, setSerializer, length) {
-//    }
-
-    /**
-     * Calculates the sum of the outputs that are sending coins to a key in the wallet.
-     */
 /*
     fun getValueSentToMe(transactionBag: TransactionBag): Coin {
         // This is tested in WalletTest.
@@ -572,44 +501,6 @@ class Transaction(val params:NetworkParameters) {
         this.hash = null
     }
 */
-    @Throws(ProtocolException::class)
-    @JvmOverloads fun parse(payload: ByteArray, offset:Int = 0) {
-        val reader = MessageReader(payload, offset)
-
-        version = reader.readUint32()
-        var optimalEncodingMessageSize = 4
-
-        // First come the inputs.
-        val numInputs = reader.readVarInt()
-
-        optimalEncodingMessageSize += VarInt.sizeOf(numInputs)
-
-        inputs = ArrayList(numInputs.toInt())
-        for (i in 0 until numInputs) {
-            val input = TransactionInput.parse(params, reader)
-            inputs.add(input)
-            optimalEncodingMessageSize += input.length
-        }
-        // Now the outputs
-        val numOutputs = reader.readVarInt()
-        optimalEncodingMessageSize += VarInt.sizeOf(numOutputs)
-        outputs = ArrayList(numOutputs.toInt())
-        for (i in 0 until numOutputs) {
-            val output = TransactionOutput.parse(params, reader, this)
-            outputs.add(output)
-            val scriptLen = output.scriptBytes?.size?.toLong()?:0L
-            optimalEncodingMessageSize += (8 + VarInt.sizeOf(scriptLen).toLong() + scriptLen).toInt()
-        }
-        lockTime = reader.readUint32()
-        optimalEncodingMessageSize += 4
-        var length = reader.cursor - offset
-//        println(length)
-//        println(optimalEncodingMessageSize)
-        check(length == optimalEncodingMessageSize)
-        // es igual a optimalEncodingMessageSize?
-
-    }
-
 
 /*
     fun getOptimalEncodingMessageSize(): Int {
@@ -625,27 +516,29 @@ class Transaction(val params:NetworkParameters) {
      * @param chain If provided, will be used to estimate lock times (if set). Can be null.
      */
     override fun toString(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+
         val s = StringBuilder()
         s.append("  ").append(hashAsString).append('\n')
 //        if (updatedAt != null)
 //            s.append("  updated: ").append(Utils.dateTimeFormat(updatedAt as Date)).append('\n')
         if (version != 1L)
             s.append("  version ").append(version).append('\n')
-/*
+
         if (isTimeLocked) {
             s.append("  time locked until ")
             if (lockTime < LOCKTIME_THRESHOLD) {
                 s.append("block ").append(lockTime)
-                if (chain != null) {
-                    s.append(" (estimated to be reached at ")
-                            .append(Utils.dateTimeFormat(chain.estimateBlockTime(lockTime.toInt()))).append(')')
-                }
+//                if (chain != null) {
+//                    s.append(" (estimated to be reached at ")
+//                            .append(Utils.dateTimeFormat(chain.estimateBlockTime(lockTime.toInt()))).append(')')
+//                }
             } else {
-                s.append(Utils.dateTimeFormat(lockTime * 1000))
+                s.append(sdf.format(lockTime * 1000))
             }
             s.append('\n')
         }
-*/
         if (inputs.size == 0) {
             s.append("  INCOMPLETE: No inputs!\n")
             return s.toString()
@@ -654,8 +547,8 @@ class Transaction(val params:NetworkParameters) {
             var script: String
             var script2: String
             try {
-                script = inputs[0].getScriptSig().toString()
-                script2 = outputs[0].getScriptPubKey().toString()
+                script = inputs[0].scriptSig.toString()
+                script2 = outputs[0].scriptPubKey.toString()
             } catch (e: ScriptException) {
                 script = "???"
                 script2 = "???"
@@ -670,17 +563,17 @@ class Transaction(val params:NetworkParameters) {
             s.append("in   ")
 
             try {
-                val scriptSig = `in`.getScriptSig()
+                val scriptSig = `in`.scriptSig
                 s.append(scriptSig)
-                if (`in`.value != null)
-                    s.append(" ").append(`in`.value!!.toFriendlyString())
+                if (`in`.connectedOutput?.value != null)
+                    s.append(" ").append(`in`.connectedOutput!!.value.toFriendlyString())
                 s.append("\n          ")
                 s.append("outpoint:")
                 val outpoint = `in`.outpoint
                 s.append(outpoint!!.toString())
                 val connectedOutput = outpoint.connectedOutput
                 if (connectedOutput != null) {
-                    val scriptPubKey = connectedOutput.getScriptPubKey()
+                    val scriptPubKey = connectedOutput.scriptPubKey
                     if (scriptPubKey.isSentToAddress || scriptPubKey.isPayToScriptHash) {
                         s.append(" hash160:")
                         s.append(HEX.encode(scriptPubKey.pubKeyHash))
@@ -697,10 +590,10 @@ class Transaction(val params:NetworkParameters) {
             s.append("     ")
             s.append("out  ")
             try {
-                val scriptPubKey = out.getScriptPubKey()
+                val scriptPubKey = out.scriptPubKey
                 s.append(scriptPubKey)
                 s.append(" ")
-                s.append(out.getValue().toFriendlyString())
+                s.append(out.value.toFriendlyString())
 //                if (!out.isAvailableForSpending) {
 //                    s.append(" Spent")
 //                }
@@ -722,185 +615,7 @@ class Transaction(val params:NetworkParameters) {
         }
 //        if (purpose != null)
 //            s.append("     prps ").append(purpose).append('\n')
-        return s.toString()                   
-    }
-
-    /**
-     * Removes all the inputs from this transaction.
-     * Note that this also invalidates the length attribute
-     */
-    fun clearInputs() {
-//        unCache()
-//        for (input in inputs) {
-//            input.parent = null
-//        }
-        inputs.clear()
-        // You wanted to reserialize, right?
-//        this.length = this.unsafeBitcoinSerialize().size
-    }
-
-    /**
-     * Adds an input to this transaction that imports value from the given output. Note that this input is *not*
-     * complete and after every input is added with [.addInput] and every output is added with
-     * [.addOutput], a [TransactionSigner] must be used to finalize the transaction and finish the inputs
-     * off. Otherwise it won't be accepted by the network.
-     * @return the newly created input.
-     */
-    fun addInput(from: TransactionOutput): TransactionInput {
-        return addInput(TransactionInput.create(params, this, from))
-    }
-
-    /**
-     * Adds an input directly, with no checking that it's valid.
-     * @return the new input.
-     */
-    fun addInput(input: TransactionInput): TransactionInput {
-//        unCache()
-//        input.parent = this
-        inputs.add(input)
-//        adjustLength(inputs.size, input.length)
-        return input
-    }
-
-    /**
-     * Creates and adds an input to this transaction, with no checking that it's valid.
-     * @return the newly created input.
-     */
-    fun addInput(spendTxHash: Sha256Hash, outputIndex: Long, script: Script): TransactionInput {
-        return addInput(TransactionInput(params, this, script.listProgram(), TransactionOutPoint(params, outputIndex, spendTxHash)))
-    }
-
-    /**
-     * Adds a new and fully signed input for the given parameters. Note that this method is **not** thread safe
-     * and requires external synchronization. Please refer to general documentation on Bitcoin scripting and contracts
-     * to understand the values of sigHash and anyoneCanPay: otherwise you can use the other form of this method
-     * that sets them to typical defaults.
-     *
-     * @throws ScriptException if the scriptPubKey is not a pay to address or pay to pubkey script.
-     */
-    @Throws(ScriptException::class)
-    @JvmOverloads
-    fun addSignedInput(prevOut: TransactionOutPoint, scriptPubKey: Script, sigKey: ECKey,
-                       sigHash: SigHash = SigHash.ALL, anyoneCanPay: Boolean = false): TransactionInput {
-        // Verify the API user didn't try to do operations out of order.
-        check(!outputs.isEmpty(), {"Attempting to sign tx without outputs."})
-        val hash = TransactionSignatureBuilder(this).hashForSignature(inputs.size - 1, scriptPubKey, sigHash, anyoneCanPay)
-        val ecSig = sigKey.sign(hash)
-        val txSig = TransactionSignature(ecSig, sigHash, anyoneCanPay, false)
-        val scriptBytes = if (scriptPubKey.isSentToRawPubKey)
-            ScriptBuilder.createInputScript(txSig).listProgram()
-        else if (scriptPubKey.isSentToAddress)
-            ScriptBuilder.createInputScript(txSig, sigKey).listProgram()
-        else
-            throw ScriptException("Don't know how to sign for this kind of scriptPubKey: " + scriptPubKey)
-
-        val input = TransactionInput(params, this, scriptBytes, prevOut)
-        addInput(input)
-
-        return input
-    }
-
-
-    /**
-     * Adds a new and fully signed input for the given parameters. Note that this method is **not** thread safe
-     * and requires external synchronization. Please refer to general documentation on Bitcoin scripting and contracts
-     * to understand the values of sigHash and anyoneCanPay: otherwise you can use the other form of this method
-     * that sets them to typical defaults.
-     *
-     * @throws ScriptException if the scriptPubKey is not a pay to address or pay to pubkey script.
-     */
-/*
-    @Throws(ScriptException::class)
-    fun addSignedInput(prevOut: TransactionOutPoint, scriptPubKey: Script, sigKey: ECKey,
-                       sigHash: SigHash, anyoneCanPay: Boolean, forkId: Boolean): TransactionInput {
-        // Verify the API user didn't try to do operations out of order.
-        checkState(!outputs.isEmpty(), "Attempting to sign tx without outputs.")
-        val input = TransactionInput(params, this, byteArrayOf(), prevOut)
-        addInput(input)
-        val hash = if (forkId)
-            TransactionSignatureBuilder(this).hashForSignatureWitness(inputs.size - 1, scriptPubKey, prevOut.getConnectedOutput()!!.getValue(), sigHash, anyoneCanPay)
-        else
-            TransactionSignatureBuilder(this).hashForSignature(inputs.size - 1, scriptPubKey, sigHash, anyoneCanPay)
-
-        val ecSig = sigKey.sign(hash)
-        val txSig = TransactionSignature(ecSig, sigHash, anyoneCanPay, forkId)
-        if (scriptPubKey.isSentToRawPubKey)
-            input.setScriptSig( ScriptBuilder.createInputScript(txSig) )
-        else if (scriptPubKey.isSentToAddress)
-            input.setScriptSig( ScriptBuilder.createInputScript(txSig, sigKey) )
-        else
-            throw ScriptException("Don't know how to sign for this kind of scriptPubKey: " + scriptPubKey)
-        return input
-    }
-*/
-
-    /**
-     * Adds an input that points to the given output and contains a valid signature for it, calculated using the
-     * signing key.
-     */
-//    fun addSignedInput(output: TransactionOutput, signingKey: ECKey): TransactionInput {
-//        return addSignedInput(output.outPointFor, output.getScriptPubKey(), signingKey)
-//    }
-
-    /**
-     * Adds an input that points to the given output and contains a valid signature for it, calculated using the
-     * signing key.
-     */
-//    fun addSignedInput(output: TransactionOutput, signingKey: ECKey, sigHash: SigHash, anyoneCanPay: Boolean): TransactionInput {
-//        return addSignedInput(output.outPointFor, output.getScriptPubKey(), signingKey, sigHash, anyoneCanPay)
-//    }
-
-    /**
-     * Removes all the outputs from this transaction.
-     * Note that this also invalidates the length attribute
-     */
-    fun clearOutputs() {
-//        unCache()
-//        for (output in outputs) {
-//            output.parent =(null)
-//        }
-        outputs.clear()
-        // You wanted to reserialize, right?
-//        this.length = this.unsafeBitcoinSerialize().size
-    }
-
-    /**
-     * Adds the given output to this transaction. The output must be completely initialized. Returns the given output.
-     */
-    fun addOutput(to: TransactionOutput): TransactionOutput {
-//        unCache()
-//        to.parent = (this)
-        outputs.add(to)
-//        adjustLength(outputs.size, to.length)
-        return to
-    }
-
-    /**
-     * Creates an output based on the given address and value, adds it to this transaction, and returns the new output.
-     */
-    fun addOutput(value: Coin, address: CashAddress): TransactionOutput {
-        return addOutput(TransactionOutput(params, this, value, address))
-    }
-
-    /**
-     * Creates an output that pays to the given pubkey directly (no address) with the given value, adds it to this
-     * transaction, and returns the new output.
-     */
-    fun addOutput(value: Coin, pubkey: ECKey): TransactionOutput {
-        return addOutput(TransactionOutput(params, this, value, pubkey))
-    }
-
-    /**
-     * Creates an output that pays to the given script. The address and key forms are specialisations of this method,
-     * you won't normally need to use it unless you're doing unusual things.
-     */
-    fun addOutput(value: Coin, script: Script): TransactionOutput {
-        return addOutput(TransactionOutput(params, this, value, script.listProgram()))
-    }
-
-    fun addData(data:ByteArray): TransactionOutput {
-        val script = ScriptBuilder.createOpReturnScript(data)
-        return addOutput(TransactionOutput(params, this, Coin.ZERO, script.listProgram()))
+        return s.toString()
     }
 
 
@@ -927,54 +642,6 @@ class Transaction(val params:NetworkParameters) {
         ByteUtils.uint32ToByteStreamLE(lockTime, stream)
     }
 
-
-    /**
-     * Transactions can have an associated lock time, specified either as a block height or in seconds since the
-     * UNIX epoch. A transaction is not allowed to be confirmed by miners until the lock time is reached, and
-     * since Bitcoin 0.8+ a transaction that did not end its lock period (non final) is considered to be non
-     * standard and won't be relayed or included in the memory pool either.
-     */
-    fun getLockTime(): Long {
-        return lockTime
-    }
-
-    /**
-     * Transactions can have an associated lock time, specified either as a block height or in seconds since the
-     * UNIX epoch. A transaction is not allowed to be confirmed by miners until the lock time is reached, and
-     * since Bitcoin 0.8+ a transaction that did not end its lock period (non final) is considered to be non
-     * standard and won't be relayed or included in the memory pool either.
-     */
-    fun setLockTime(lockTime: Long) {
-//        unCache()
-        var seqNumSet = false
-        for (input in inputs) {
-            if (input.sequenceNumber != TransactionInput.NO_SEQUENCE) {
-                seqNumSet = true
-                break
-            }
-        }
-        if (lockTime != 0L && (!seqNumSet || inputs.isEmpty())) {
-            // At least one input must have a non-default sequence number for lock times to have any effect.
-            // For instance one of them can be set to zero to make this feature work.
-            log.warn("You are setting the lock time on a transaction but none of the inputs have non-default sequence numbers. This will not do what you expect!")
-        }
-        this.lockTime = lockTime
-    }
-
-    fun setVersion(version: Int) {
-        this.version = version.toLong()
-//        unCache()
-    }
-
-    /** Returns an unmodifiable view of all inputs.  */
-    fun getInputs(): List<TransactionInput> {
-        return Collections.unmodifiableList(inputs)
-    }
-
-    /** Returns an unmodifiable view of all outputs.  */
-    fun getOutputs(): List<TransactionOutput> {
-        return Collections.unmodifiableList(outputs)
-    }
 
     /**
      *
@@ -1112,10 +779,10 @@ class Transaction(val params:NetworkParameters) {
         }
         try {
             for (output in outputs) {
-                if (output.getValue().signum < 0)
+                if (output.value.signum < 0)
                 // getValue() can throw IllegalStateException
                     throw VerificationException.NegativeValueOutput()
-                valueOut = valueOut.add(output.getValue())
+                valueOut = valueOut.add(output.value)
                 if (valueOut.compareTo(MAX_MONEY) > 0)
                     throw IllegalArgumentException()
             }
@@ -1126,12 +793,26 @@ class Transaction(val params:NetworkParameters) {
         }
 
         if (isCoinBase) {
-            if (inputs[0].scriptBytes!!.size < 2 || inputs[0].scriptBytes!!.size > 100)
+            if (inputs[0].scriptBytes.size < 2 || inputs[0].scriptBytes.size > 100)
                 throw VerificationException.CoinbaseScriptSizeOutOfRange()
         } else {
             for (input in inputs)
                 if (input.isCoinBase)
                     throw VerificationException.UnexpectedCoinbaseInput()
+        }
+
+        var seqNumSet = false
+        for (input in inputs) {
+            if (input.sequenceNumber != TransactionInput.NO_SEQUENCE) {
+                seqNumSet = true
+                break
+            }
+        }
+        if (lockTime != 0L && (!seqNumSet || inputs.isEmpty())) {
+            // At least one input must have a non-default sequence number for lock times to have any effect.
+            // For instance one of them can be set to zero to make this feature work.
+            log.warn("You are setting the lock time on a transaction but none of the inputs have non-default sequence numbers. This will not do what you expect!")
+            // TODO: move to a method
         }
     }
 
@@ -1164,65 +845,42 @@ class Transaction(val params:NetworkParameters) {
     }
 */
 
-    fun clone():Transaction {
-        return Transaction(params, bitcoinSerialize())
-    }
-
     companion object {
 
-        @JvmStatic val MAX_MONEY = Coin.COIN.multiply(NetworkParameters.MAX_COINS)
+        @JvmStatic
+        val MAX_MONEY = Coin.COIN.multiply(NetworkParameters.MAX_COINS)
 
-        /**
-         * A comparator that can be used to sort transactions by their updateTime field. The ordering goes from most recent
-         * into the past.
-         */
-/*
-        val SORT_TX_BY_UPDATE_TIME: Comparator<Transaction> = Comparator { tx1, tx2 ->
-            val time1 = tx1.updateTime!!.time
-            val time2 = tx2.updateTime!!.time
-            val updateTimeComparison = -Longs.compare(time1, time2)
-            //If time1==time2, compare by tx hash to make comparator consistent with equals
-            if (updateTimeComparison != 0) updateTimeComparison else tx1.hash!!.compareTo(tx2.hash!!)
+        @JvmStatic
+        fun parse(bytes:ByteArray): Transaction {
+            return TransactionBuilder.parse(bytes).build()
         }
-*/
-        /** A comparator that can be used to sort transactions by their chain height.  */
-/*
-        val SORT_TX_BY_HEIGHT: Comparator<Transaction> = Comparator { tx1, tx2 ->
-            val confidence1 = tx1.getConfidence()
-            val height1 = if (confidence1.getConfidenceType() == ConfidenceType.BUILDING)
-                confidence1.getAppearedAtChainHeight()
-            else
-                Block.BLOCK_HEIGHT_UNKNOWN
-            val confidence2 = tx2.getConfidence()
-            val height2 = if (confidence2.getConfidenceType() == ConfidenceType.BUILDING)
-                confidence2.getAppearedAtChainHeight()
-            else
-                Block.BLOCK_HEIGHT_UNKNOWN
-            val heightComparison = -Ints.compare(height1, height2)
-            //If height1==height2, compare by tx hash to make comparator consistent with equals
-            if (heightComparison != 0) heightComparison else tx1.hash!!.compareTo(tx2.hash!!)
+
+        @JvmStatic
+        fun parse(rawHex:String) : Transaction {
+            return TransactionBuilder.parse(rawHex).build()
         }
-*/
-        private val log = LoggerFactory.getLogger(Transaction::class.java!!)
+
+        private val log = LoggerFactory.getLogger(Transaction::class.java)
 
         /** Threshold for lockTime: below this value it is interpreted as block number, otherwise as timestamp.  */
         const val LOCKTIME_THRESHOLD = 500000000 // Tue Nov  5 00:53:20 1985 UTC
+
         /** Same but as a BigInteger for CHECKLOCKTIMEVERIFY  */
         @JvmStatic val LOCKTIME_THRESHOLD_BIG = BigInteger.valueOf(LOCKTIME_THRESHOLD.toLong())
 
         /** How many bytes a transaction can be before it won't be relayed anymore. Currently 100kb.  */
-        const val MAX_STANDARD_TX_SIZE = 100000
+//        const val MAX_STANDARD_TX_SIZE = 100000
 
         /**
          * If feePerKb is lower than this, Bitcoin Core will treat it as if there were no fee.
          */
-        @JvmStatic val REFERENCE_DEFAULT_MIN_TX_FEE = Coin.valueOf(1000) // 0.01 mBTC
+//        @JvmStatic val REFERENCE_DEFAULT_MIN_TX_FEE = Coin.valueOf(1000) // 0.01 mBTC
 
         /**
          * If using this feePerKb, transactions will get confirmed within the next couple of blocks.
          * This should be adjusted from time to time. Last adjustment: March 2016.
          */
-        @JvmStatic val DEFAULT_TX_FEE = Coin.valueOf(5000) // 0.5 mBTC
+//        @JvmStatic val DEFAULT_TX_FEE = Coin.valueOf(5000) // 0.5 mBTC
 
         /**
          * Any standard (ie pay-to-address) output smaller than this value (in satoshis) will most likely be rejected by the network.
@@ -1231,55 +889,8 @@ class Transaction(val params:NetworkParameters) {
          */
         @JvmStatic val MIN_NONDUST_OUTPUT = Coin.valueOf(546) // satoshis
 
-        const val CURRENT_VERSION = 2
+//        const val CURRENT_VERSION = 2
 
 
-        protected fun calcLength(buf: ByteArray, offset: Int): Int {
-            var varint: VarInt
-            // jump past version (uint32)
-            var cursor = offset + 4
-
-            var i: Int
-            var scriptLen: Long
-
-            varint = VarInt(buf, cursor)
-            val txInCount = varint.value
-            cursor += varint.originalSizeInBytes
-
-            i = 0
-            while (i < txInCount) {
-                // 36 = length of previous_outpoint
-                cursor += 36
-                varint = VarInt(buf, cursor)
-                scriptLen = varint.value
-                // 4 = length of sequence field (unint32)
-                cursor += (scriptLen + 4 + varint.originalSizeInBytes.toLong()).toInt()
-                i++
-            }
-
-            varint = VarInt(buf, cursor)
-            val txOutCount = varint.value
-            cursor += varint.originalSizeInBytes
-
-            i = 0
-            while (i < txOutCount) {
-                // 8 = length of tx value field (uint64)
-                cursor += 8
-                varint = VarInt(buf, cursor)
-                scriptLen = varint.value
-                cursor += (scriptLen + varint.originalSizeInBytes).toInt()
-                i++
-            }
-            // 4 = length of lock_time field (uint32)
-            return cursor - offset + 4
-        }
     }
 }
-/**
- * Same as [.addSignedInput]
- * but defaults to [SigHash.ALL] and "false" for the anyoneCanPay flag. This is normally what you want.
- */
-/**
- * Returns the confidence object for this transaction from the [org.bitcoinj.core.TxConfidenceTable]
- * referenced by the implicit [Context].
- */

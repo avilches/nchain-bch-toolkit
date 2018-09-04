@@ -147,14 +147,15 @@ public class ScriptTest {
         ECKey key3 = DumpedPrivateKey.fromBase58(PARAMS, "cVHwXSPRZmL9adctwBwmn4oTZdZMbaCsR5XF6VznqMgcvt1FDDxg").getKey();
         Script multisigScript = ScriptBuilder.createMultiSigOutputScript(2, Arrays.asList(key1, key2, key3));
         byte[] bytes = HEX.decode("01000000013df681ff83b43b6585fa32dd0e12b0b502e6481e04ee52ff0fdaf55a16a4ef61000000006b483045022100a84acca7906c13c5895a1314c165d33621cdcf8696145080895cbf301119b7cf0220730ff511106aa0e0a8570ff00ee57d7a6f24e30f592a10cae1deffac9e13b990012102b8d567bcd6328fd48a429f9cf4b315b859a58fd28c5088ef3cb1d98125fc4e8dffffffff02364f1c00000000001976a91439a02793b418de8ec748dd75382656453dc99bcb88ac40420f000000000017a9145780b80be32e117f675d6e0ada13ba799bf248e98700000000");
-        Transaction transaction = new Transaction(PARAMS, bytes);
+        Transaction transaction = Transaction.parse(bytes);
         TransactionOutput output = transaction.getOutput(1);
-        Transaction spendTx = new Transaction(PARAMS);
+        TransactionBuilder spendTx = new TransactionBuilder();
+        spendTx.addInput(transaction, 1);
         CashAddress address = CashAddress.fromBase58(PARAMS, "n3CFiCmBXVt5d3HXKQ15EFZyhPz4yj5F3H");
         Script outputScript = ScriptBuilder.createOutputScript(address);
         spendTx.addOutput(output.getValue(), outputScript);
-        spendTx.addInput(output);
-        Sha256Hash sighash = new TransactionSignatureBuilder(spendTx).hashForSignature(0, multisigScript, Transaction.SigHash.ALL, false);
+        spendTx.addInput(transaction, 1);
+        Sha256Hash sighash = new TransactionSignatureBuilder(spendTx.build()).hashForSignature(0, multisigScript, Transaction.SigHash.ALL, false);
         ECKey.ECDSASignature party1Signature = key1.sign(sighash);
         ECKey.ECDSASignature party2Signature = key2.sign(sighash);
         TransactionSignature party1TransactionSignature = new TransactionSignature(party1Signature, Transaction.SigHash.ALL, false);
@@ -241,12 +242,12 @@ public class ScriptTest {
     @Test
     public void testOp0() {
         // Check that OP_0 doesn't NPE and pushes an empty stack frame.
-        Transaction tx = new Transaction(PARAMS);
-        tx.addInput(new TransactionInput(PARAMS, tx, new byte[] {}));
+        TransactionBuilder tx = new TransactionBuilder();
+        tx.addInput(new TransactionInput(new byte[] {}));
         Script script = new ScriptBuilder().smallNum(0).build();
 
         LinkedList<byte[]> stack = new LinkedList<byte[]>();
-        Script.executeScript(tx, 0, script, stack, Script.ALL_VERIFY_FLAGS);
+        Script.executeScript(tx.build(), 0, script, stack, Script.ALL_VERIFY_FLAGS);
         assertEquals("OP_0 push length", 0, stack.get(0).length);
     }
 
@@ -260,7 +261,7 @@ public class ScriptTest {
             Script scriptPubKey = parseScriptString(test.get(1).asText());
             Set<VerifyFlag> verifyFlags = parseVerifyFlags(test.get(2).asText());
             try {
-                scriptSig.correctlySpends(new Transaction(PARAMS), 0, scriptPubKey, verifyFlags);
+                scriptSig.correctlySpends(new Transaction(), 0, scriptPubKey, verifyFlags);
             } catch (ScriptException e) {
                 System.err.println(test);
                 System.err.flush();
@@ -278,7 +279,7 @@ public class ScriptTest {
                 Script scriptSig = parseScriptString(test.get(0).asText());
                 Script scriptPubKey = parseScriptString(test.get(1).asText());
                 Set<VerifyFlag> verifyFlags = parseVerifyFlags(test.get(2).asText());
-                scriptSig.correctlySpends(new Transaction(PARAMS), 0, scriptPubKey, verifyFlags);
+                scriptSig.correctlySpends(new Transaction(), 0, scriptPubKey, verifyFlags);
                 System.err.println(test);
                 System.err.flush();
                 fail();
@@ -295,7 +296,7 @@ public class ScriptTest {
             int index = input.get(1).asInt();
             String script = input.get(2).asText();
             Sha256Hash sha256Hash = Sha256Hash.wrap(HEX.decode(hash));
-            scriptPubKeys.put(new TransactionOutPoint(PARAMS, index, sha256Hash), parseScriptString(script));
+            scriptPubKeys.put(new TransactionOutPoint(index, sha256Hash), parseScriptString(script));
         }
         return scriptPubKeys;
     }
@@ -315,14 +316,17 @@ public class ScriptTest {
                 Map<TransactionOutPoint, Script> scriptPubKeys = parseScriptPubKeys(test.get(0));
                 System.err.println("#"+(x++)+" :"+test.get(0));
 
-                transaction = new Transaction(PARAMS, test.get(1).asText().toLowerCase());
+                transaction = Transaction.parse(test.get(1).asText().toLowerCase());
                 transaction.verify();
                 Set<VerifyFlag> verifyFlags = parseVerifyFlags(test.get(2).asText());
 
                 for (int i = 0; i < transaction.getInputs().size(); i++) {
                     TransactionInput input = transaction.getInputs().get(i);
-                    if (input.getOutpoint().getIndex() == 0xffffffffL)
-                        input.getOutpoint().setIndex(-1);
+                    if (input.getOutpoint().isUnconnected()) {
+                        input = new TransactionInput(input.getScriptBytes(), new TransactionOutPoint(-1, input.getOutpoint().getHash()));
+//                        transaction.getInputs().set(i, input);
+
+                    }
                     assertTrue(scriptPubKeys.containsKey(input.getOutpoint()));
                     input.getScriptSig().correctlySpends(transaction, i, scriptPubKeys.get(input.getOutpoint()),
                             verifyFlags);
@@ -350,7 +354,7 @@ public class ScriptTest {
             System.err.println("#"+(x++)+" :"+test.get(0));
             System.out.println(test.get(1).asText().toLowerCase());
 
-            Transaction transaction = new Transaction(PARAMS, test.get(1).asText().toLowerCase());
+            Transaction transaction = Transaction.parse(test.get(1).asText().toLowerCase());
             Set<VerifyFlag> verifyFlags = parseVerifyFlags(test.get(2).asText());
 
             boolean valid = true;
@@ -554,7 +558,7 @@ public class ScriptTest {
         LinkedList<byte[]> stack = new LinkedList<byte[]>();
         EnumSet<VerifyFlag> verifyFlags = EnumSet.noneOf(VerifyFlag.class);
         verifyFlags.add(VerifyFlag.MONOLITH_OPCODES);
-        Script.executeScript(new Transaction(PARAMS), 0, script, stack, Coin.getZERO(), verifyFlags);
+        Script.executeScript(new Transaction(), 0, script, stack, Coin.getZERO(), verifyFlags);
         return stack.peekLast();
     }
 

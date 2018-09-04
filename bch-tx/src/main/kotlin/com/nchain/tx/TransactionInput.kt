@@ -24,7 +24,6 @@ import java.io.OutputStream
 import java.lang.ref.WeakReference
 import java.util.Arrays
 
-import com.google.common.base.Preconditions.checkNotNull
 import com.nchain.shared.VerificationException
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
@@ -48,25 +47,53 @@ import org.bitcoinj.script.ScriptException
  */
 
 open class TransactionInput
-    @JvmOverloads constructor(val params: NetworkParameters,
-        val parentTransaction: Transaction?,
-        var scriptBytes: ByteArray?,
-        val outpoint: TransactionOutPoint = TransactionOutPoint.createUnconnected(params),
-        val value: Coin? = null,
-        var sequence: Long = NO_SEQUENCE) {
+
+    @JvmOverloads
+    constructor(val scriptBytes: ByteArray,
+                outpoint: TransactionOutPoint? = null,
+                sequenceNumber: Long? = null) {
 
     val length:Int
-    init {
-        length = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes?.size?.toLong()?:0) + scriptBytes!!.size?:1
-    }
+    val outpoint: TransactionOutPoint
 
+    /**
+     * Sequence numbers allow participants in a multi-party transaction signing protocol to create new versions of the
+     * transaction independently of each other. Newer versions of a transaction can replace an existing version that's
+     * in nodes memory pools if the existing version is time locked. See the Contracts page on the Bitcoin wiki for
+     * examples of how you can use this feature to build contract protocols.
+     */
+    val sequenceNumber: Long
+
+    init {
+        this.outpoint = if (outpoint != null) outpoint else TransactionOutPoint.UNCONNECTED;
+        this.sequenceNumber = if (sequenceNumber != null) sequenceNumber else NO_SEQUENCE
+        length = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes?.size?.toLong()?:0) + (scriptBytes.size?:1)
+    }
 
     // The "script bytes" might not actually be a script. In coinbase transactions where new coins are minted there
     // is no input transaction, so instead the scriptBytes contains some extra stuff (like a rollover nonce) that we
     // don't care about much. The bytes are turned into a Script object (cached below) on demand via a getter.
     // The Script object obtained from parsing scriptBytes. Only filled in on demand and if the transaction is not
     // coinbase.
-    private var scriptSig: WeakReference<Script>? = null
+    private var _scriptSig: WeakReference<Script>? = null
+
+    /**
+     * Returns the script that is fed to the referenced output (scriptPubKey) script in order to satisfy it: usually
+     * contains signatures and maybe keys, but can contain arbitrary data if the output script accepts it.
+     */
+    open val scriptSig:Script
+        @Throws(ScriptException::class)
+        get() {
+            // Transactions that generate new coins don't actually have a script. Instead this
+            // parameter is overloaded to be something totally different.
+            var script: Script? = if (_scriptSig == null) null else _scriptSig!!.get()
+            if (script == null) {
+                // can be null because is the first time (no WeakReference) or because the WeakReference is empty
+                script = Script(scriptBytes)
+                _scriptSig = WeakReference(script)
+            }
+            return script
+        }
 
     companion object {
         /** Magic sequence number that indicates there is no sequence number.  */
@@ -90,29 +117,33 @@ open class TransactionInput
         /**
          * Creates an UNSIGNED input that links to the given output
          */
-        fun create(params: NetworkParameters, parentTransaction: Transaction, output: TransactionOutput): TransactionInput {
-            val outputIndex = output.index.toLong()
-            val outpoint = if (output.parentTransaction != null) {
-                TransactionOutPoint.create(params, outputIndex, output.parentTransaction!!)
-            } else {
-                TransactionOutPoint.create(params, output)
-            }
-            val input = TransactionInput(params, parentTransaction, ByteUtils.EMPTY_BYTE_ARRAY, outpoint, output.getValue(), NO_SEQUENCE)
+        fun create(fromTx:Transaction, outputIndex: Long): TransactionInput {
+            val outpoint = TransactionOutPoint.create(outputIndex, fromTx)
+            val input = TransactionInput(ByteUtils.EMPTY_BYTE_ARRAY, outpoint, NO_SEQUENCE)
             check(input.length == 41)
             return input
         }
 
+/*
+        fun create(params: NetworkParameters,output: TransactionOutput): TransactionInput {
+            val outpoint = TransactionOutPoint.create(params, output)
+            val input = TransactionInput(params, ByteUtils.EMPTY_BYTE_ARRAY, outpoint, output.getValue(), NO_SEQUENCE)
+            check(input.length == 41)
+            return input
+        }
+*/
+
 
         @Throws(ProtocolException::class)
-        fun parse(params:NetworkParameters, payload:ByteArray, offset:Int = 0):TransactionInput {
-            return parse(params, MessageReader(payload, offset))
+        fun parse(payload:ByteArray, offset:Int = 0):TransactionInput {
+            return parse(MessageReader(payload, offset))
         }
 
         @Throws(ProtocolException::class)
-        fun parse(params:NetworkParameters, reader:MessageReader):TransactionInput {
+        fun parse(reader:MessageReader):TransactionInput {
             val offset = reader.cursor
 
-            val outpoint = TransactionOutPoint.parse(params, reader)
+            val outpoint = TransactionOutPoint.parse(reader)
 
             val scriptLen = reader.readVarInt().toInt()
             val length = reader.cursor - offset + scriptLen + 4
@@ -122,7 +153,7 @@ open class TransactionInput
             var otherLength = reader.cursor - offset
             check(otherLength == length)
             // es igual a length?
-            return TransactionInput(params, null, scriptBytes, outpoint, null, sequence)
+            return TransactionInput(scriptBytes, outpoint, sequence)
         }
     }
 
@@ -153,18 +184,9 @@ open class TransactionInput
         }
 */
 
-    /**
-     * Sequence numbers allow participants in a multi-party transaction signing protocol to create new versions of the
-     * transaction independently of each other. Newer versions of a transaction can replace an existing version that's
-     * in nodes memory pools if the existing version is time locked. See the Contracts page on the Bitcoin wiki for
-     * examples of how you can use this feature to build contract protocols.
-     */
-    var sequenceNumber: Long
-        get() = sequence
-        set(sequence) {
-//            unCache()
-            this.sequence = sequence
-        }
+    fun changeSequence(newSequence:Long):TransactionInput {
+        return TransactionInput(scriptBytes, outpoint, newSequence)
+    }
 
     /**
      * Returns the connected output, assuming the input was connected with
@@ -218,105 +240,18 @@ open class TransactionInput
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {
         outpoint.bitcoinSerializeToStream(stream)
-        stream.write(VarInt(scriptBytes!!.size.toLong()).encode())
-        stream.write(scriptBytes!!)
-        ByteUtils.uint32ToByteStreamLE(sequence, stream)
+        stream.write(VarInt(scriptBytes.size.toLong()).encode())
+        stream.write(scriptBytes)
+        ByteUtils.uint32ToByteStreamLE(sequenceNumber, stream)
     }
 
-    /**
-     * Returns the script that is fed to the referenced output (scriptPubKey) script in order to satisfy it: usually
-     * contains signatures and maybe keys, but can contain arbitrary data if the output script accepts it.
-     */
-    @Throws(ScriptException::class)
-    open fun getScriptSig(): Script {
-        // Transactions that generate new coins don't actually have a script. Instead this
-        // parameter is overloaded to be something totally different.
-        var script: Script? = if (scriptSig == null) null else scriptSig!!.get()
-        if (script == null) {
-            script = Script(scriptBytes!!)
-            scriptSig = WeakReference(script)
-        }
-        return script
-    }
-
-/*
-* Set the given program as the scriptSig that is supposed to satisfy the connected output script.
-
-    fun setScriptSig(scriptSig: Script) {
-        this.scriptSig = WeakReference(checkNotNull(scriptSig))
-        // TODO: This should all be cleaned up so we have a consistent internal representation.
-        setScriptBytes(scriptSig.listProgram())
-    }
-*/
-
-    /**
-     * The "script bytes" might not actually be a script. In coinbase transactions where new coins are minted there
-     * is no input transaction, so instead the scriptBytes contains some extra stuff (like a rollover nonce) that we
-     * don't care about much. The bytes are turned into a Script object (cached below) on demand via a getter.
-     * @return the scriptBytes
-     */
-/*
-    fun getScriptBytes(): ByteArray? {
-        return scriptBytes
-    }
-*/
-
-    // TODO no allow this
     /** Clear input scripts, e.g. in preparation for signing.  */
-    fun clearScriptBytes() {
-//        setScriptBytes(ByteUtils.EMPTY_BYTE_ARRAY)
-        scriptBytes = ByteUtils.EMPTY_BYTE_ARRAY
+    fun clearScriptBytes():TransactionInput {
+        return changeScriptBytes(ByteUtils.EMPTY_BYTE_ARRAY)
     }
 
-    /**
-     * @param scriptBytes the scriptBytes to set
-     */
-    // TODO: no allow this
-/*
-    fun setScriptBytes(scriptBytes: ByteArray?) {
-//        unCache()
-        this.scriptSig = null
-        val oldLength = length
-        this.scriptBytes = scriptBytes
-        // 40 = previous_outpoint (36) + sequence (4)
-        val newLength = 40 + if (scriptBytes == null) 1 else VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
-//        adjustLength(newLength - oldLength)
-    }
-*/
-
-    enum class ConnectionResult {
-        NO_SUCH_TX,
-        ALREADY_SPENT,
-        SUCCESS
-    }
-
-    // TODO: Clean all this up once TransactionOutPoint disappears.
-
-    /**
-     * Locates the referenced output from the given pool of transactions.
-     *
-     * @return The TransactionOutput or null if the transactions map doesn't contain the referenced tx.
-     */
-    internal fun getConnectedOutput(transactions: Map<Sha256Hash, Transaction>): TransactionOutput? {
-        val tx = transactions[outpoint.hash] ?: return null
-        return tx.getOutputs()[outpoint.index.toInt()]
-    }
-
-    /**
-     * Alias for getOutpoint().getConnectedRedeemData(keyBag)
-     * @see TransactionOutPoint.getConnectedRedeemData
-     */
-/*
-    @Throws(ScriptException::class)
-    fun getConnectedRedeemData(keyBag: KeyBag): RedeemData? {
-        return outpoint!!.getConnectedRedeemData(keyBag)
-    }
-*/
-
-
-    enum class ConnectMode {
-        DISCONNECT_ON_CONFLICT,
-        ABORT_ON_CONFLICT
+    fun changeScriptBytes(bytes:ByteArray):TransactionInput {
+        return TransactionInput(bytes, outpoint, sequenceNumber)
     }
 
     /**
@@ -399,7 +334,7 @@ open class TransactionInput
      * @return true if this transaction's sequence number is set (ie it may be a part of a time-locked transaction)
      */
     fun hasSequence(): Boolean {
-        return sequence != NO_SEQUENCE
+        return sequenceNumber != NO_SEQUENCE
     }
 
     /**
@@ -460,7 +395,7 @@ open class TransactionInput
 */
 
     override fun hashCode(): Int {
-        return Objects.hashCode(sequence, outpoint, Arrays.hashCode(scriptBytes))
+        return Objects.hashCode(sequenceNumber, outpoint, Arrays.hashCode(scriptBytes))
     }
 
     /**
@@ -472,8 +407,8 @@ open class TransactionInput
             if (isCoinBase) {
                 s.append(": COINBASE")
             } else {
-                s.append(" for [").append(outpoint).append("]: ").append(getScriptSig())
-                if (hasSequence()) s.append(" (sequence: " + java.lang.Long.toHexString(sequence) + ")")
+                s.append(" for [").append(outpoint).append("]: ").append(scriptSig)
+                if (hasSequence()) s.append(" (sequence: " + java.lang.Long.toHexString(sequenceNumber) + ")")
             }
             return s.toString()
         } catch (e: ScriptException) {
