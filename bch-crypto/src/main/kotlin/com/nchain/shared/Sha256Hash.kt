@@ -55,7 +55,8 @@ class Sha256Hash : Serializable, Comparable<Sha256Hash> {
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        return if (o == null || javaClass != o.javaClass) false else Arrays.equals(bytes, (o as Sha256Hash).bytes)
+        return if (o == null || o !is Sha256Hash) false
+        else Arrays.equals(bytes, o.bytes)
     }
 
     /**
@@ -93,6 +94,8 @@ class Sha256Hash : Serializable, Comparable<Sha256Hash> {
 
     companion object {
         val LENGTH = 32 // bytes
+
+        @JvmStatic
         val ZERO_HASH = wrap(ByteArray(LENGTH))
 
         /**
