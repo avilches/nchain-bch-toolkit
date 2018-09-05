@@ -20,9 +20,7 @@
 
 package com.nchain.tx
 
-import com.google.common.math.LongMath
-import com.google.common.primitives.Longs
-
+import com.nchain.tools.LongMath
 import java.io.Serializable
 import java.math.BigDecimal
 
@@ -164,7 +162,7 @@ class Coin private constructor(val value: Long): Comparable<Coin>, Serializable 
     }
 
     override fun compareTo(other: Coin): Int {
-        return Longs.compare(this.value, other.value)
+        return value.compareTo(other.value)
     }
 
     companion object {

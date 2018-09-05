@@ -17,9 +17,6 @@
 
 package com.nchain.tx
 
-import org.slf4j.*
-
-import com.google.common.base.Preconditions.*
 import com.nchain.address.CashAddress
 import com.nchain.key.ECKey
 import com.nchain.params.NetworkParameters
@@ -254,7 +251,6 @@ class TransactionOutput(val value: Coin = Coin.ZERO,
 
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {
-        checkNotNull<ByteArray>(scriptBytes)
         ByteUtils.int64ToByteStreamLE(value.value, stream)
         // TODO: Move script serialization into the Script class, where it belongs.
         stream.write(VarInt(scriptBytes.size.toLong()).encode())
@@ -415,8 +411,6 @@ class TransactionOutput(val value: Coin = Coin.ZERO,
     }
 
     companion object {
-        private val log = LoggerFactory.getLogger(TransactionOutput::class.java!!)
-
         @Throws(ProtocolException::class)
         fun parse(payload:ByteArray, offset:Int = 0):TransactionOutput {
             return parse(MessageReader(payload, offset))

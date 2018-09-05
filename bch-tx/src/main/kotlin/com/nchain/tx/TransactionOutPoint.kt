@@ -25,7 +25,6 @@ import org.bitcoinj.script.ProtocolException
 import java.io.IOException
 import java.io.OutputStream
 import java.util.*
-import javax.annotation.concurrent.ThreadSafe
 
 /**
  *
@@ -33,7 +32,6 @@ import javax.annotation.concurrent.ThreadSafe
  *
  * Instances of this class are thread safe.
  */
-@ThreadSafe
 class TransactionOutPoint
     @JvmOverloads
     constructor(
