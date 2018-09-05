@@ -57,6 +57,7 @@ public class TransactionSignature {
         this.signature = new ECKey.ECDSASignature(signature.getR(), signature.getS());
         sighashFlags = calcSigHashValue(mode, anyoneCanPay);
     }
+
     public TransactionSignature(ECKey.ECDSASignature signature, Transaction.SigHash mode, boolean anyoneCanPay, boolean useForkId) {
         this.signature = new ECKey.ECDSASignature(signature.getR(), signature.getS());
         sighashFlags = calcSigHashValue(mode, anyoneCanPay, useForkId);
@@ -176,8 +177,7 @@ public class TransactionSignature {
      * of the type used by Bitcoin we have to encode them using DER encoding, which is just a way to pack the two
      * components into a structure, and then we append a byte to the end for the sighash flags.
      */
-    // TODO:rename to serializeBitcoin
-    public byte[] encodeToBitcoin() {
+    public byte[] bitcoinSerialize() {
         try {
             ByteArrayOutputStream bos = DER.createByteStream(signature);
             bos.write(sighashFlags);

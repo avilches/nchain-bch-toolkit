@@ -24,7 +24,7 @@ package org.bitcoinj.script;
 
 import com.google.common.collect.Lists;
 import com.nchain.address.CashAddress;
-import com.nchain.bitcoinkt.core.TransactionSignatureBuilder;
+import com.nchain.bitcoinkt.core.TransactionSignatureService;
 import com.nchain.key.ECKey;
 import com.nchain.key.ECKeySigner;
 import com.nchain.shared.VerificationException;
@@ -1942,8 +1942,8 @@ public class Script {
 
                 // TODO: Should check hash type is known
                 Sha256Hash hash = sig.useForkId() ?
-                        new TransactionSignatureBuilder(txContainingThis).hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay(), verifyFlags) :
-                        new TransactionSignatureBuilder(txContainingThis).hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
+                        TransactionSignatureService.INSTANCE.hashForSignatureWitness(txContainingThis, index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay(), verifyFlags) :
+                        TransactionSignatureService.INSTANCE.hashForSignature(txContainingThis, index, connectedScript, (byte) sig.sighashFlags);
 
                 sigValid = ECKeySigner.verify(hash.getBytes(), sig.signature, pubKey);
 
@@ -2054,9 +2054,9 @@ public class Script {
                     // Signature is well-structured, but it can still be Empty, so we control that situations...
                     if (sigsCopy.getFirst().length > 0) {
                         sig = TransactionSignature.decodeFromBitcoin(sigsCopy.getFirst(), requireCanonical);
-                        Sha256Hash hash = /*sig.useForkId() ?
-                                new TransactionSignatureBuilder(txContainingThis).hashForSignatureWitness(index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay(), verifyFlags) :*/
-                                new TransactionSignatureBuilder(txContainingThis).hashForSignature(index, connectedScript, (byte) sig.sighashFlags);
+                        Sha256Hash hash = sig.useForkId() ?
+                                TransactionSignatureService.INSTANCE.hashForSignatureWitness(txContainingThis, index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay(), verifyFlags) :
+                                TransactionSignatureService.INSTANCE.hashForSignature(txContainingThis, index, connectedScript, (byte) sig.sighashFlags);
                         if (ECKeySigner.verify(hash.getBytes(), sig.signature, pubKey))
                             sigsCopy.pollFirst();
                     }

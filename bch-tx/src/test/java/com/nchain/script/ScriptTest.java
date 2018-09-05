@@ -28,7 +28,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.nchain.address.CashAddress;
-import com.nchain.bitcoinkt.core.TransactionSignatureBuilder;
+import com.nchain.bitcoinkt.core.TransactionSignatureService;
 import com.nchain.key.DumpedPrivateKey;
 import com.nchain.key.ECKey;
 import com.nchain.params.MainNetParams;
@@ -155,7 +155,7 @@ public class ScriptTest {
         Script outputScript = ScriptBuilder.createOutputScript(address);
         spendTx.addOutput(output.getValue(), outputScript);
         spendTx.addInput(transaction, 1);
-        Sha256Hash sighash = new TransactionSignatureBuilder(spendTx.build()).hashForSignature(0, multisigScript, Transaction.SigHash.ALL, false);
+        Sha256Hash sighash = TransactionSignatureService.INSTANCE.hashForSignature(spendTx.build(), 0, multisigScript, Transaction.SigHash.ALL, false);
         ECKey.ECDSASignature party1Signature = key1.sign(sighash);
         ECKey.ECDSASignature party2Signature = key2.sign(sighash);
         TransactionSignature party1TransactionSignature = new TransactionSignature(party1Signature, Transaction.SigHash.ALL, false);
@@ -185,20 +185,20 @@ public class ScriptTest {
     }
 
 
-    @Test
-    public void createAndUpdateEmptyInputScript() throws Exception {
+    @Test(expected = IllegalStateException.class)
+    public void createAndUpdateEmptyInputScript() {
         TransactionSignature dummySig = TransactionSignature.dummy();
         ECKey key = ECKey.create();
 
         // pay-to-pubkey
         Script inputScript = ScriptBuilder.createInputScript(dummySig);
-        assertThat(inputScript.getChunks().get(0).data, equalTo(dummySig.encodeToBitcoin()));
+        assertThat(inputScript.getChunks().get(0).data, equalTo(dummySig.bitcoinSerialize()));
         inputScript = ScriptBuilder.createInputScript(null);
         assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
 
         // pay-to-address
         inputScript = ScriptBuilder.createInputScript(dummySig, key);
-        assertThat(inputScript.getChunks().get(0).data, equalTo(dummySig.encodeToBitcoin()));
+        assertThat(inputScript.getChunks().get(0).data, equalTo(dummySig.bitcoinSerialize()));
         inputScript = ScriptBuilder.createInputScript(null, key);
         assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
         assertThat(inputScript.getChunks().get(1).data, equalTo(key.getPubKey()));
@@ -208,8 +208,8 @@ public class ScriptTest {
         Script multisigScript = ScriptBuilder.createMultiSigOutputScript(2, Arrays.asList(key, key2));
         inputScript = ScriptBuilder.createP2SHMultiSigInputScript(Arrays.asList(dummySig, dummySig), multisigScript);
         assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(1).data, equalTo(dummySig.encodeToBitcoin()));
-        assertThat(inputScript.getChunks().get(2).data, equalTo(dummySig.encodeToBitcoin()));
+        assertThat(inputScript.getChunks().get(1).data, equalTo(dummySig.bitcoinSerialize()));
+        assertThat(inputScript.getChunks().get(2).data, equalTo(dummySig.bitcoinSerialize()));
         assertThat(inputScript.getChunks().get(3).data, equalTo(multisigScript.getProgram()));
 
         inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, multisigScript);
@@ -218,25 +218,20 @@ public class ScriptTest {
         assertThat(inputScript.getChunks().get(2).opcode, equalTo(OP_0));
         assertThat(inputScript.getChunks().get(3).data, equalTo(multisigScript.getProgram()));
 
-        inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, dummySig.encodeToBitcoin(), 0, 1, 1);
+        inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, dummySig.bitcoinSerialize(), 0, 1, 1);
         assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(1).data, equalTo(dummySig.encodeToBitcoin()));
+        assertThat(inputScript.getChunks().get(1).data, equalTo(dummySig.bitcoinSerialize()));
         assertThat(inputScript.getChunks().get(2).opcode, equalTo(OP_0));
         assertThat(inputScript.getChunks().get(3).data, equalTo(multisigScript.getProgram()));
 
-        inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, dummySig.encodeToBitcoin(), 1, 1, 1);
+        inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, dummySig.bitcoinSerialize(), 1, 1, 1);
         assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(1).data, equalTo(dummySig.encodeToBitcoin()));
-        assertThat(inputScript.getChunks().get(2).data, equalTo(dummySig.encodeToBitcoin()));
+        assertThat(inputScript.getChunks().get(1).data, equalTo(dummySig.bitcoinSerialize()));
+        assertThat(inputScript.getChunks().get(2).data, equalTo(dummySig.bitcoinSerialize()));
         assertThat(inputScript.getChunks().get(3).data, equalTo(multisigScript.getProgram()));
 
         // updating scriptSig with no missing signatures
-        try {
-            ScriptBuilder.updateScriptWithSignature(inputScript, dummySig.encodeToBitcoin(), 1, 1, 1);
-            fail("Exception expected");
-        } catch (Exception e) {
-            assertEquals(IllegalArgumentException.class, e.getClass());
-        }
+        ScriptBuilder.updateScriptWithSignature(inputScript, dummySig.bitcoinSerialize(), 1, 1, 1);
     }
 
     @Test
@@ -324,8 +319,6 @@ public class ScriptTest {
                     TransactionInput input = transaction.getInputs().get(i);
                     if (input.getOutpoint().isUnconnected()) {
                         input = new TransactionInput(input.getScriptBytes(), new TransactionOutPoint(-1, input.getOutpoint().getHash()));
-//                        transaction.getInputs().set(i, input);
-
                     }
                     assertTrue(scriptPubKeys.containsKey(input.getOutpoint()));
                     input.getScriptSig().correctlySpends(transaction, i, scriptPubKeys.get(input.getOutpoint()),
@@ -395,8 +388,8 @@ public class ScriptTest {
         Script script = ScriptBuilder.createCLTVPaymentChannelOutput(BigInteger.valueOf(20), ECKey.create(), ECKey.create());
         assertTrue("script is locktime-verify", script.isSentToCLTVPaymentChannel());
     }
-/*
 
+     /*
     @Test
     public void getToAddress() throws Exception {
         // pay to pubkey
@@ -410,7 +403,7 @@ public class ScriptTest {
         CashAddress scriptAddress = CashAddress.fromP2SHScript(PARAMS, p2shScript);
         assertEquals(scriptAddress, p2shScript.getToAddress(PARAMS, true));
     }
-*/
+    */
 
     @Test(expected = ScriptException.class)
     public void getToAddressNoPubKey() throws Exception {
