@@ -23,6 +23,7 @@ import com.nchain.shared.VarInt
 import com.nchain.shared.VerificationException
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.HEX
+import com.nchain.tools.LongMath
 import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.Script
 import org.bitcoinj.script.ScriptException
@@ -62,6 +63,7 @@ class Transaction(val version: Long = 0L,
     private var _inputSum: Coin? = null
     private var _outputSum: Coin? = null
     private var _fee: Coin? = null
+    private var _length: Int? = null
 
     val inputs: List<TransactionInput>
     val outputs: List<TransactionOutput>
@@ -71,10 +73,22 @@ class Transaction(val version: Long = 0L,
         this.outputs = if (outputs != null) Collections.unmodifiableList(outputs) else Collections.EMPTY_LIST as List<TransactionOutput>
     }
 
+    val length: Int
+        get() {
+            if (_length == null) {
+                val bytes = bitcoinSerialize()
+                _length = bytes.size
+                _hash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(bytes))
+            }
+            return _length!!
+        }
+
     val hash: Sha256Hash
         get() {
             if (_hash == null) {
-                _hash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(bitcoinSerialize()))
+                val bytes = bitcoinSerialize()
+                _length = bytes.size
+                _hash = Sha256Hash.wrapReversed(Sha256Hash.hashTwice(bytes))
             }
             return _hash!!
         }
@@ -88,14 +102,13 @@ class Transaction(val version: Long = 0L,
     val inputSum: Coin
         get() {
             if (_inputSum == null) {
-                var inputSum = Coin.ZERO
+                var inputSum = 0L
                 for (input in inputs) {
-                    // TODO: improve it, don't use add, use LongMath.checkedAdd and create a Coin at the end
                     if (input.connectedOutput?.value != null) {
-                        inputSum = inputSum.add(input.connectedOutput!!.value)
+                        inputSum = LongMath.checkedAdd(inputSum, input.connectedOutput!!.value.value)
                     }
                 }
-                _inputSum = inputSum
+                _inputSum = Coin.valueOf(inputSum)
             }
             return _inputSum!!
         }
@@ -103,11 +116,11 @@ class Transaction(val version: Long = 0L,
     val outputSum: Coin
         get() {
             if (_outputSum == null) {
-                var outputSum = Coin.ZERO
+                var outputSum = 0L
                 for (output in outputs) {
-                    outputSum = outputSum.add(output.value)
+                    outputSum = LongMath.checkedAdd(outputSum, output.value.value)
                 }
-                _outputSum = outputSum
+                _outputSum = Coin.valueOf(outputSum)
             }
             return _outputSum!!
         }
@@ -609,9 +622,8 @@ class Transaction(val version: Long = 0L,
         }
         val fee = fee
         if (fee != null) {
-            val size = bitcoinSerialize().size
-            s.append("     fee  ").append(fee.multiply(1000).divide(size.toLong()).toFriendlyString()).append("/kB, ")
-                    .append(fee.toFriendlyString()).append(" for ").append(size).append(" bytes\n")
+            s.append("     fee  ").append(fee.multiply(1000).divide(length.toLong()).toFriendlyString()).append("/kB, ")
+                    .append(fee.toFriendlyString()).append(" for ").append(length).append(" bytes\n")
         }
 //        if (purpose != null)
 //            s.append("     prps ").append(purpose).append('\n')
@@ -766,21 +778,19 @@ class Transaction(val version: Long = 0L,
         if (inputs.size == 0 || outputs.size == 0)
             throw VerificationException.EmptyInputsOrOutputs()
 
-        var length:Int = bitcoinSerialize().size
         if (length > NetworkParameters.MAX_BLOCK_SIZE)
             throw VerificationException.LargerThanMaxBlockSize()
 
-        var valueOut = Coin.ZERO
         val outpoints = HashSet<TransactionOutPoint>()
         for (input in inputs) {
             if (outpoints.contains(input.outpoint))
                 throw VerificationException.DuplicatedOutPoint()
-            outpoints.add(input.outpoint!!)
+            outpoints.add(input.outpoint)
         }
         try {
+            var valueOut = Coin.ZERO
             for (output in outputs) {
                 if (output.value.signum < 0)
-                // getValue() can throw IllegalStateException
                     throw VerificationException.NegativeValueOutput()
                 valueOut = valueOut.add(output.value)
                 if (valueOut.compareTo(MAX_MONEY) > 0)
