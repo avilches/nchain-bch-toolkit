@@ -20,8 +20,7 @@ import kotlin.experimental.and
  */
 
 
-class TransactionSignatureBuilder(val tx: Transaction) {
-
+object TransactionSignatureService {
 
     /**
      * Calculates a signature that is valid for being inserted into the input at the given position. This is simply
@@ -36,14 +35,15 @@ class TransactionSignatureBuilder(val tx: Transaction) {
      * @param anyoneCanPay Signing mode, see the SigHash enum for documentation.
      * @return A newly calculated signature object that wraps the r, s and sighash components.
      */
-    fun calculateSignature(inputIndex: Int, key: ECKey,
+    fun calculateSignature(tx: Transaction, inputIndex: Int, key: ECKey,
                            redeemScript: ByteArray,
                            hashType: Transaction.SigHash, anyoneCanPay: Boolean): TransactionSignature {
-        val hash = hashForSignature(inputIndex, redeemScript, hashType, anyoneCanPay)
+        val hash = hashForSignature(tx, inputIndex, redeemScript, hashType, anyoneCanPay)
         return TransactionSignature(key.sign(hash), hashType, anyoneCanPay)
     }
 
     fun calculateWitnessSignature(
+            tx: Transaction,
             inputIndex: Int,
             key: ECKey,
             redeemScript: ByteArray,
@@ -51,7 +51,7 @@ class TransactionSignatureBuilder(val tx: Transaction) {
             hashType: Transaction.SigHash,
             anyoneCanPay: Boolean,
             verifyFlags: Set<Script.VerifyFlag>): TransactionSignature {
-        val hash = hashForSignatureWitness(inputIndex, redeemScript, value, hashType, anyoneCanPay, verifyFlags)
+        val hash = hashForSignatureWitness(tx, inputIndex, redeemScript, value, hashType, anyoneCanPay, verifyFlags)
         return TransactionSignature(key.sign(hash), hashType, anyoneCanPay, true)
     }
 
@@ -67,14 +67,15 @@ class TransactionSignatureBuilder(val tx: Transaction) {
      * @param anyoneCanPay Signing mode, see the SigHash enum for documentation.
      * @return A newly calculated signature object that wraps the r, s and sighash components.
      */
-    fun calculateSignature(inputIndex: Int, key: ECKey,
+    fun calculateSignature(tx: Transaction, inputIndex: Int, key: ECKey,
                            redeemScript: Script,
                            hashType: Transaction.SigHash, anyoneCanPay: Boolean): TransactionSignature {
-        val hash = hashForSignature(inputIndex, redeemScript.listProgram(), hashType, anyoneCanPay)
+        val hash = hashForSignature(tx, inputIndex, redeemScript.listProgram(), hashType, anyoneCanPay)
         return TransactionSignature(key.sign(hash), hashType, anyoneCanPay)
     }
 
     fun calculateWitnessSignature(
+            tx: Transaction,
             inputIndex: Int,
             key: ECKey,
             redeemScript: Script,
@@ -82,7 +83,7 @@ class TransactionSignatureBuilder(val tx: Transaction) {
             hashType: Transaction.SigHash,
             anyoneCanPay: Boolean,
                         verifyFlags:Set<Script.VerifyFlag>): TransactionSignature {
-        val hash = hashForSignatureWitness(inputIndex, redeemScript.listProgram(), value, hashType, anyoneCanPay, verifyFlags)
+        val hash = hashForSignatureWitness(tx, inputIndex, redeemScript.listProgram(), value, hashType, anyoneCanPay, verifyFlags)
         return TransactionSignature(key.sign(hash), hashType, anyoneCanPay, true)
     }
 
@@ -179,10 +180,10 @@ class TransactionSignatureBuilder(val tx: Transaction) {
      * @param type Should be SigHash.ALL
      * @param anyoneCanPay should be false.
      */
-    fun hashForSignature(inputIndex: Int, redeemScript: ByteArray,
+    fun hashForSignature(tx: Transaction, inputIndex: Int, redeemScript: ByteArray,
                          type: Transaction.SigHash, anyoneCanPay: Boolean): Sha256Hash {
         val sigHashType = TransactionSignature.calcSigHashValue(type, anyoneCanPay).toByte()
-        return hashForSignature(inputIndex, redeemScript, sigHashType)!!
+        return hashForSignature(tx, inputIndex, redeemScript, sigHashType)!!
     }
 
     /**
@@ -201,17 +202,17 @@ class TransactionSignatureBuilder(val tx: Transaction) {
      * @param type Should be SigHash.ALL
      * @param anyoneCanPay should be false.
      */
-    fun hashForSignature(inputIndex: Int, redeemScript: Script,
+    fun hashForSignature(tx: Transaction, inputIndex: Int, redeemScript: Script,
                          type: Transaction.SigHash, anyoneCanPay: Boolean): Sha256Hash {
         val sigHash = TransactionSignature.calcSigHashValue(type, anyoneCanPay)
-        return hashForSignature(inputIndex, redeemScript.listProgram(), sigHash.toByte())!!
+        return hashForSignature(tx, inputIndex, redeemScript.listProgram(), sigHash.toByte())!!
     }
 
     /**
      * This is required for signatures which use a sigHashType which cannot be represented using SigHash and anyoneCanPay
      * See transaction c99c49da4c38af669dea436d3e73780dfdb6c1ecf9958baa52960e8baee30e73, which has sigHashType 0
      */
-    fun hashForSignature(inputIndex: Int, connectedScript: ByteArray, sigHashType: Byte): Sha256Hash? {
+    fun hashForSignature(tx: Transaction, inputIndex: Int, connectedScript: ByteArray, sigHashType: Byte): Sha256Hash? {
         // The SIGHASH flags are used in the design of contracts, please see this page for a further understanding of
         // the purposes of the code in this method:
         //
@@ -228,11 +229,13 @@ class TransactionSignatureBuilder(val tx: Transaction) {
 
                 // Bitcoin Core's bug is that SignatureHash was supposed to return a hash and on this codepath it
                 // actually returns the constant "1" to indicate an error, which is never checked for. Oops.
-                return Sha256Hash.wrap("0100000000000000000000000000000000000000000000000000000000000000")
+                val hash = Sha256Hash.wrap("0100000000000000000000000000000000000000000000000000000000000000")
+                return hash
             }
 
             val bos = UnsafeByteArrayOutputStream()
-            prepareTransactionForSigning(inputIndex, connectedScript, sigHashType).bitcoinSerializeToStream(bos)
+            val transaction = prepareTransactionForSigning(tx, inputIndex, connectedScript, sigHashType);
+            transaction.bitcoinSerializeToStream(bos);
             // We also have to write a hash type (sigHashType is actually an unsigned char)
             ByteUtils.uint32ToByteStreamLE((0x000000ff and sigHashType.toInt()).toLong(), bos)
             // Note that this is NOT reversed to ensure it will be signed correctly. If it were to be printed out
@@ -246,7 +249,7 @@ class TransactionSignatureBuilder(val tx: Transaction) {
         }
     }
 
-    fun prepareTransactionForSigning(inputIndex: Int, connectedScript: ByteArray, sigHashType: Byte): Transaction {
+    fun prepareTransactionForSigning(tx: Transaction, inputIndex: Int, connectedScript: ByteArray, sigHashType: Byte): Transaction {
         val tb = TransactionBuilder(tx)
         val inputs = tb.inputs
         for (i in inputs.indices) {
@@ -324,6 +327,7 @@ class TransactionSignatureBuilder(val tx: Transaction) {
      */
     @Synchronized
     fun hashForSignatureWitness(
+            tx: Transaction,
             inputIndex: Int,
             scriptCode: Script,
             prevValue: Coin,
@@ -331,11 +335,12 @@ class TransactionSignatureBuilder(val tx: Transaction) {
             anyoneCanPay: Boolean,
             verifyFlags: Set<Script.VerifyFlag>): Sha256Hash {
         val connectedScript = scriptCode.listProgram()
-        return hashForSignatureWitness(inputIndex, connectedScript, prevValue, type, anyoneCanPay, verifyFlags)
+        return hashForSignatureWitness(tx, inputIndex, connectedScript, prevValue, type, anyoneCanPay, verifyFlags)
     }
 
     @Synchronized
     fun hashForSignatureWitness(
+            tx: Transaction,
             inputIndex: Int,
             connectedScript: ByteArray,
             prevValue: Coin,
