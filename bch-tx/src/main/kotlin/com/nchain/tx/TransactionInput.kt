@@ -18,11 +18,9 @@
 package com.nchain.tx
 
 
-import com.google.common.base.Objects
 import java.io.IOException
 import java.io.OutputStream
 import java.lang.ref.WeakReference
-import java.util.Arrays
 
 import com.nchain.shared.VerificationException
 import com.nchain.params.NetworkParameters
@@ -34,6 +32,7 @@ import com.nchain.tools.UnsafeByteArrayOutputStream
 import org.bitcoinj.script.ProtocolException
 import org.bitcoinj.script.Script
 import org.bitcoinj.script.ScriptException
+import java.util.*
 
 /**
  *
@@ -395,7 +394,7 @@ open class TransactionInput
 */
 
     override fun hashCode(): Int {
-        return Objects.hashCode(sequenceNumber, outpoint, Arrays.hashCode(scriptBytes))
+        return Arrays.hashCode(arrayOf(*scriptBytes.toTypedArray(), sequenceNumber, outpoint))
     }
 
     /**
