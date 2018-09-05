@@ -58,7 +58,7 @@ constructor(params: NetworkParameters, encoded: String) : VersionedChecksummedBy
     class BadPassphraseException : Exception()
 
     init {
-        this.params = params!!
+        this.params = params
         if (version != 0x01)
             throw AddressFormatException("Mismatched version number: " + version)
         if (bytes.size != 38)
@@ -187,20 +187,6 @@ constructor(params: NetworkParameters, encoded: String) : VersionedChecksummedBy
 
     override fun clone(): VersionedChecksummedBytes {
         return fromBase58(params, toBase58())
-    }
-
-    // Java serialization
-
-    @Throws(IOException::class)
-    private fun writeObject(out: ObjectOutputStream) {
-        out.defaultWriteObject()
-        out.writeUTF(params.id)
-    }
-
-    @Throws(IOException::class, ClassNotFoundException::class)
-    private fun readObject(`in`: ObjectInputStream) {
-        `in`.defaultReadObject()
-        params = NetworkParameters.fromID(`in`.readUTF())!!
     }
 
     companion object {
