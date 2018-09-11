@@ -167,10 +167,13 @@ class LazyECPoint {
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        return if (o == null || javaClass != o.javaClass) false else Arrays.equals(canonicalEncoding, (o as LazyECPoint).canonicalEncoding)
+        return if (o != null && o is LazyECPoint)
+            Arrays.equals(canonicalEncoding, o.canonicalEncoding)
+        else
+            false
     }
 
     override fun hashCode(): Int {
-        return Arrays.hashCode(canonicalEncoding)
+        return canonicalEncoding.hashCode()
     }
 }

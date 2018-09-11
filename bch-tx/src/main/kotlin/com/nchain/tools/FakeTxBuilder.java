@@ -26,6 +26,8 @@ import com.nchain.tx.*;
 import java.security.SecureRandom;
 import java.util.Random;
 
+import static com.nchain.tools.Preconditions.checkState;
+
 public class FakeTxBuilder {
     private final static Coin COIN = Coin.getCOIN();
     private final static Coin FIFTY_COINS = Coin.getFIFTY_COINS();
@@ -58,7 +60,7 @@ public class FakeTxBuilder {
                 addInput(new byte[0], TransactionOutPoint.getUNCONNECTED(), TransactionInput.NO_SEQUENCE). // coinbase input
                 addOutput(FIFTY_COINS, ECKey.create().toCashAddress(params)); // output to me
 
-        // TODO: checkState(tx.build().isCoinBase());
+        checkState(tx.build().isCoinBase());
         return tx;
     }
 
@@ -118,10 +120,9 @@ public class FakeTxBuilder {
 
         Transaction transaction = tx.build();
 
-        // TODO:
-//        checkState(transaction.getInputSum().getValue() == value.getValue(), "Error in inputSum");
-//        checkState(transaction.getOutputSum().getValue() == value.getValue(), "Error in outputSum");
-//        checkState(transaction.getFee().getValue() == 0, "Error in fee");
+        checkState(transaction.getInputSum().getValue() == value.getValue(), "Error in inputSum");
+        checkState(transaction.getOutputSum().getValue() == value.getValue(), "Error in outputSum");
+        checkState(transaction.getFee().getValue() == 0, "Error in fee");
 
         return tx;
     }

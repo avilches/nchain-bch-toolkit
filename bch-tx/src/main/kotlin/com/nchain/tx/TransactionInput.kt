@@ -383,18 +383,16 @@ open class TransactionInput
 //        return TransactionInput(params!!, null, bitcoinSerialize(), 0)
 //    }
 
-/*
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        if (o == null || javaClass != o.javaClass) return false
-        val other = o as TransactionInput?
-        return (sequence == other!!.sequence && parent === other.parent
-                && outpoint == other.outpoint && Arrays.equals(scriptBytes, other.scriptBytes))
+        return if (o != null && o is TransactionInput)
+            sequenceNumber == o.sequenceNumber && outpoint == o.outpoint && Arrays.equals(scriptBytes, o.scriptBytes)
+        else
+            false
     }
-*/
 
     override fun hashCode(): Int {
-        return Arrays.hashCode(arrayOf(*scriptBytes.toTypedArray(), sequenceNumber, outpoint))
+        return Objects.hash(sequenceNumber, outpoint, Arrays.hashCode(scriptBytes))
     }
 
     /**

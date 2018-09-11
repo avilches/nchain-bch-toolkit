@@ -34,7 +34,7 @@ import java.io.ObjectOutputStream
 import java.math.BigInteger
 import java.security.GeneralSecurityException
 import java.text.Normalizer
-import java.util.Arrays
+import java.util.*
 
 import kotlin.experimental.and
 import kotlin.experimental.xor
@@ -175,14 +175,14 @@ constructor(params: NetworkParameters, encoded: String) : VersionedChecksummedBy
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        if (o != null && o is BIP38PrivateKey) {
-            return super.equals(o) && params.equals(o.params)
-        }
-        return false
+        return if (o != null && o is BIP38PrivateKey)
+            super.equals(o) && params == o.params
+        else
+            false
     }
 
     override fun hashCode(): Int {
-        return Arrays.hashCode(arrayOf(super.hashCode(), params))
+        return Objects.hash(super.hashCode(), params)
     }
 
     override fun clone(): VersionedChecksummedBytes {

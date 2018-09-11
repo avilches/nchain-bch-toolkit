@@ -18,7 +18,6 @@ package com.nchain.address
 
 
 import com.nchain.shared.Sha256Hash
-import com.nchain.tools.ByteUtils
 import java.io.Serializable
 import java.util.*
 
@@ -79,15 +78,15 @@ open class VersionedChecksummedBytes : Serializable, Cloneable, Comparable<Versi
     }
 
     override fun hashCode(): Int {
-        return Arrays.hashCode(arrayOf(version, *bytes.toTypedArray()))
+        return Objects.hash(version, Arrays.hashCode(bytes))
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other != null && other is VersionedChecksummedBytes) {
-            return version == other.version && Arrays.equals(bytes, other.bytes)
-        }
-        return false
+    override fun equals(o: Any?): Boolean {
+        if (this === o) return true
+        return if (o != null && o is VersionedChecksummedBytes)
+            version == o.version && Arrays.equals(bytes, o.bytes)
+        else
+            false
     }
 
     /**

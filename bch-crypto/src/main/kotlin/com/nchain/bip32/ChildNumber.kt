@@ -15,7 +15,8 @@
  */
 
 package com.nchain.bip32
-import java.util.Locale
+import com.nchain.key.DumpedPrivateKey
+import java.util.*
 
 /**
  *
@@ -58,7 +59,10 @@ class ChildNumber : Comparable<ChildNumber> {
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        return if (o == null || javaClass != o.javaClass) false else i == (o as ChildNumber).i
+        return if (o != null && o is ChildNumber)
+            o.i == i
+        else
+            false
     }
 
     override fun hashCode(): Int {

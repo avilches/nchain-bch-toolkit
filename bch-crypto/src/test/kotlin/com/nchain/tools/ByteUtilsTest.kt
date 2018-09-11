@@ -175,7 +175,6 @@ class ByteUtilsTest {
         }
         for (v in candidate) {
             val value = BigInteger.valueOf(v)
-            println(value)
             assertEquals(value, ByteUtils.decodeCompactBits(ByteUtils.encodeCompactBits(value)))
         }
     }

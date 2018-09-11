@@ -149,12 +149,14 @@ class TransactionOutPoint
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        return if (o == null || o !is TransactionOutPoint) false
-        else index == o.index && hash == o.hash
+        return if (o != null && o is TransactionOutPoint)
+            index == o.index && hash == o.hash
+        else
+            false
     }
 
     override fun hashCode(): Int {
-        return Arrays.hashCode(arrayOf(index, hash))
+        return Objects.hash(index, hash)
     }
 
 }

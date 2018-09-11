@@ -55,18 +55,15 @@ class Sha256Hash : Serializable, Comparable<Sha256Hash> {
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        return if (o == null || o !is Sha256Hash) false
-        else Arrays.equals(bytes, o.bytes)
+        return if (o != null && o is Sha256Hash)
+            Arrays.equals(bytes, o.bytes)
+        else
+            false
     }
 
-    /**
-     * Returns the last four bytes of the wrapped hash. This should be unique enough to be a suitable hash code even for
-     * blocks, where the goal is to try and get the first bytes to be zeros (i.e. the value as a big integer lower
-     * than the target value).
-     */
     override fun hashCode(): Int {
         // Use the last 4 bytes, not the first 4 which are often zeros in Bitcoin.
-        return Arrays.hashCode(byteArrayOf(bytes[LENGTH - 4], bytes[LENGTH - 3], bytes[LENGTH - 2], bytes[LENGTH - 1]))
+        return Arrays.hashCode(bytes)
     }
 
     override fun toString(): String {

@@ -174,9 +174,12 @@ abstract class NetworkParameters protected constructor(
 
 */
 
-    override fun equals(o: Any?): Boolean {
-        if (this === o) return true
-        return if (o == null || javaClass != o.javaClass) false else id == (o as NetworkParameters).id
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        return if (other != null && other is NetworkParameters)
+            id == other.id
+        else
+            false
     }
 
     override fun hashCode(): Int {

@@ -60,14 +60,14 @@ class DumpedPrivateKey : VersionedChecksummedBytes {
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        if (o != null && o is DumpedPrivateKey) {
-            return version == o.version && compressed == o.compressed && Arrays.equals(bytes, o.bytes)
-        }
-        return false
+        return if (o != null && o is DumpedPrivateKey)
+            super.equals(o) && compressed == o.compressed
+        else
+            false
     }
 
     override fun hashCode(): Int {
-        return Arrays.hashCode(arrayOf(*bytes.toTypedArray(), version, compressed))
+        return Objects.hash(super.hashCode(), compressed)
     }
 
     @Throws(CloneNotSupportedException::class)

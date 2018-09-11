@@ -722,7 +722,10 @@ class Transaction(val version: Long = 0L,
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        return if (o == null || javaClass != o.javaClass) false else hash == (o as Transaction).hash
+        return if (o != null && o is Transaction)
+            hash == o.hash
+        else
+            false
     }
 
     override fun hashCode(): Int {

@@ -22,14 +22,14 @@ import com.nchain.key.ECKey
 import org.spongycastle.math.ec.ECPoint
 import java.math.BigInteger
 import java.nio.ByteBuffer
-import java.util.Arrays
-import java.util.Comparator
 
 import com.nchain.key.LazyECPoint
 import com.nchain.keycrypter.KeyCrypterException
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.tools.ByteUtils
+import com.nchain.tools.HEX
+import java.util.*
 
 /**
  * A deterministic key is a node in a [DeterministicHierarchy]. As per
@@ -463,32 +463,28 @@ class DeterministicKey {
      */
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        if (o != null && o is DeterministicKey) {
-            return ( //* super.equals(other) &&
-                    Arrays.equals(chainCode, o.chainCode)
-                    && path == o.path)
-        }
-        return false
+        return if (o != null && o is DeterministicKey) 
+            Arrays.equals(chainCode, o.chainCode) && path == o.path
+        else 
+            false
     }
 
-/*
     override fun hashCode(): Int {
-        return Objects.hashCode(super.hashCode(), Arrays.hashCode(chainCode), path)
+        return Objects.hash(path, Arrays.hashCode(chainCode))
     }
+
 
     override fun toString(): String {
-        val helper = MoreObjects.toStringHelper(this).omitNullValues()
-        helper.add("pub", Utils.HEX.encode(pub!!.encoded))
-        helper.add("chainCode", HEX.encode(chainCode))
-        helper.add("path", pathAsString)
-        if (creationTimeSeconds > 0)
-            helper.add("creationTimeSeconds", creationTimeSeconds)
-        helper.add("isEncrypted", isEncrypted)
-        helper.add("isPubKeyOnly", isPubKeyOnly)
+        val helper = StringBuffer()
+        helper.append("pub: ", HEX.encode(key.pubKey))
+        helper.append(", chainCode: ", HEX.encode(chainCode))
+        helper.append(", path:", pathAsString)
+//        if (creationTimeSeconds > 0)
+//            helper.append("creationTimeSeconds", creationTimeSeconds)
+//        helper.append("isEncrypted", isEncrypted)
+        helper.append(", isPubKeyOnly", isPubKeyOnly.toString())
         return helper.toString()
     }
-
-*/
 /*
     fun formatKeyWithAddress(includePrivateKeys: Boolean, builder: StringBuilder, params: NetworkParameters) {
         val address = toAddress(params)

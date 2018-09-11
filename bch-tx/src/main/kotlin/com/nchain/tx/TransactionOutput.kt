@@ -397,15 +397,14 @@ class TransactionOutput(val value: Coin = Coin.ZERO,
     }
 */
 
-    // TODO:
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        if (o == null || javaClass != o.javaClass) return false
-        val other = o as TransactionOutput?
-        return (value == other!!.value  && Arrays.equals(scriptBytes, other.scriptBytes))
+        return if (o != null && o is TransactionOutput)
+            value == o.value && Arrays.equals(scriptBytes, o.scriptBytes)
+        else
+            false
     }
 
-    // TODO:
     override fun hashCode(): Int {
         return Objects.hash(value, scriptBytes)
     }
