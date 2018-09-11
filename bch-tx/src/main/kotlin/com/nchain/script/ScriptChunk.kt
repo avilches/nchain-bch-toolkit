@@ -17,6 +17,12 @@
 
 package com.nchain.script
 
+import com.nchain.script.ScriptOpCodes.OP_0
+import com.nchain.script.ScriptOpCodes.OP_1
+import com.nchain.script.ScriptOpCodes.OP_16
+import com.nchain.script.ScriptOpCodes.OP_1NEGATE
+import com.nchain.script.ScriptOpCodes.OP_PUSHDATA1
+import com.nchain.script.ScriptOpCodes.OP_PUSHDATA2
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.HEX
 
@@ -26,8 +32,9 @@ import java.util.Arrays
 import java.util.Objects
 
 import com.nchain.tools.Preconditions.checkState
-import com.nchain.script.Script
-import com.nchain.script.ScriptOpCodes.*
+import com.nchain.script.ScriptOpCodes.OP_PUSHDATA4
+import com.nchain.script.ScriptOpCodes.getOpCodeName
+import com.nchain.script.ScriptOpCodes.getPushDataName
 
 /**
  * A script element that is either a data push (signature, pubkey, etc) or a non-push (logic, numeric, etc) operation.

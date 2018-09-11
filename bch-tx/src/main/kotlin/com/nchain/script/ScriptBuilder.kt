@@ -22,11 +22,26 @@ import com.nchain.tools.ByteUtils
 import com.nchain.tx.Transaction
 import com.nchain.tx.TransactionSignature
 import com.nchain.script.Script
+import com.nchain.script.ScriptOpCodes.OP_0
+import com.nchain.script.ScriptOpCodes.OP_CHECKLOCKTIMEVERIFY
+import com.nchain.script.ScriptOpCodes.OP_CHECKMULTISIG
+import com.nchain.script.ScriptOpCodes.OP_CHECKSIG
+import com.nchain.script.ScriptOpCodes.OP_CHECKSIGVERIFY
+import com.nchain.script.ScriptOpCodes.OP_DROP
+import com.nchain.script.ScriptOpCodes.OP_DUP
+import com.nchain.script.ScriptOpCodes.OP_ELSE
+import com.nchain.script.ScriptOpCodes.OP_ENDIF
+import com.nchain.script.ScriptOpCodes.OP_EQUAL
+import com.nchain.script.ScriptOpCodes.OP_EQUALVERIFY
+import com.nchain.script.ScriptOpCodes.OP_HASH160
+import com.nchain.script.ScriptOpCodes.OP_IF
+import com.nchain.script.ScriptOpCodes.OP_PUSHDATA1
+import com.nchain.script.ScriptOpCodes.OP_PUSHDATA2
+import com.nchain.script.ScriptOpCodes.OP_PUSHDATA4
+import com.nchain.script.ScriptOpCodes.OP_RETURN
 
 import java.math.BigInteger
 import java.util.*
-
-import com.nchain.script.ScriptOpCodes.*
 
 /**
  *
