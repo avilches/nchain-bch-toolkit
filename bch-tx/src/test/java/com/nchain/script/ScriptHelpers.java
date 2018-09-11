@@ -28,7 +28,7 @@ import com.nchain.tools.ByteUtils;
 import com.nchain.tools.HEX;
 import com.nchain.tools.UnsafeByteArrayOutputStream;
 import com.nchain.tx.*;
-import org.bitcoinj.script.*;
+import com.nchain.script.*;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -36,7 +36,7 @@ import java.nio.charset.Charset;
 import java.util.EnumSet;
 import java.util.Set;
 
-import static org.bitcoinj.script.ScriptOpCodes.OP_INVALIDOPCODE;
+import static com.nchain.script.ScriptOpCodes.OP_INVALIDOPCODE;
 
 
 public class ScriptHelpers {

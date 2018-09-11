@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package org.bitcoinj.tx
+package com.nchain.tx
 
 import com.nchain.key.ECKey
 import com.nchain.shared.VerificationException
 import com.nchain.tools.DER
-import com.nchain.tx.Transaction
 
-import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.math.BigInteger
 

@@ -25,8 +25,8 @@ import com.nchain.tools.ByteUtils
 import com.nchain.tools.HEX
 import com.nchain.tools.LongMath
 import com.nchain.tools.UnsafeByteArrayOutputStream
-import org.bitcoinj.script.Script
-import org.bitcoinj.script.ScriptException
+import com.nchain.script.Script
+import com.nchain.script.ScriptException
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.io.OutputStream

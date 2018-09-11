@@ -19,14 +19,13 @@ package com.nchain.tx
 
 import com.nchain.address.CashAddress
 import com.nchain.key.ECKey
-import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.MessageReader
 import com.nchain.tools.hexStringToByteArray
-import org.bitcoinj.script.Script
-import org.bitcoinj.script.ScriptBuilder
-import org.bitcoinj.script.ScriptException
+import com.nchain.script.Script
+import com.nchain.script.ScriptBuilder
+import com.nchain.script.ScriptException
 import org.slf4j.LoggerFactory
 
 /**

@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package org.bitcoinj.script;
+package com.nchain.script
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashMap
 
-public enum ScriptError {
+enum class ScriptError private constructor(val mnemonic: String) {
 
     SCRIPT_ERR_OK("OK"),
     SCRIPT_ERR_UNKNOWN_ERROR("UNKNOWN_ERROR"),
@@ -78,28 +77,19 @@ public enum ScriptError {
     SCRIPT_ERR_INVALID_NUMBER_RANGE("INVALID_NUMBER_RANGE"),
     SCRIPT_ERR_FORKID("ILLEGAL_FORKID");
 
-    private final String mnemonic;
-    private static final Map<String, ScriptError> mnemonicToScriptErrorMap;
 
-    private ScriptError(String name) {
-        this.mnemonic = name;
-    }
+    companion object {
+        private val mnemonicToScriptErrorMap: MutableMap<String, ScriptError>
 
-    static {
-        mnemonicToScriptErrorMap = new HashMap<String, ScriptError>();
-        for (ScriptError err : ScriptError.values()) {
-            mnemonicToScriptErrorMap.put(err.getMnemonic(), err);
+        init {
+            mnemonicToScriptErrorMap = HashMap()
+            for (err in ScriptError.values()) {
+                mnemonicToScriptErrorMap[err.mnemonic] = err
+            }
         }
-    }
 
-    public String getMnemonic() {
-        return mnemonic;
-    }
-
-    public static ScriptError fromMnemonic(String name) {
-        ScriptError err = mnemonicToScriptErrorMap.get(name);
-        if (err == null)
-            throw new IllegalArgumentException(name + " is not a valid name");
-        return err;
+        fun fromMnemonic(name: String): ScriptError {
+            return mnemonicToScriptErrorMap[name] ?: throw IllegalArgumentException("$name is not a valid name")
+        }
     }
 }

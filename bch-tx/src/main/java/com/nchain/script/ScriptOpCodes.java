@@ -18,7 +18,7 @@
  * The original file was from the bitcoinj project (https://github.com/bitcoinj/bitcoinj).
  */
 
-package org.bitcoinj.script;
+package com.nchain.script;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,7 +26,7 @@ import java.util.Map;
 
 /**
  * Various constants that define the assembly-like scripting language that forms part of the Bitcoin protocol.
- * See {@link org.bitcoinj.script.Script} for details. Also provides a method to convert them to a string.
+ * See {@link com.nchain.script.Script} for details. Also provides a method to convert them to a string.
  */
 public class ScriptOpCodes {
     // push value

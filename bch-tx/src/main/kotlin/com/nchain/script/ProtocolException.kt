@@ -1,4 +1,6 @@
 /*
+ * Copyright 2011 Google Inc.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,7 +14,15 @@
  * limitations under the License.
  */
 
-/**
- * Classes for working with and executing Bitcoin script programs, as embedded in inputs and outputs.
- */
-package org.bitcoinj.script;
+package com.nchain.script
+
+import com.nchain.shared.VerificationException
+
+class ProtocolException : VerificationException {
+
+    constructor(msg: String) : super(msg) {}
+
+    constructor(e: Exception) : super(e) {}
+
+    constructor(msg: String, e: Exception) : super(msg, e) {}
+}

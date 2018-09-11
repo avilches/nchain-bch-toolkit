@@ -28,10 +28,9 @@ import com.nchain.shared.Sha256Hash;
 import com.nchain.shared.VerificationException;
 import com.nchain.tools.FakeTxBuilder;
 import com.nchain.tools.HEX;
-import org.bitcoinj.script.Script;
-import org.bitcoinj.script.ScriptBuilder;
-import org.bitcoinj.script.ScriptException;
-import org.bitcoinj.tx.TransactionSignature;
+import com.nchain.script.Script;
+import com.nchain.script.ScriptBuilder;
+import com.nchain.script.ScriptException;
 import org.junit.Test;
 
 import java.io.IOException;

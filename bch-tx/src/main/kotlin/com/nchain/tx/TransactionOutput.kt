@@ -24,10 +24,10 @@ import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.MessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
-import org.bitcoinj.script.ProtocolException
-import org.bitcoinj.script.Script
-import org.bitcoinj.script.ScriptBuilder
-import org.bitcoinj.script.ScriptException
+import com.nchain.script.ProtocolException
+import com.nchain.script.Script
+import com.nchain.script.ScriptBuilder
+import com.nchain.script.ScriptException
 import java.io.IOException
 import java.io.OutputStream
 import java.util.*

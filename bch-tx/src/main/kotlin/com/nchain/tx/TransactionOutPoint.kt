@@ -17,11 +17,10 @@
 
 package com.nchain.tx
 
-import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.MessageReader
-import org.bitcoinj.script.ProtocolException
+import com.nchain.script.ProtocolException
 import java.io.IOException
 import java.io.OutputStream
 import java.util.*

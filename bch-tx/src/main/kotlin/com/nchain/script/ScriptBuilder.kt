@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
-package org.bitcoinj.script
+package com.nchain.script
 
 import com.nchain.address.CashAddress
 import com.nchain.key.ECKey
 import com.nchain.tools.ByteUtils
 import com.nchain.tx.Transaction
-import org.bitcoinj.tx.TransactionSignature
+import com.nchain.tx.TransactionSignature
+import com.nchain.script.Script
 
 import java.math.BigInteger
 import java.util.*
 
-import org.bitcoinj.script.ScriptOpCodes.*
+import com.nchain.script.ScriptOpCodes.*
 
 /**
  *
@@ -412,7 +413,7 @@ class ScriptBuilder {
         @JvmStatic
         fun createP2SHOutputScript(redeemScript: Script): Script {
             val hash = ByteUtils.sha256hash160(redeemScript.getProgram())
-            return ScriptBuilder.createP2SHOutputScript(hash)
+            return createP2SHOutputScript(hash)
         }
 
         /**
@@ -434,7 +435,7 @@ class ScriptBuilder {
             var pubkeys = pubkeys
             pubkeys = ArrayList(pubkeys)
             //        Collections.sort(pubkeys, ECKey.PUBKEY_COMPARATOR);
-            return ScriptBuilder.createMultiSigOutputScript(threshold, pubkeys)
+            return createMultiSigOutputScript(threshold, pubkeys)
         }
 
         /**

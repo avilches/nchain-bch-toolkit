@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bitcoinj.script;
+package com.nchain.script;
 
 import com.nchain.params.MainNetParams;
 import com.nchain.params.NetworkParameters;
+import com.nchain.script.ScriptBuilder;
+import com.nchain.script.ScriptChunk;
+import com.nchain.script.ScriptException;
 import com.nchain.tools.HEX;
-import com.nchain.tx.Coin;
-import com.nchain.tx.Transaction;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -95,7 +96,7 @@ public class InteractiveScriptStateListener extends ScriptStateListener {
             System.out.println(fullScriptString);
         }
 
-        System.out.println(String.format("\nExecuting %s operation: [%s]", getCurrentChunk().isOpCode() ? "OP_CODE" : "PUSHDATA", ScriptOpCodes.getOpCodeName(getCurrentChunk().opcode)));
+        System.out.println(String.format("\nExecuting %s operation: [%s]", getCurrentChunk().isOpCode() ? "OP_CODE" : "PUSHDATA", ScriptOpCodes.getOpCodeName(getCurrentChunk().getOpcode())));
     }
 
     @Override

@@ -20,12 +20,16 @@
  * The original file was from the bitcoinj project (https://github.com/bitcoinj/bitcoinj).
  */
 
-package org.bitcoinj.script;
+package com.nchain.script;
 
 import com.nchain.address.CashAddress;
 import com.nchain.bitcoinkt.core.TransactionSignatureService;
 import com.nchain.key.ECKey;
 import com.nchain.key.ECKeySigner;
+import com.nchain.script.ScriptBuilder;
+import com.nchain.script.ScriptChunk;
+import com.nchain.script.ScriptError;
+import com.nchain.script.ScriptException;
 import com.nchain.shared.VerificationException;
 import com.nchain.params.NetworkParameters;
 import com.nchain.shared.Sha256Hash;
@@ -35,7 +39,7 @@ import com.nchain.tools.UnsafeByteArrayOutputStream;
 import com.nchain.tx.Coin;
 import com.nchain.tx.Transaction;
 import com.nchain.tx.TransactionInput;
-import org.bitcoinj.tx.TransactionSignature;
+import com.nchain.tx.TransactionSignature;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +55,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 import static kotlin.jvm.internal.Intrinsics.checkNotNull;
-import static org.bitcoinj.script.ScriptOpCodes.*;
+import static com.nchain.script.ScriptOpCodes.*;
 import static com.nchain.tools.Preconditions.*;
 
 // TODO: Redesign this entire API to be more type safe and organised.
@@ -289,7 +293,7 @@ public class Script {
      */
     public boolean isSentToRawPubKey() {
         return chunks.size() == 2 && chunks.get(1).equalsOpCode(OP_CHECKSIG) &&
-               !chunks.get(0).isOpCode() && chunks.get(0).data.length > 1;
+               !chunks.get(0).isOpCode() && chunks.get(0).getData().length > 1;
     }
 
     /**
@@ -302,7 +306,7 @@ public class Script {
         return chunks.size() == 5 &&
                chunks.get(0).equalsOpCode(OP_DUP) &&
                chunks.get(1).equalsOpCode(OP_HASH160) &&
-               chunks.get(2).data.length == CashAddress.LENGTH &&
+               chunks.get(2).getData().length == CashAddress.LENGTH &&
                chunks.get(3).equalsOpCode(OP_EQUALVERIFY) &&
                chunks.get(4).equalsOpCode(OP_CHECKSIG);
     }
@@ -329,9 +333,9 @@ public class Script {
      */
     public byte[] getPubKeyHash() {
         if (isSentToAddress())
-            return chunks.get(2).data;
+            return chunks.get(2).getData();
         else if (isPayToScriptHash())
-            return chunks.get(1).data;
+            return chunks.get(1).getData();
         else
             throw new ScriptException(ScriptError.SCRIPT_ERR_STANDARD, "script is not a recognized standard script");
     }
@@ -349,9 +353,9 @@ public class Script {
             throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_STACK_OPERATION, "the operation was invalid given the contents of the stack");
         }
         final ScriptChunk chunk0 = chunks.get(0);
-        final byte[] chunk0data = chunk0.data;
+        final byte[] chunk0data = chunk0.getData();
         final ScriptChunk chunk1 = chunks.get(1);
-        final byte[] chunk1data = chunk1.data;
+        final byte[] chunk1data = chunk1.getData();
         if (chunk0data != null && chunk0data.length > 2 && chunk1data != null && chunk1data.length > 2) {
             // If we have two large constants assume the input to a pay-to-address output.
             return chunk1data;
@@ -371,7 +375,7 @@ public class Script {
         if (!isSentToCLTVPaymentChannel()) {
             throw new ScriptException("Script not a standard CHECKLOCKTIMVERIFY transaction: " + this);
         }
-        return chunks.get(8).data;
+        return chunks.get(8).getData();
     }
 
     /**
@@ -382,7 +386,7 @@ public class Script {
         if (!isSentToCLTVPaymentChannel()) {
             throw new ScriptException("Script not a standard CHECKLOCKTIMVERIFY transaction: " + this);
         }
-        return chunks.get(1).data;
+        return chunks.get(1).getData();
     }
 
     public BigInteger getCLTVPaymentChannelExpiry() {
@@ -391,7 +395,7 @@ public class Script {
         }
         //FIXME We may actually need to enforce minimal encoding here.  But we don't have access
         //to the verify flags
-        return castToBigInteger(chunks.get(4).data, 5, false);
+        return castToBigInteger(chunks.get(4).getData(), 5, false);
     }
 
     /**
@@ -547,17 +551,17 @@ public class Script {
         // and any placeholder OP_0 sigs.
         List<ScriptChunk> existingChunks = chunks.subList(1, chunks.size() - 1);
         ScriptChunk redeemScriptChunk = chunks.get(chunks.size() - 1);
-        checkNotNull(redeemScriptChunk.data);
-        Script redeemScript = new Script(redeemScriptChunk.data);
+        checkNotNull(redeemScriptChunk.getData());
+        Script redeemScript = new Script(redeemScriptChunk.getData());
 
         int sigCount = 0;
         int myIndex = redeemScript.findKeyInRedeem(signingKey);
         for (ScriptChunk chunk : existingChunks) {
-            if (chunk.opcode == OP_0) {
+            if (chunk.getOpcode() == OP_0) {
                 // OP_0, skip
             } else {
-                checkNotNull(chunk.data);
-                if (myIndex < redeemScript.findSigInRedeem(chunk.data, hash))
+                checkNotNull(chunk.getData());
+                if (myIndex < redeemScript.findSigInRedeem(chunk.getData(), hash))
                     return sigCount;
                 sigCount++;
             }
@@ -567,9 +571,9 @@ public class Script {
 
     private int findKeyInRedeem(ECKey key) {
         checkArgument(chunks.get(0).isOpCode()); // P2SH scriptSig
-        int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).opcode);
+        int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).getOpcode());
         for (int i = 0 ; i < numKeys ; i++) {
-            if (Arrays.equals(chunks.get(1 + i).data, key.getPubKey())) {
+            if (Arrays.equals(chunks.get(1 + i).getData(), key.getPubKey())) {
                 return i;
             }
         }
@@ -587,18 +591,18 @@ public class Script {
             throw new ScriptException("Only usable for multisig scripts.");
 
         ArrayList<ECKey> result = new ArrayList();
-        int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).opcode);
+        int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).getOpcode());
         for (int i = 0 ; i < numKeys ; i++)
-            result.add(ECKey.fromPublicOnly(chunks.get(1 + i).data));
+            result.add(ECKey.fromPublicOnly(chunks.get(1 + i).getData()));
         return result;
     }
 
     private int findSigInRedeem(byte[] signatureBytes, Sha256Hash hash) {
         checkArgument(chunks.get(0).isOpCode()); // P2SH scriptSig
-        int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).opcode);
+        int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).getOpcode());
         TransactionSignature signature = TransactionSignature.decodeFromBitcoin(signatureBytes, true);
         for (int i = 0 ; i < numKeys ; i++) {
-            if (ECKey.fromPublicOnly(chunks.get(i + 1).data).verify(hash, signature.getSignature())) {
+            if (ECKey.fromPublicOnly(chunks.get(i + 1).getData()).verify(hash, signature.getSignature())) {
                 return i;
             }
         }
@@ -615,7 +619,7 @@ public class Script {
         int lastOpCode = OP_INVALIDOPCODE;
         for (ScriptChunk chunk : chunks) {
             if (chunk.isOpCode()) {
-                switch (chunk.opcode) {
+                switch (chunk.getOpcode()) {
                 case OP_CHECKSIG:
                 case OP_CHECKSIGVERIFY:
                     sigOps++;
@@ -630,7 +634,7 @@ public class Script {
                 default:
                     break;
                 }
-                lastOpCode = chunk.opcode;
+                lastOpCode = chunk.getOpcode();
             }
         }
         return sigOps;
@@ -682,7 +686,7 @@ public class Script {
         for (int i = script.chunks.size() - 1; i >= 0; i--)
             if (!script.chunks.get(i).isOpCode()) {
                 Script subScript =  new Script();
-                subScript.parse(script.chunks.get(i).data);
+                subScript.parse(script.chunks.get(i).getData());
                 return getSigOpCount(subScript.chunks, true);
             }
         return 0;
@@ -695,7 +699,7 @@ public class Script {
         if (isSentToMultiSig()) {
             // for N of M CHECKMULTISIG script we will need N signatures to spend
             ScriptChunk nChunk = chunks.get(0);
-            return Script.decodeFromOpN(nChunk.opcode);
+            return Script.decodeFromOpN(nChunk.getOpcode());
         } else if (isSentToAddress() || isSentToRawPubKey()) {
             // pay-to-address and pay-to-pubkey require single sig
             return 1;
@@ -767,13 +771,13 @@ public class Script {
             // Second to last chunk must be an OP_N opcode and there should be that many data chunks (keys).
             ScriptChunk m = chunks.get(chunks.size() - 2);
             if (!m.isOpCode()) return false;
-            int numKeys = decodeFromOpN(m.opcode);
+            int numKeys = decodeFromOpN(m.getOpcode());
             if (numKeys < 1 || chunks.size() != 3 + numKeys) return false;
             for (int i = 1; i < chunks.size() - 2; i++) {
                 if (chunks.get(i).isOpCode()) return false;
             }
             // First chunk must be an OP_N opcode too.
-            if (decodeFromOpN(chunks.get(0).opcode) < 1) return false;
+            if (decodeFromOpN(chunks.get(0).getOpcode()) < 1) return false;
         } catch (IllegalArgumentException e) { // thrown by decodeFromOpN()
             return false;   // Not an OP_N opcode.
         }
@@ -904,11 +908,11 @@ public class Script {
     /**
      * Exposes the script interpreter. Normally you should not use this directly, instead use
      * {@link org.bitcoinj.core.TransactionInput#verify(org.bitcoinj.core.TransactionOutput)} or
-     * {@link org.bitcoinj.script.Script#correctlySpends(org.bitcoinj.core.Transaction, long, Script)}. This method
+     * {@link com.nchain.script.Script#correctlySpends(org.bitcoinj.core.Transaction, long, Script)}. This method
      * is useful if you need more precise control or access to the final state of the stack. This interface is very
      * likely to change in future.
      *
-     * @deprecated Use {@link #executeScript(org.bitcoinj.core.Transaction, long, org.bitcoinj.script.Script, LinkedList, Set)}
+     * @deprecated Use {@link #executeScript(org.bitcoinj.core.Transaction, long, com.nchain.script.Script, LinkedList, Set)}
      * instead.
      */
     @Deprecated
@@ -967,7 +971,7 @@ public class Script {
     /**
      * Exposes the script interpreter. Normally you should not use this directly, instead use
      * {@link org.bitcoinj.core.TransactionInput#verify(org.bitcoinj.core.TransactionOutput)} or
-     * {@link org.bitcoinj.script.Script#correctlySpends(org.bitcoinj.core.Transaction, long, Script)}. This method
+     * {@link com.nchain.script.Script#correctlySpends(org.bitcoinj.core.Transaction, long, Script)}. This method
      * is useful if you need more precise control or access to the final state of the stack. This interface is very
      * likely to change in future.
      */
@@ -999,7 +1003,7 @@ public class Script {
     /**
      * Exposes the script interpreter. Normally you should not use this directly, instead use
      * {@link org.bitcoinj.core.TransactionInput#verify(org.bitcoinj.core.TransactionOutput)} or
-     * {@link org.bitcoinj.script.Script#correctlySpends(org.bitcoinj.core.Transaction, long, Script)}. This method
+     * {@link com.nchain.script.Script#correctlySpends(org.bitcoinj.core.Transaction, long, Script)}. This method
      * is useful if you need more precise control or access to the final state of the stack. This interface is very
      * likely to change in future.
      */
@@ -1032,13 +1036,13 @@ public class Script {
                 scriptStateListener._onBeforeOpCodeExecuted(chunk, shouldExecute);
             }
 
-            if (chunk.opcode == OP_0) {
+            if (chunk.getOpcode() == OP_0) {
                 if (!shouldExecute)
                     continue;
 
                 stack.add(new byte[] {});
             } else if (!chunk.isOpCode()) {
-                if (chunk.data.length > MAX_SCRIPT_ELEMENT_SIZE)
+                if (chunk.getData().length > MAX_SCRIPT_ELEMENT_SIZE)
                     throw new ScriptException(ScriptError.SCRIPT_ERR_PUSH_SIZE, "attempted to push value on the stack that was too large");
 
                 if (!shouldExecute)
@@ -1048,9 +1052,9 @@ public class Script {
                     throw new ScriptException(ScriptError.SCRIPT_ERR_MINIMALDATA
                             , "PushData operation not compliant to Minimal data. A more specific opCode should be used.");
 
-                stack.add(chunk.data);
+                stack.add(chunk.getData());
             } else {
-                int opcode = chunk.opcode;
+                int opcode = chunk.getOpcode();
                 if (opcode > OP_16) {
                     opCount++;
                     if (opCount > 201)
@@ -2098,7 +2102,7 @@ public class Script {
      *                         Accessing txContainingThis from another thread while this method runs results in undefined behavior.
      * @param scriptSigIndex The index in txContainingThis of the scriptSig (note: NOT the index of the scriptPubKey).
      * @param scriptPubKey The connected scriptPubKey containing the conditions needed to claim the value.
-     * @deprecated Use {@link #correctlySpends(org.bitcoinj.core.Transaction, long, org.bitcoinj.script.Script, Set)}
+     * @deprecated Use {@link #correctlySpends(org.bitcoinj.core.Transaction, long, com.nchain.script.Script, Set)}
      * instead so that verification flags do not change as new verification options
      * are added.
      */
@@ -2179,7 +2183,7 @@ public class Script {
         // TODO: Check if we can take out enforceP2SH if there's a checkpoint at the enforcement block.
         if (verifyFlags.contains(VerifyFlag.P2SH) && scriptPubKey.isPayToScriptHash()) {
             for (ScriptChunk chunk : chunks)
-                if (chunk.isOpCode() && chunk.opcode > OP_16)
+                if (chunk.isOpCode() && chunk.getOpcode() > OP_16)
                     throw new ScriptException(ScriptError.SCRIPT_ERR_SIG_PUSHONLY
                             ,"attempted to spend a P2SH scriptPubKey with a script that contained script ops");
 
@@ -2352,7 +2356,7 @@ public class Script {
         Iterator<ScriptChunk> it = chunks.iterator();
 
         while (result && it.hasNext()) {
-            int opCode = it.next().opcode;
+            int opCode = it.next().getOpcode();
             // Note that IsPushOnly() *does* consider OP_RESERVED to be a push-type
             // opcode, however execution of OP_RESERVED fails, so it's not relevant
             // to P2SH/BIP62 as the scriptSig would fail prior to the P2SH special
@@ -2371,7 +2375,7 @@ public class Script {
     }
 
     /**
-     * Get the {@link org.bitcoinj.script.Script.ScriptType}.
+     * Get the {@link com.nchain.script.Script.ScriptType}.
      * @return The script type.
      */
     public ScriptType getScriptType() {

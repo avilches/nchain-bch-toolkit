@@ -37,9 +37,9 @@ import com.nchain.tools.ByteUtils;
 import com.nchain.tools.HEX;
 import com.nchain.tools.UnsafeByteArrayOutputStream;
 import com.nchain.tx.*;
-import org.bitcoinj.script.*;
-import org.bitcoinj.script.Script.VerifyFlag;
-import org.bitcoinj.tx.TransactionSignature;
+import com.nchain.script.*;
+import com.nchain.script.Script.VerifyFlag;
+import com.nchain.tx.TransactionSignature;
 import org.hamcrest.core.IsNot;
 import org.junit.Assert;
 import org.junit.Before;
@@ -58,8 +58,8 @@ import static com.nchain.script.ScriptHelpers.parseVerifyFlags;
 import static com.nchain.tools.ByteUtils.checkMinimallyEncodedLE;
 import static com.nchain.tools.ByteUtils.minimallyEncodeLE;
 import static com.nchain.tools.ByteUtils.toByteArray;
-import static org.bitcoinj.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
-import static org.bitcoinj.script.ScriptOpCodes.OP_0;
+import static com.nchain.script.Script.MAX_SCRIPT_ELEMENT_SIZE;
+import static com.nchain.script.ScriptOpCodes.OP_0;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.*;
 
@@ -168,7 +168,7 @@ public class ScriptTest {
         // Assert that the input script created contains the original multisig
         // script as the last chunk
         ScriptChunk scriptChunk = inputScript.getChunks().get(inputScript.getChunks().size() - 1);
-        Assert.assertArrayEquals(scriptChunk.data, multisigScript.getProgram());
+        Assert.assertArrayEquals(scriptChunk.getData(), multisigScript.getProgram());
 
         // Create regular multisig input script
         inputScript = ScriptBuilder.createMultiSigInputScript(Arrays.asList(party1TransactionSignature, party2TransactionSignature));
@@ -179,7 +179,7 @@ public class ScriptTest {
         // Assert that the input script created does not end with the original
         // multisig script
         scriptChunk = inputScript.getChunks().get(inputScript.getChunks().size() - 1);
-        Assert.assertThat(scriptChunk.data, IsNot.not(equalTo(multisigScript.getProgram())));
+        Assert.assertThat(scriptChunk.getData(), IsNot.not(equalTo(multisigScript.getProgram())));
     }
 
 
@@ -190,43 +190,43 @@ public class ScriptTest {
 
         // pay-to-pubkey
         Script inputScript = ScriptBuilder.createInputScript(dummySig);
-        assertThat(inputScript.getChunks().get(0).data, equalTo(dummySig.bitcoinSerialize()));
+        assertThat(inputScript.getChunks().get(0).getData(), equalTo(dummySig.bitcoinSerialize()));
         inputScript = ScriptBuilder.createInputScript(null);
-        assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
+        assertThat(inputScript.getChunks().get(0).getOpcode(), equalTo(OP_0));
 
         // pay-to-address
         inputScript = ScriptBuilder.createInputScript(dummySig, key);
-        assertThat(inputScript.getChunks().get(0).data, equalTo(dummySig.bitcoinSerialize()));
+        assertThat(inputScript.getChunks().get(0).getData(), equalTo(dummySig.bitcoinSerialize()));
         inputScript = ScriptBuilder.createInputScript(null, key);
-        assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(1).data, equalTo(key.getPubKey()));
+        assertThat(inputScript.getChunks().get(0).getOpcode(), equalTo(OP_0));
+        assertThat(inputScript.getChunks().get(1).getData(), equalTo(key.getPubKey()));
 
         // pay-to-script-hash
         ECKey key2 = ECKey.create();
         Script multisigScript = ScriptBuilder.createMultiSigOutputScript(2, Arrays.asList(key, key2));
         inputScript = ScriptBuilder.createP2SHMultiSigInputScript(Arrays.asList(dummySig, dummySig), multisigScript);
-        assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(1).data, equalTo(dummySig.bitcoinSerialize()));
-        assertThat(inputScript.getChunks().get(2).data, equalTo(dummySig.bitcoinSerialize()));
-        assertThat(inputScript.getChunks().get(3).data, equalTo(multisigScript.getProgram()));
+        assertThat(inputScript.getChunks().get(0).getOpcode(), equalTo(OP_0));
+        assertThat(inputScript.getChunks().get(1).getData(), equalTo(dummySig.bitcoinSerialize()));
+        assertThat(inputScript.getChunks().get(2).getData(), equalTo(dummySig.bitcoinSerialize()));
+        assertThat(inputScript.getChunks().get(3).getData(), equalTo(multisigScript.getProgram()));
 
         inputScript = ScriptBuilder.createP2SHMultiSigInputScript(null, multisigScript);
-        assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(1).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(2).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(3).data, equalTo(multisigScript.getProgram()));
+        assertThat(inputScript.getChunks().get(0).getOpcode(), equalTo(OP_0));
+        assertThat(inputScript.getChunks().get(1).getOpcode(), equalTo(OP_0));
+        assertThat(inputScript.getChunks().get(2).getOpcode(), equalTo(OP_0));
+        assertThat(inputScript.getChunks().get(3).getData(), equalTo(multisigScript.getProgram()));
 
         inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, dummySig.bitcoinSerialize(), 0, 1, 1);
-        assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(1).data, equalTo(dummySig.bitcoinSerialize()));
-        assertThat(inputScript.getChunks().get(2).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(3).data, equalTo(multisigScript.getProgram()));
+        assertThat(inputScript.getChunks().get(0).getOpcode(), equalTo(OP_0));
+        assertThat(inputScript.getChunks().get(1).getData(), equalTo(dummySig.bitcoinSerialize()));
+        assertThat(inputScript.getChunks().get(2).getOpcode(), equalTo(OP_0));
+        assertThat(inputScript.getChunks().get(3).getData(), equalTo(multisigScript.getProgram()));
 
         inputScript = ScriptBuilder.updateScriptWithSignature(inputScript, dummySig.bitcoinSerialize(), 1, 1, 1);
-        assertThat(inputScript.getChunks().get(0).opcode, equalTo(OP_0));
-        assertThat(inputScript.getChunks().get(1).data, equalTo(dummySig.bitcoinSerialize()));
-        assertThat(inputScript.getChunks().get(2).data, equalTo(dummySig.bitcoinSerialize()));
-        assertThat(inputScript.getChunks().get(3).data, equalTo(multisigScript.getProgram()));
+        assertThat(inputScript.getChunks().get(0).getOpcode(), equalTo(OP_0));
+        assertThat(inputScript.getChunks().get(1).getData(), equalTo(dummySig.bitcoinSerialize()));
+        assertThat(inputScript.getChunks().get(2).getData(), equalTo(dummySig.bitcoinSerialize()));
+        assertThat(inputScript.getChunks().get(3).getData(), equalTo(multisigScript.getProgram()));
 
         // updating scriptSig with no missing signatures
         ScriptBuilder.updateScriptWithSignature(inputScript, dummySig.bitcoinSerialize(), 1, 1, 1);

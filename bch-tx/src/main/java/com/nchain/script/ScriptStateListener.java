@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.bitcoinj.script;
+package com.nchain.script;
 
+import com.nchain.script.ScriptChunk;
+import com.nchain.script.ScriptException;
 import com.nchain.tx.Coin;
 import com.nchain.tx.Transaction;
 

@@ -23,15 +23,14 @@ import java.io.OutputStream
 import java.lang.ref.WeakReference
 
 import com.nchain.shared.VerificationException
-import com.nchain.params.NetworkParameters
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.MessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
-import org.bitcoinj.script.ProtocolException
-import org.bitcoinj.script.Script
-import org.bitcoinj.script.ScriptException
+import com.nchain.script.ProtocolException
+import com.nchain.script.Script
+import com.nchain.script.ScriptException
 import java.util.*
 
 /**

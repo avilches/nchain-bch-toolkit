@@ -16,12 +16,10 @@
 
 package com.nchain.script;
 
-import org.bitcoinj.script.Script;
-import org.bitcoinj.script.ScriptBuilder;
-import org.bitcoinj.script.ScriptChunk;
+import com.nchain.script.Script;
 import org.junit.Test;
 
-import static org.bitcoinj.script.ScriptOpCodes.*;
+import static com.nchain.script.ScriptOpCodes.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

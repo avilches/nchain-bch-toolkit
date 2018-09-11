@@ -6,9 +6,9 @@ import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.UnsafeByteArrayOutputStream
 import com.nchain.tx.*
-import org.bitcoinj.script.Script
-import org.bitcoinj.script.ScriptOpCodes
-import org.bitcoinj.tx.TransactionSignature
+import com.nchain.script.Script
+import com.nchain.script.ScriptOpCodes
+import com.nchain.tx.TransactionSignature
 import java.io.IOException
 import java.math.BigInteger
 import java.util.ArrayList
