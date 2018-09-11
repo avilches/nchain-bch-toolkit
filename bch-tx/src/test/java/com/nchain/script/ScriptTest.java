@@ -24,9 +24,6 @@ package com.nchain.script;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.nchain.address.CashAddress;
 import com.nchain.bitcoinkt.core.TransactionSignatureService;
 import com.nchain.key.DumpedPrivateKey;
@@ -53,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.*;
 
 import static com.nchain.script.ScriptHelpers.parseScriptString;
@@ -102,7 +100,7 @@ public class ScriptTest {
 
     @Test
     public void testMultiSig() throws Exception {
-        List<ECKey> keys = Lists.newArrayList(ECKey.create(), ECKey.create(), ECKey.create());
+        List<ECKey> keys = Arrays.asList(ECKey.create(), ECKey.create(), ECKey.create());
         assertTrue(ScriptBuilder.createMultiSigOutputScript(2, keys).isSentToMultiSig());
         Script script = ScriptBuilder.createMultiSigOutputScript(3, keys);
         assertTrue(script.isSentToMultiSig());
@@ -162,7 +160,7 @@ public class ScriptTest {
         TransactionSignature party2TransactionSignature = new TransactionSignature(party2Signature, Transaction.SigHash.ALL, false);
 
         // Create p2sh multisig input script
-        Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(ImmutableList.of(party1TransactionSignature, party2TransactionSignature), multisigScript);
+        Script inputScript = ScriptBuilder.createP2SHMultiSigInputScript(Arrays.asList(party1TransactionSignature, party2TransactionSignature), multisigScript);
 
         // Assert that the input script contains 4 chunks
         assertTrue(inputScript.getChunks().size() == 4);
@@ -173,7 +171,7 @@ public class ScriptTest {
         Assert.assertArrayEquals(scriptChunk.data, multisigScript.getProgram());
 
         // Create regular multisig input script
-        inputScript = ScriptBuilder.createMultiSigInputScript(ImmutableList.of(party1TransactionSignature, party2TransactionSignature));
+        inputScript = ScriptBuilder.createMultiSigInputScript(Arrays.asList(party1TransactionSignature, party2TransactionSignature));
 
         // Assert that the input script only contains 3 chunks
         assertTrue(inputScript.getChunks().size() == 3);
@@ -250,7 +248,7 @@ public class ScriptTest {
     @Test
     public void dataDrivenValidScripts() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(Thread.currentThread().getContextClassLoader().getResourceAsStream(
-                "script_valid.json"), Charsets.UTF_8));
+                "script_valid.json"), Charset.forName("UTF-8")));
         for (JsonNode test : json) {
             Script scriptSig = parseScriptString(test.get(0).asText());
             Script scriptPubKey = parseScriptString(test.get(1).asText());
@@ -268,7 +266,7 @@ public class ScriptTest {
     @Test
     public void dataDrivenInvalidScripts() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(Thread.currentThread().getContextClassLoader().getResourceAsStream(
-                "script_invalid.json"), Charsets.UTF_8));
+                "script_invalid.json"), Charset.forName("UTF-8")));
         for (JsonNode test : json) {
             try {
                 Script scriptSig = parseScriptString(test.get(0).asText());
@@ -299,7 +297,7 @@ public class ScriptTest {
     @Test
     public void dataDrivenValidTransactions() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(Thread.currentThread().getContextClassLoader().getResourceAsStream(
-                "tx_valid.json"), Charsets.UTF_8));
+                "tx_valid.json"), Charset.forName("UTF-8")));
         int x = 0;
         for (JsonNode test : json) {
             if (test.isArray() && test.size() == 1 && test.get(0).isTextual()) {
@@ -336,7 +334,7 @@ public class ScriptTest {
     @Test
     public void dataDrivenInvalidTransactions() throws Exception {
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(Thread.currentThread().getContextClassLoader().getResourceAsStream(
-                "tx_invalid.json"), Charsets.UTF_8));
+                "tx_invalid.json"), Charset.forName("UTF-8")));
         int x = 0;
         for (JsonNode test : json) {
             if (test.isArray() && test.size() == 1 && test.get(0).isTextual()) {

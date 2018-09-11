@@ -18,7 +18,6 @@ package com.nchain.script;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
 import com.nchain.shared.VerificationException;
 import com.nchain.tx.Coin;
 import com.nchain.tx.Transaction;
@@ -31,6 +30,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -43,7 +43,7 @@ public class ScriptDataDrivenTest {
     public static Collection<JsonNode> getData() throws IOException {
         Collection<JsonNode> testData = new ArrayList<JsonNode>(1000);
         JsonNode json = new ObjectMapper().readTree(new InputStreamReader(Thread.currentThread().getContextClassLoader().
-                getResourceAsStream("script_tests.json"), Charsets.UTF_8));
+                getResourceAsStream("script_tests.json"), Charset.forName("UTF-8")));
         for (JsonNode test : json) {
             if (test.size() > 1) {          // ignore comments
                 testData.add(test);

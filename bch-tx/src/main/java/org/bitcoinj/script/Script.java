@@ -22,7 +22,6 @@
 
 package org.bitcoinj.script;
 
-import com.google.common.collect.Lists;
 import com.nchain.address.CashAddress;
 import com.nchain.bitcoinkt.core.TransactionSignatureService;
 import com.nchain.key.ECKey;
@@ -42,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.crypto.digests.RIPEMD160Digest;
 
-import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -52,8 +50,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
+import static kotlin.jvm.internal.Intrinsics.checkNotNull;
 import static org.bitcoinj.script.ScriptOpCodes.*;
-import static com.google.common.base.Preconditions.*;
+import static com.nchain.tools.Preconditions.*;
 
 // TODO: Redesign this entire API to be more type safe and organised.
 
@@ -146,7 +145,7 @@ public class Script {
 
     /** Creates an empty script that serializes to nothing. */
     private Script() {
-        chunks = Lists.newArrayList();
+        chunks = new ArrayList();
     }
 
     // Used from ScriptBuilder.
@@ -506,7 +505,7 @@ public class Script {
      * It is expected that this program later on will be updated with proper signatures.
      */
 /*
-    public Script createEmptyInputScript(@Nullable ECKey key, @Nullable Script redeemScript) {
+    public Script createEmptyInputScript(ECKey key, Script redeemScript) {
         if (isSentToAddress()) {
             checkArgument(key != null, "Key required to create pay-to-address input script");
             return ScriptBuilder.createInputScript(null, key);
@@ -587,7 +586,7 @@ public class Script {
         if (!isSentToMultiSig())
             throw new ScriptException("Only usable for multisig scripts.");
 
-        ArrayList<ECKey> result = Lists.newArrayList();
+        ArrayList<ECKey> result = new ArrayList();
         int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).opcode);
         for (int i = 0 ; i < numKeys ; i++)
             result.add(ECKey.fromPublicOnly(chunks.get(1 + i).data));
@@ -599,7 +598,7 @@ public class Script {
         int numKeys = Script.decodeFromOpN(chunks.get(chunks.size() - 2).opcode);
         TransactionSignature signature = TransactionSignature.decodeFromBitcoin(signatureBytes, true);
         for (int i = 0 ; i < numKeys ; i++) {
-            if (ECKey.fromPublicOnly(chunks.get(i + 1).data).verify(hash, signature.signature)) {
+            if (ECKey.fromPublicOnly(chunks.get(i + 1).data).verify(hash, signature.getSignature())) {
                 return i;
             }
         }
@@ -711,7 +710,7 @@ public class Script {
      * Returns number of bytes required to spend this script. It accepts optional ECKey and redeemScript that may
      * be required for certain types of script to estimate target size.
      */
-    public int getNumberOfBytesRequiredToSpend(@Nullable ECKey pubKey, @Nullable Script redeemScript) {
+    public int getNumberOfBytesRequiredToSpend(ECKey pubKey, Script redeemScript) {
         if (isPayToScriptHash()) {
             // scriptSig: <sig> [sig] [sig...] <redeemscript>
             checkArgument(redeemScript != null, "P2SH script requires redeemScript to be spent");
@@ -913,7 +912,7 @@ public class Script {
      * instead.
      */
     @Deprecated
-    public static void executeScript(@Nullable Transaction txContainingThis, long index,
+    public static void executeScript(Transaction txContainingThis, long index,
                                      Script script, LinkedList<byte[]> stack, boolean enforceNullDummy) {
         final EnumSet<VerifyFlag> flags = enforceNullDummy
             ? EnumSet.of(VerifyFlag.NULLDUMMY)
@@ -923,7 +922,7 @@ public class Script {
     }
 
     @Deprecated
-    public static void executeScript(@Nullable Transaction txContainingThis, long index,
+    public static void executeScript(Transaction txContainingThis, long index,
                                      Script script, LinkedList<byte[]> stack, Set<VerifyFlag> verifyFlags) {
          executeScript(txContainingThis, index, script, stack, Coin.getZERO(), verifyFlags);
     }
@@ -972,7 +971,7 @@ public class Script {
      * is useful if you need more precise control or access to the final state of the stack. This interface is very
      * likely to change in future.
      */
-    public static void executeScript(@Nullable Transaction txContainingThis, long index,
+    public static void executeScript(Transaction txContainingThis, long index,
                                      Script script, LinkedList<byte[]> stack, Coin value, Set<VerifyFlag> verifyFlags) throws ScriptException {
         executeScript(txContainingThis,index, script, stack, value, verifyFlags, null);
     }
@@ -981,7 +980,7 @@ public class Script {
      * Executes a script in debug mode with the provided ScriptStateListener.  Exceptions (which are thrown when a script fails) are caught
      * and passed to the listener before being rethrown.
      */
-    public static void executeDebugScript(@Nullable Transaction txContainingThis, long index,
+    public static void executeDebugScript(Transaction txContainingThis, long index,
                                      Script script, LinkedList<byte[]> stack, Coin value, Set<VerifyFlag> verifyFlags, ScriptStateListener scriptStateListener) throws ScriptException {
         try {
             executeScript(txContainingThis, index, script, stack, value, verifyFlags, scriptStateListener);
@@ -1004,7 +1003,7 @@ public class Script {
      * is useful if you need more precise control or access to the final state of the stack. This interface is very
      * likely to change in future.
      */
-    public static void executeScript(@Nullable Transaction txContainingThis, long index,
+    public static void executeScript(Transaction txContainingThis, long index,
                                      Script script, LinkedList<byte[]> stack, Coin value, Set<VerifyFlag> verifyFlags, ScriptStateListener scriptStateListener) throws ScriptException {
         int opCount = 0;
         int lastCodeSepLocation = 0;
@@ -1943,9 +1942,9 @@ public class Script {
                 // TODO: Should check hash type is known
                 Sha256Hash hash = sig.useForkId() ?
                         TransactionSignatureService.INSTANCE.hashForSignatureWitness(txContainingThis, index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay(), verifyFlags) :
-                        TransactionSignatureService.INSTANCE.hashForSignature(txContainingThis, index, connectedScript, (byte) sig.sighashFlags);
+                        TransactionSignatureService.INSTANCE.hashForSignature(txContainingThis, index, connectedScript, (byte) sig.getSighashFlags());
 
-                sigValid = ECKeySigner.verify(hash.getBytes(), sig.signature, pubKey);
+                sigValid = ECKeySigner.verify(hash.getBytes(), sig.getSignature(), pubKey);
 
             }
 
@@ -2056,8 +2055,8 @@ public class Script {
                         sig = TransactionSignature.decodeFromBitcoin(sigsCopy.getFirst(), requireCanonical);
                         Sha256Hash hash = sig.useForkId() ?
                                 TransactionSignatureService.INSTANCE.hashForSignatureWitness(txContainingThis, index, connectedScript, value, sig.sigHashMode(), sig.anyoneCanPay(), verifyFlags) :
-                                TransactionSignatureService.INSTANCE.hashForSignature(txContainingThis, index, connectedScript, (byte) sig.sighashFlags);
-                        if (ECKeySigner.verify(hash.getBytes(), sig.signature, pubKey))
+                                TransactionSignatureService.INSTANCE.hashForSignature(txContainingThis, index, connectedScript, (byte) sig.getSighashFlags());
+                        if (ECKeySigner.verify(hash.getBytes(), sig.getSignature(), pubKey))
                             sigsCopy.pollFirst();
                     }
                 }

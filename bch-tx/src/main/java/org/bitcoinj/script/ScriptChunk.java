@@ -17,16 +17,15 @@
 
 package org.bitcoinj.script;
 
-import com.google.common.base.Objects;
 import com.nchain.tools.ByteUtils;
 import com.nchain.tools.HEX;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Objects;
 
-import static com.google.common.base.Preconditions.checkState;
+import static com.nchain.tools.Preconditions.checkState;
 import static org.bitcoinj.script.ScriptOpCodes.*;
 
 /**
@@ -39,7 +38,6 @@ public class ScriptChunk {
      * For push operations, this is the vector to be pushed on the stack. For {@link ScriptOpCodes#OP_0}, the vector is
      * empty. Null for non-push operations.
      */
-    @Nullable
     public final byte[] data;
     private int startLocationInProgram;
 
@@ -165,6 +163,6 @@ public class ScriptChunk {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(opcode, startLocationInProgram, Arrays.hashCode(data));
+        return Objects.hash(opcode, startLocationInProgram, Arrays.hashCode(data));
     }
 }

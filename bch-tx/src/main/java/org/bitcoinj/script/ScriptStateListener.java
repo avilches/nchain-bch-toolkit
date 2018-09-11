@@ -18,7 +18,6 @@ package org.bitcoinj.script;
 import com.nchain.tx.Coin;
 import com.nchain.tx.Transaction;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Set;
 
@@ -51,7 +50,7 @@ public abstract class ScriptStateListener {
     private List<ScriptChunk> scriptChunks;
 
 
-    void setInitialState(@Nullable Transaction txContainingThis, long index,
+    void setInitialState(Transaction txContainingThis, long index,
                          Script script, List<byte[]> stack, List<byte[]> altstack, List<Boolean> ifStack, Coin value, Set<Script.VerifyFlag> verifyFlags) {
         this.chunkIndex = -1;
         this.txContainingThis = txContainingThis;
