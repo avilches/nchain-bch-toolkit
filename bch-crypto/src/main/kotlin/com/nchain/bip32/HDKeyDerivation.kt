@@ -150,7 +150,7 @@ object HDKeyDerivation {
     fun deriveChildKeyBytesFromPrivate(parent: DeterministicKey,
                                        childNumber: ChildNumber): RawKeyBytes {
         check(parent.hasPrivKey(), {"Parent key must have private key bytes for this method."})
-        val parentPublicKey = parent.key!!.pubKeyPoint.getEncoded(true)
+        val parentPublicKey = parent.key.pubKeyPoint.getEncoded(true)
         check(parentPublicKey.size == 33, {"Parent pubkey must be 33 bytes, but is " + parentPublicKey.size})
         val data = ByteBuffer.allocate(37)
         if (childNumber.isHardened) {
@@ -179,7 +179,7 @@ object HDKeyDerivation {
     @Throws(HDDerivationException::class)
     fun deriveChildKeyBytesFromPublic(parent: DeterministicKey, childNumber: ChildNumber, mode: PublicDeriveMode): RawKeyBytes {
         check(!childNumber.isHardened, {"Can't use private derivation with public keys only."})
-        val parentPublicKey = parent.key!!.pubKeyPoint.getEncoded(true)
+        val parentPublicKey = parent.key.pubKeyPoint.getEncoded(true)
         check(parentPublicKey.size == 33, {"Parent pubkey must be 33 bytes, but is " + parentPublicKey.size})
         val data = ByteBuffer.allocate(37)
         data.put(parentPublicKey)

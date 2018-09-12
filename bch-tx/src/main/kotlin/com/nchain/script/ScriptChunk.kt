@@ -150,10 +150,10 @@ class ScriptChunk
 
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
-        if (o == null || javaClass != o.javaClass) return false
-        val other = o as ScriptChunk?
-        return (opcode == other!!.opcode && startLocationInProgram == other.startLocationInProgram
-                && Arrays.equals(data, other.data))
+        return if (o != null && o is ScriptChunk)
+            opcode == o.opcode && startLocationInProgram == o.startLocationInProgram && Arrays.equals(data, o.data)
+        else
+            false
     }
 
     override fun hashCode(): Int {

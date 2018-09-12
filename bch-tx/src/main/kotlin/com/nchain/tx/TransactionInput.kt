@@ -162,7 +162,7 @@ open class TransactionInput
      */
     // -1 but all is serialized to the wire as unsigned int.
     val isCoinBase: Boolean
-        get() = outpoint!!.hash == Sha256Hash.ZERO_HASH && outpoint!!.index and 0xFFFFFFFFL == 0xFFFFFFFFL
+        get() = outpoint.hash == Sha256Hash.ZERO_HASH && outpoint.index and 0xFFFFFFFFL == 0xFFFFFFFFL
 
     /**
      * Convenience method that returns the from address of this input by parsing the scriptSig. The concept of a
@@ -192,7 +192,7 @@ open class TransactionInput
      * this method returns null.
      */
     val connectedOutput: TransactionOutput?
-        get() = outpoint!!.connectedOutput
+        get() = outpoint.connectedOutput
 
     /**
      * Returns the connected transaction, assuming the input was connected with

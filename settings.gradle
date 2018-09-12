@@ -3,3 +3,4 @@ rootProject.name = "bitcoincash-toolkit"
 
 include(":bch-crypto")
 include(":bch-tx")
+include(":bch-rpc-client")

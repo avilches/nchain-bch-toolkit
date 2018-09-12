@@ -583,7 +583,7 @@ class Transaction(val version: Long = 0L,
                 s.append("\n          ")
                 s.append("outpoint:")
                 val outpoint = `in`.outpoint
-                s.append(outpoint!!.toString())
+                s.append(outpoint.toString())
                 val connectedOutput = outpoint.connectedOutput
                 if (connectedOutput != null) {
                     val scriptPubKey = connectedOutput.scriptPubKey

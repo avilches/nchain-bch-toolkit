@@ -156,7 +156,7 @@ class CashAddress(@Transient var parameters: NetworkParameters,
          * Check if a given address version is valid given the NetworkParameters.
          */
         @JvmStatic fun isAcceptableVersion(params: NetworkParameters, version: Int): Boolean {
-            for (v in params.acceptableAddressCodes!!) {
+            for (v in params.acceptableAddressCodes) {
                 if (version == v) {
                     return true
                 }

@@ -83,7 +83,7 @@ class TransactionOutPoint
 
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {
-        stream.write(hash!!.reversedBytes)
+        stream.write(hash.reversedBytes)
         ByteUtils.uint32ToByteStreamLE(index, stream)
     }
 

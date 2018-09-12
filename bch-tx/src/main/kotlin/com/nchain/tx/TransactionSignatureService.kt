@@ -212,7 +212,7 @@ object TransactionSignatureService {
      * This is required for signatures which use a sigHashType which cannot be represented using SigHash and anyoneCanPay
      * See transaction c99c49da4c38af669dea436d3e73780dfdb6c1ecf9958baa52960e8baee30e73, which has sigHashType 0
      */
-    fun hashForSignature(tx: Transaction, inputIndex: Int, connectedScript: ByteArray, sigHashType: Byte): Sha256Hash? {
+    fun hashForSignature(tx: Transaction, inputIndex: Int, connectedScript: ByteArray, sigHashType: Byte): Sha256Hash {
         // The SIGHASH flags are used in the design of contracts, please see this page for a further understanding of
         // the purposes of the code in this method:
         //
