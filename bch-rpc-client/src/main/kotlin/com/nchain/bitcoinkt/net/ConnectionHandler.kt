@@ -16,8 +16,6 @@
 
 package com.nchain.bitcoinkt.net
 
-import com.nchain.bitcoinkt.core.Message
-import com.nchain.bitcoinkt.utils.Threading
 import com.google.common.base.Throwables
 import org.slf4j.LoggerFactory
 import javax.annotation.concurrent.GuardedBy
@@ -43,7 +41,7 @@ internal class ConnectionHandler private constructor(@field:GuardedBy("lock") va
 
     // We lock when touching local flags and when writing data, but NEVER when calling any methods which leave this
     // class into non-Java classes.
-    private val lock = Threading.lock("nioConnectionHandler")
+//    private val lock = Threading.lock("nioConnectionHandler")
     @GuardedBy("lock")
     private var readBuff: ByteBuffer?
     @GuardedBy("lock")
@@ -81,13 +79,13 @@ internal class ConnectionHandler private constructor(@field:GuardedBy("lock") va
         // closeConnection() may have already happened because we invoked the other c'tor above, which called
         // connection.setWriteTarget which might have re-entered already. In this case we shouldn't add ourselves
         // to the connectedHandlers set.
-        lock.lock()
+//        lock.lock()
         try {
             this.connectedHandlers = connectedHandlers
             if (!closeCalled)
                 checkState(this.connectedHandlers!!.add(this))
         } finally {
-            lock.unlock()
+//            lock.unlock()
         }
     }
 
@@ -102,7 +100,7 @@ internal class ConnectionHandler private constructor(@field:GuardedBy("lock") va
     // Tries to write any outstanding write bytes, runs in any thread (possibly unlocked)
     @Throws(IOException::class)
     private fun tryWriteBytes() {
-        lock.lock()
+//        lock.lock()
         try {
             // Iterate through the outbound ByteBuff queue, pushing as much as possible into the OS' network buffer.
             val bytesIterator = bytesToWrite.iterator()
@@ -121,48 +119,48 @@ internal class ConnectionHandler private constructor(@field:GuardedBy("lock") va
                 key.interestOps(key.interestOps() and SelectionKey.OP_WRITE.inv())
             // Don't bother waking up the selector here, since we're just removing an op, not adding
         } finally {
-            lock.unlock()
+//            lock.unlock()
         }
     }
 
     @Throws(IOException::class)
     override fun writeBytes(message: ByteArray) {
         var andUnlock = true
-        lock.lock()
+//        lock.lock()
         try {
             // Network buffers are not unlimited (and are often smaller than some messages we may wish to send), and
             // thus we have to buffer outbound messages sometimes. To do this, we use a queue of ByteBuffers and just
             // append to it when we want to send a message. We then let tryWriteBytes() either send the message or
             // register our SelectionKey to wakeup when we have free outbound buffer space available.
 
-            if (bytesToWriteRemaining + message.size > OUTBOUND_BUFFER_BYTE_COUNT)
-                throw IOException("Outbound buffer overflowed")
+//            if (bytesToWriteRemaining + message.size > OUTBOUND_BUFFER_BYTE_COUNT)
+//                throw IOException("Outbound buffer overflowed")
             // Just dump the message onto the write buffer and call tryWriteBytes
             // TODO: Kill the needless message duplication when the write completes right away
             bytesToWrite.offer(ByteBuffer.wrap(Arrays.copyOf(message, message.size)))
             bytesToWriteRemaining += message.size.toLong()
             setWriteOps()
         } catch (e: IOException) {
-            lock.unlock()
+//            lock.unlock()
             andUnlock = false
             log.warn("Error writing message to connection, closing connection", e)
             closeConnection()
             throw e
         } catch (e: CancelledKeyException) {
-            lock.unlock()
+//            lock.unlock()
             andUnlock = false
             log.warn("Error writing message to connection, closing connection", e)
             closeConnection()
             throw IOException(e)
         } finally {
-            if (andUnlock)
-                lock.unlock()
+//            if (andUnlock)
+//                lock.unlock()
         }
     }
 
     // May NOT be called with lock held
     override fun closeConnection() {
-        checkState(!lock.isHeldByCurrentThread)
+//        checkState(!lock.isHeldByCurrentThread)
         try {
             channel.close()
         } catch (e: IOException) {
@@ -174,12 +172,12 @@ internal class ConnectionHandler private constructor(@field:GuardedBy("lock") va
 
     private fun connectionClosed() {
         var callClosed = false
-        lock.lock()
+//        lock.lock()
         try {
             callClosed = !closeCalled
             closeCalled = true
         } finally {
-            lock.unlock()
+//            lock.unlock()
         }
         if (callClosed) {
             checkState(connectedHandlers == null || connectedHandlers!!.remove(this))
@@ -193,7 +191,7 @@ internal class ConnectionHandler private constructor(@field:GuardedBy("lock") va
         private val BUFFER_SIZE_LOWER_BOUND = 4096
         private val BUFFER_SIZE_UPPER_BOUND = 65536
 
-        private val OUTBOUND_BUFFER_BYTE_COUNT = Message.MAX_SIZE + 24 // 24 byte message header
+//        private val OUTBOUND_BUFFER_BYTE_COUNT = Message.MAX_SIZE + 24 // 24 byte message header
 
         // Handle a SelectionKey which was selected
         // Runs unlocked as the caller is single-threaded (or if not, should enforce that handleKey is only called

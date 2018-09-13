@@ -18,7 +18,6 @@ package com.nchain.bitcoinkt.net
 
 import com.google.common.base.Throwables
 import com.google.common.util.concurrent.*
-import com.nchain.bitcoinkt.utils.*
 import org.slf4j.LoggerFactory
 
 import java.io.IOException
@@ -184,7 +183,8 @@ class NioClientManager : AbstractExecutionThreadService(), ClientConnectionManag
     }
 
     override fun executor(): Executor {
-        return Executor { command -> ContextPropagatingThreadFactory("NioClientManager").newThread(command).start() }
+        return Executors.newFixedThreadPool(10)
+//        return Executor { command -> ContextPropagatingThreadFactory("NioClientManager").newThread(command).start() }
     }
 
     companion object {
