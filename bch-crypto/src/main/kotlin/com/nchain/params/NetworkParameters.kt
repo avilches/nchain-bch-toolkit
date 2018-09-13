@@ -61,7 +61,7 @@ abstract class NetworkParameters protected constructor(
         /** Returns the 4 byte header for BIP32 (HD) wallet - public key part.  */
         val bip32HeaderPub: Int,
         /** Returns the 4 byte header for BIP32 (HD) wallet - private key part.  */
-        val bip32HeaderPriv: Int
+        val bip32HeaderPriv: Int,
 
 
         /**
@@ -125,11 +125,11 @@ abstract class NetworkParameters protected constructor(
          */
 
         /** Default TCP port on which to connect to nodes.  */
-//        val port: Int,
+        val port: Int,
         /** The header bytes that identify the start of a packet on this network.  */
-//        val packetMagic: Long,
+        val packetMagic: Long,
         /** Returns DNS names that when resolved, give IP addresses of active peers.  */
-//        val dnsSeeds: Array<String>,
+        val dnsSeeds: Array<String>
         /** Returns IP address of known seed peers. */
 //        val addrSeeds: Array<Int>
 ) {

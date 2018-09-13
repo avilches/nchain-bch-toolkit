@@ -36,7 +36,7 @@ object TestNet3Params : NetworkParameters(
         dumpedPrivateKeyHeader = 239,
         acceptableAddressCodes = intArrayOf(TESTNET_ADDRESS_HEADER, TESTNET_P2SH_HEADER),
         bip32HeaderPub = 0x043587CF,
-        bip32HeaderPriv = 0x04358394
+        bip32HeaderPriv = 0x04358394,
 
 //        maxTarget = ByteUtils.decodeCompactBits(0x1d00ffffL),
 //        majorityEnforceBlockUpgrade = 51,
@@ -49,11 +49,15 @@ object TestNet3Params : NetworkParameters(
 //        daaUpdateHeight = 1188697,
 //        monolithHeight = 1233078,
 //
-//        packetMagic = 0xf4e5f3f4L,
-//        port = 18333,
-//        dnsSeeds = arrayOf("testnet-seed.bitcoinabc.org", "testnet-seed-abc.bitcoinforks.org",
-//                "testnet-seed.bitcoinunlimited.info", "testnet-seed.bitprim.org", "testnet-seed.deadalnix.me",
-//                "testnet-seeder.criptolayer.net"),
+        packetMagic = 0xf4e5f3f4L,
+        port = 18333,
+        dnsSeeds = arrayOf(
+                "testnet-seed.bitcoinabc.org",
+//                "testnet-seed-abc.bitcoinforks.org",
+//                "testnet-seed.bitcoinunlimited.info",
+                "testnet-seed.bitprim.org",
+                "testnet-seed.deadalnix.me",
+                "testnet-seeder.criptolayer.net")
 //        addrSeeds = emptyArray()
 )
 {

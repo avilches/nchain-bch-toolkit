@@ -38,7 +38,7 @@ object MainNetParams : NetworkParameters(
         dumpedPrivateKeyHeader = 128,
         acceptableAddressCodes = intArrayOf(MAINNET_ADDRESS_HEADER, MAINNET_P2SH_HEADER),
         bip32HeaderPub = 0x0488B21E, //The 4 byte header that serializes in base58 to "xpub".
-        bip32HeaderPriv = 0x0488ADE4 //The 4 byte header that serializes in base58 to "xprv"
+        bip32HeaderPriv = 0x0488ADE4, //The 4 byte header that serializes in base58 to "xprv"
 
 //        maxTarget = ByteUtils.decodeCompactBits(0x1d00ffffL),
 //        majorityEnforceBlockUpgrade = 750,
@@ -51,10 +51,15 @@ object MainNetParams : NetworkParameters(
 //        daaUpdateHeight = 504031,
 //        monolithHeight = 530359,
 //
-//        packetMagic = 0xe3e1f3e8L,
-//        port = 8333,
-//        dnsSeeds = arrayOf("seed.bitcoinabc.org", "seed-abc.bitcoinforks.org", "btccash-seeder.bitcoinunlimited.info",
-//                "seed.bitprim.org", "seed.deadalnix.me", "seeder.criptolayer.net"),
+        packetMagic = 0xe3e1f3e8L,
+        port = 8333,
+        dnsSeeds = arrayOf(
+                "seed.bitcoinabc.org",
+//                "seed-abc.bitcoinforks.org",
+//                "btccash-seeder.bitcoinunlimited.info",
+                "seed.bitprim.org",
+                "seed.deadalnix.me",
+                "seeder.criptolayer.net")
 //        addrSeeds = emptyArray()
 
 ) {

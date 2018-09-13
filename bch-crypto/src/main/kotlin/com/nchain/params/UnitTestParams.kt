@@ -37,7 +37,7 @@ object UnitTestParams : NetworkParameters(
         dumpedPrivateKeyHeader = 239,
         acceptableAddressCodes = intArrayOf(UNITTEST_ADDRESS_HEADER, UNITTEST_P2SH_HEADER),
         bip32HeaderPub = 0x043587CF,
-        bip32HeaderPriv = 0x04358394
+        bip32HeaderPriv = 0x04358394,
 
 //        maxTarget = BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
 //        majorityEnforceBlockUpgrade = 3,
@@ -52,9 +52,9 @@ object UnitTestParams : NetworkParameters(
 //        daaUpdateHeight = 1000,
 //        monolithHeight = 2000,
 //
-//        packetMagic = 0xf4e5f3f4L,
-//        port = 18333,
-//        dnsSeeds = emptyArray(),
+        packetMagic = 0xf4e5f3f4L,
+        port = 18333,
+        dnsSeeds = emptyArray()
 //        addrSeeds = emptyArray()
 )
 {
