@@ -16,6 +16,7 @@ repositories {
 
 dependencies {
     compile(kotlin("stdlib-jdk8"))
+    implementation(project(":bch-rpc-client"))
     implementation("org.slf4j", "slf4j-api", "1.7.25")
     implementation("com.madgag.spongycastle", "core", "1.58.0.0")
     implementation("com.lambdaworks", "scrypt", "1.4.0")

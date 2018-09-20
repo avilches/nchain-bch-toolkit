@@ -21,8 +21,9 @@
 
 package com.nchain.params
 
+import com.nchain.bitcoinkt.core.BitcoinSerializer
+import com.nchain.bitcoinkt.core.MessageSerializer
 import java.math.BigInteger
-import java.util.*
 
 /**
  * NetworkParameters contains the data needed for working with an instantiation of a Bitcoin chain.
@@ -69,7 +70,7 @@ abstract class NetworkParameters protected constructor(
          */
 
         /** Maximum target represents the easiest allowable proof of work.  */
-//        val maxTarget: BigInteger,
+        val maxTarget: BigInteger,
 
         /**
          * The number of blocks in the last [] blocks
@@ -89,7 +90,7 @@ abstract class NetworkParameters protected constructor(
          * The sampling window from which the version numbers of blocks are taken
          * in order to determine if a new block version is now the majority.
          */
-//        val majorityWindow: Int,
+        val majorityWindow: Int,
 
         /**
          * The depth of blocks required for a coinbase transaction to be spendable.
@@ -101,7 +102,7 @@ abstract class NetworkParameters protected constructor(
         /**
          * How many blocks pass between difficulty adjustment periods. Bitcoin standardises this to be 2015.
          */
-//        val interval: Int = INTERVAL,
+        val interval: Int = INTERVAL,
 
         /**
          * How much time in seconds is supposed to pass between "interval" blocks. If the actual elapsed time is
@@ -116,9 +117,9 @@ abstract class NetworkParameters protected constructor(
          * the following are block heights when particular features became enabled
          * they are the height of the first block where the feature is active
          */
-//        val uahfHeight: Int,                            // 1 aug 2018 split from BTC
-//        val daaUpdateHeight: Int,                       // 13 nov 2018 DAA upgrade
-//        val monolithHeight: Int,                         // 15 may 2018 upgrade
+        val uahfHeight: Int,                            // 1 aug 2018 split from BTC
+        val daaUpdateHeight: Int,                       // 13 nov 2018 DAA upgrade
+        val monolithHeight: Int,                         // 15 may 2018 upgrade
 
         /**
          * network related
@@ -150,7 +151,7 @@ abstract class NetworkParameters protected constructor(
 
 //    protected var checkpoints: MutableMap<Int, Sha256Hash> = HashMap()
 
-/*
+
     @Transient
     var defaultSerializer: MessageSerializer? = null
         get(): MessageSerializer? {
@@ -172,7 +173,7 @@ abstract class NetworkParameters protected constructor(
         }
         protected set
 
-*/
+
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -231,12 +232,12 @@ abstract class NetworkParameters protected constructor(
 //        return flags
 //    }
 
-//    enum class ProtocolVersion private constructor(val bitcoinProtocolVersion: Int) {
-//        MINIMUM(70000),
-//        PONG(60001),
-//        BLOOM_FILTER(70000),
-//        CURRENT(70013)
-//    }
+    enum class ProtocolVersion private constructor(val bitcoinProtocolVersion: Int) {
+        MINIMUM(70000),
+        PONG(60001),
+        BLOOM_FILTER(70000),
+        CURRENT(70013)
+    }
 
     /**
      * Returns the number of coins that will be produced in total, on this
@@ -266,85 +267,29 @@ abstract class NetworkParameters protected constructor(
 //
     /**
      * Checks if we are at a difficulty transition point.
-     * @param storedPrev The previous stored block
+     * @param storedPrevBlockHeight The previous stored block
      * @return If this is a difficulty transition point
      */
-/*
-    fun isDifficultyTransitionPoint(storedPrev: StoredBlock): Boolean {
-        return (storedPrev.height + 1) % this.interval == 0
+    fun isDifficultyTransitionPoint(storedPrevBlockHeight: Int): Boolean {
+        return (storedPrevBlockHeight + 1) % this.interval == 0
     }
 
-    fun verifyDifficulty(newTarget: BigInteger?, nextBlock: Block) {
-        var newTarget = newTarget
-        if (newTarget!!.compareTo(this.maxTarget!!) > 0) {
-            newTarget = this.maxTarget
-        }
-
-        val accuracyBytes = nextBlock.getDifficultyTarget().ushr(24).toInt() - 3
-        val receivedTargetCompact = nextBlock.getDifficultyTarget()
-
-        // The calculated difficulty is to a higher precision than received, so reduce here.
-        val mask = BigInteger.valueOf(0xFFFFFFL).shiftLeft(accuracyBytes * 8)
-        newTarget = newTarget!!.and(mask)
-        val newTargetCompact = Utils.encodeCompactBits(newTarget!!)
-
-        if (newTargetCompact != receivedTargetCompact)
-            throw VerificationException("Network provided difficulty bits do not match what was calculated: " +
-                    java.lang.Long.toHexString(newTargetCompact) + " vs " + java.lang.Long.toHexString(receivedTargetCompact))
-    }
-
-*/
     /**
      * Compute the a target based on the work done between 2 blocks and the time
      * required to produce that work.
      */
-/*
-    fun ComputeTarget(firstBlock: StoredBlock?,
-                      lastBlock: StoredBlock): BigInteger {
-        check(lastBlock.height > firstBlock!!.height)
-
-*
-         * From the total work done and the time it took to produce that much work,
-         * we can deduce how much work we expect to be produced in the targeted time
-         * between blocks.
-
-
-        var work = lastBlock.chainWork.subtract(firstBlock.chainWork)
-        work = work.multiply(BigInteger.valueOf(TARGET_SPACING.toLong()))
-
-        // In order to avoid difficulty cliffs, we bound the amplitude of the
-        // adjustment we are going to do.
-        Preconditions.checkState(lastBlock.header.timeSeconds > firstBlock.header.timeSeconds)
-        var nActualTimespan = lastBlock.header.timeSeconds - firstBlock.header.timeSeconds
-        if (nActualTimespan > 288 * TARGET_SPACING) {
-            nActualTimespan = (288 * TARGET_SPACING).toLong()
-        } else if (nActualTimespan < 72 * TARGET_SPACING) {
-            nActualTimespan = (72 * TARGET_SPACING).toLong()
-        }
-
-        work = work.divide(BigInteger.valueOf(nActualTimespan))
-
-*
-         * We need to compute T = (2^256 / W) - 1.
-         * This code differs from Bitcoin-ABC in that we are using
-         * BigIntegers instead of a data type that is limited to 256 bits.
-
-
-
-        return LARGEST_HASH.divide(work).subtract(BigInteger.ONE)
-    }
 
     fun getProtocolVersionNum(version: ProtocolVersion): Int {
         return version.bitcoinProtocolVersion
     }
-*/
+
 
     /**
      * Construct and return a custom serializer.
      */
-//    fun getSerializer(parseRetain: Boolean): BitcoinSerializer {
-//        return BitcoinSerializer(this, parseRetain)
-//    }
+    fun getSerializer(parseRetain: Boolean): BitcoinSerializer {
+        return BitcoinSerializer(this, parseRetain)
+    }
 
     /**
      * Returns whether this network has a maximum number of coins (finite supply) or
@@ -369,11 +314,11 @@ abstract class NetworkParameters protected constructor(
         /**
          * The number that is one greater than the largest representable SHA-256 hash.
          */
-//        private val LARGEST_HASH = BigInteger.ONE.shiftLeft(256)
+        val LARGEST_HASH = BigInteger.ONE.shiftLeft(256)
 
-//        val TARGET_TIMESPAN = 14 * 24 * 60 * 60  // 2 weeks per difficulty cycle, on average.
-//        val TARGET_SPACING = 10 * 60  // 10 minutes per block.
-//        val INTERVAL = TARGET_TIMESPAN / TARGET_SPACING // blocks per difficulty cycle
+        val TARGET_TIMESPAN = 14 * 24 * 60 * 60  // 2 weeks per difficulty cycle, on average.
+        val TARGET_SPACING = 10 * 60  // 10 minutes per block.
+        val INTERVAL = TARGET_TIMESPAN / TARGET_SPACING // blocks per difficulty cycle
 
         /**
          * Blocks with a timestamp after this should enforce BIP 16, aka "Pay to script hash". This BIP changed the

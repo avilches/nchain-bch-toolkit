@@ -40,16 +40,16 @@ object MainNetParams : NetworkParameters(
         bip32HeaderPub = 0x0488B21E, //The 4 byte header that serializes in base58 to "xpub".
         bip32HeaderPriv = 0x0488ADE4, //The 4 byte header that serializes in base58 to "xprv"
 
-//        maxTarget = ByteUtils.decodeCompactBits(0x1d00ffffL),
+        maxTarget = ByteUtils.decodeCompactBits(0x1d00ffffL),
 //        majorityEnforceBlockUpgrade = 750,
 //        majorityRejectBlockOutdated = 950,
-//        majorityWindow = 1000,
+        majorityWindow = 1000,
 //        subsidyDecreaseBlockCount = 210000,
 //        spendableCoinbaseDepth = 100,
 //
-//        uahfHeight = 478559,
-//        daaUpdateHeight = 504031,
-//        monolithHeight = 530359,
+        uahfHeight = 478559,
+        daaUpdateHeight = 504031,
+        monolithHeight = 530359,
 //
         packetMagic = 0xe3e1f3e8L,
         port = 8333,

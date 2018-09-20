@@ -17,16 +17,23 @@
 package com.nchain.bitcoinkt.net
 
 import com.google.common.base.Throwables
-import com.google.common.util.concurrent.*
+import com.google.common.util.concurrent.AbstractExecutionThreadService
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
+import com.nchain.bitcoinkt.utils.ContextPropagatingThreadFactory
 import org.slf4j.LoggerFactory
-
 import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketAddress
-import java.nio.channels.*
+import java.nio.channels.ClosedChannelException
+import java.nio.channels.SelectionKey
+import java.nio.channels.Selector
+import java.nio.channels.SocketChannel
 import java.nio.channels.spi.SelectorProvider
 import java.util.*
-import java.util.concurrent.*
+import java.util.concurrent.Executor
+import java.util.concurrent.LinkedBlockingQueue
 
 /**
  * A class which manages a set of client connections. Uses Java NIO to select network events and processes them in a
@@ -183,8 +190,7 @@ class NioClientManager : AbstractExecutionThreadService(), ClientConnectionManag
     }
 
     override fun executor(): Executor {
-        return Executors.newFixedThreadPool(10)
-//        return Executor { command -> ContextPropagatingThreadFactory("NioClientManager").newThread(command).start() }
+        return Executor { command -> ContextPropagatingThreadFactory("NioClientManager").newThread(command).start() }
     }
 
     companion object {

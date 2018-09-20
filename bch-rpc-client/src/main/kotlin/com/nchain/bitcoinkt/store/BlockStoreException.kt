@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.nchain.script
+package com.nchain.bitcoinkt.store
 
-import com.nchain.shared.VerificationException
+/**
+ * Thrown when something goes wrong with storing a block. Examples: out of disk space.
+ */
+open class BlockStoreException : Exception {
+    constructor(message: String) : super(message) {}
 
-class ProtocolException : VerificationException {
+    constructor(t: Throwable) : super(t) {}
 
-    constructor(msg: String) : super(msg) {}
-
-    constructor(e: Exception) : super(e) {}
-
-    constructor(msg: String, e: Exception) : super(msg, e) {}
+    constructor(message: String, t: Throwable) : super(message, t) {}
 }

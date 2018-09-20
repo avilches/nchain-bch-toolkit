@@ -20,7 +20,8 @@ package com.nchain.tx
 import com.nchain.shared.Sha256Hash
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.MessageReader
-import com.nchain.script.ProtocolException
+import com.nchain.shared.ProtocolException
+import com.nchain.tools.UnsafeByteArrayOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import java.util.*
@@ -80,6 +81,17 @@ class TransactionOutPoint
             return result
 
         }
+
+    fun bitcoinSerialize():ByteArray {
+        val stream = UnsafeByteArrayOutputStream()
+        try {
+            bitcoinSerializeToStream(stream)
+            stream.close()
+        } catch (e: IOException) {
+            // It will never happen
+        }
+        return stream.toByteArray()
+    }
 
     @Throws(IOException::class)
     fun bitcoinSerializeToStream(stream: OutputStream) {

@@ -864,8 +864,9 @@ class Transaction(val version: Long = 0L,
         val MAX_MONEY = Coin.COIN.multiply(NetworkParameters.MAX_COINS)
 
         @JvmStatic
-        fun parse(bytes:ByteArray): Transaction {
-            return TransactionBuilder.parse(bytes).build()
+        @JvmOverloads
+        fun parse(bytes:ByteArray, offset: Int = 0): Transaction {
+            return TransactionBuilder.parse(bytes, offset).build()
         }
 
         @JvmStatic
@@ -893,7 +894,7 @@ class Transaction(val version: Long = 0L,
          * If using this feePerKb, transactions will get confirmed within the next couple of blocks.
          * This should be adjusted from time to time. Last adjustment: March 2016.
          */
-//        @JvmStatic val DEFAULT_TX_FEE = Coin.valueOf(5000) // 0.5 mBTC
+        @JvmStatic val DEFAULT_TX_FEE = Coin.valueOf(5000) // 0.5 mBTC
 
         /**
          * Any standard (ie pay-to-address) output smaller than this value (in satoshis) will most likely be rejected by the network.

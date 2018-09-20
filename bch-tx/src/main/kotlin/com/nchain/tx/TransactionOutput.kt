@@ -24,7 +24,7 @@ import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.MessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
-import com.nchain.script.ProtocolException
+import com.nchain.shared.ProtocolException
 import com.nchain.script.Script
 import com.nchain.script.ScriptBuilder
 import com.nchain.script.ScriptException

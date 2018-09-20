@@ -20,9 +20,7 @@ package com.nchain.bitcoinkt.net
 import com.google.common.base.Throwables
 import com.google.common.util.concurrent.FutureCallback
 import com.google.common.util.concurrent.Futures
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
 import java.io.IOException
 import java.net.SocketAddress
 import java.nio.ByteBuffer

@@ -16,15 +16,18 @@
 
 package com.nchain.bitcoinkt.net
 
-import com.google.common.util.concurrent.*
-import org.slf4j.*
-
-import javax.net.*
-import java.io.*
-import java.net.*
-import java.nio.*
-
-import com.google.common.base.Preconditions.*
+import com.google.common.base.Preconditions.checkState
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
+import com.nchain.bitcoinkt.core.Context
+import com.nchain.bitcoinkt.core.Peer
+import org.slf4j.LoggerFactory
+import java.io.IOException
+import java.io.InputStream
+import java.net.Socket
+import java.net.SocketAddress
+import java.nio.ByteBuffer
+import javax.net.SocketFactory
 
 /**
  *
@@ -65,13 +68,10 @@ constructor(serverAddress: SocketAddress, connection: StreamConnection,
         // sure it doesnt get too large or have to call read too often.
         connection.writeTarget = this
         socket = socketFactory.createSocket()
-
-        // TODO Context
-//        val context = Context.get()
+        val context = Context.get()
         val t = object : Thread() {
             override fun run() {
-                // TODO Context
-//                Context.propagate(context!!)
+                Context.propagate(context!!)
                 clientSet?.add(this@BlockingClient)
                 try {
                     socket.connect(serverAddress, connectTimeoutMillis)

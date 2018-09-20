@@ -16,16 +16,13 @@
 
 package com.nchain.bitcoinkt.net
 
+import com.google.common.base.Preconditions.checkNotNull
 import com.google.common.util.concurrent.AbstractIdleService
 import com.google.common.util.concurrent.ListenableFuture
-
-import javax.net.SocketFactory
 import java.io.IOException
 import java.net.SocketAddress
-import java.util.Collections
-import java.util.HashSet
-
-import com.google.common.base.Preconditions.checkNotNull
+import java.util.*
+import javax.net.SocketFactory
 
 /**
  *

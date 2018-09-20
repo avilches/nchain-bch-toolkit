@@ -16,8 +16,7 @@
 
 package com.nchain.bitcoinkt.net
 
-import java.util.Timer
-import java.util.TimerTask
+import java.util.*
 
 /**
  *

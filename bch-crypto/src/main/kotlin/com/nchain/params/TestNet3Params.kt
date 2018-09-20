@@ -21,6 +21,9 @@
 
 package com.nchain.params
 
+import com.nchain.tools.ByteUtils
+import java.util.*
+
 const val TESTNET_ADDRESS_HEADER = 111
 const val TESTNET_P2SH_HEADER = 196
 
@@ -38,16 +41,16 @@ object TestNet3Params : NetworkParameters(
         bip32HeaderPub = 0x043587CF,
         bip32HeaderPriv = 0x04358394,
 
-//        maxTarget = ByteUtils.decodeCompactBits(0x1d00ffffL),
+        maxTarget = ByteUtils.decodeCompactBits(0x1d00ffffL),
 //        majorityEnforceBlockUpgrade = 51,
 //        majorityRejectBlockOutdated = 75,
-//        majorityWindow = 100,
+        majorityWindow = 100,
 //        subsidyDecreaseBlockCount = 210000,
 //        spendableCoinbaseDepth = 100,
 //
-//        uahfHeight = 1155876,
-//        daaUpdateHeight = 1188697,
-//        monolithHeight = 1233078,
+        uahfHeight = 1155876,
+        daaUpdateHeight = 1188697,
+        monolithHeight = 1233078,
 //
         packetMagic = 0xf4e5f3f4L,
         port = 18333,
@@ -63,7 +66,7 @@ object TestNet3Params : NetworkParameters(
 {
 
     // February 16th 2012
-//    private val testnetDiffDate = Date(1329264000000L)
+    private val testnetDiffDate = Date(1329264000000L)
 /*
 
     init {
@@ -73,9 +76,9 @@ object TestNet3Params : NetworkParameters(
         if (genesisBlock.hashAsString != "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")
             throw RuntimeException("genesis block hash incorrect")
     }
-
-    fun isValidTestnetDateBlock(block: Block): Boolean {
-        return block.time.after(testnetDiffDate)
-    }
 */
+
+    fun isValidTestnetDateBlock(blockTime: Date): Boolean {
+        return blockTime.after(testnetDiffDate)
+    }
 }
