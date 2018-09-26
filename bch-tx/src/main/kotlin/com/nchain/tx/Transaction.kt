@@ -630,6 +630,10 @@ class Transaction(val version: Long = 0L,
         return s.toString()
     }
 
+    @Throws(CloneNotSupportedException::class)
+    fun clone():Transaction {
+        return Transaction.parse(bitcoinSerialize())
+    }
 
     fun bitcoinSerialize():ByteArray {
         val stream = UnsafeByteArrayOutputStream()
