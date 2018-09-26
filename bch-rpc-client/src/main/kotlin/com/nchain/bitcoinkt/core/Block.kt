@@ -25,6 +25,7 @@ import com.google.common.annotations.*
 import com.google.common.base.*
 import com.google.common.collect.*
 import com.nchain.address.CashAddress
+import com.nchain.bitcoinkt.utils.Utils
 import com.nchain.key.ECKey
 import com.nchain.params.NetworkParameters
 import com.nchain.script.ScriptBuilder
@@ -314,14 +315,15 @@ class Block : Message {
         optimalEncodingMessageSize += VarInt.sizeOf(numTransactions.toLong())
         _transactions = ArrayList(numTransactions)
         for (i in 0 until numTransactions) {
-            // TODO VILCHES
-//            val tx = Transaction(params, payload, cursor, this, serializer!!, Message.UNKNOWN_LENGTH)
+            // TODO vilches, recycle MessageReader and cursor
+            val tx = TransactionBuilder.parse(payload!!, cursor).build()
             // Label the transaction as coming from the P2P network, so code that cares where we first saw it knows.
 
+            // TODO vilches, recycle MessageReader and cursor
 //            tx.getConfidence().source = TransactionConfidence.Source.NETWORK
-//            _transactions!!.add(tx)
-//            cursor += tx.messageSize
-//            optimalEncodingMessageSize += tx.getOptimalEncodingMessageSize()
+            _transactions!!.add(tx)
+            cursor += tx.length
+            optimalEncodingMessageSize += tx.length
         }
         isTransactionBytesValid = serializer!!.isParseRetainMode
     }
@@ -586,7 +588,7 @@ class Block : Message {
     @Throws(VerificationException::class)
     private fun checkTimestamp() {
         // Allow injection of a fake clock to allow unit testing.
-        val currentTime = System.currentTimeMillis()
+        val currentTime = Utils.currentTimeSeconds()
         if (timeSeconds > currentTime + ALLOWED_TIME_DRIFT)
             throw VerificationException(String.format(Locale.US, "Block too far in future: %d vs %d", timeSeconds, currentTime + ALLOWED_TIME_DRIFT))
     }
