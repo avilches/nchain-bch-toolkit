@@ -314,7 +314,7 @@ class TransactionConfidence(
      * @return true if marked, false if this address was already seen
      */
     fun markBroadcastBy(address: PeerAddress): Boolean {
-        lastBroadcastedAt = Date(System.currentTimeMillis())
+        lastBroadcastedAt = Utils.now()
         if (!broadcastBy.addIfAbsent(address))
             return false  // Duplicate.
         synchronized(this) {

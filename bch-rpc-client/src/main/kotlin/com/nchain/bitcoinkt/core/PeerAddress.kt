@@ -28,6 +28,7 @@ import java.net.InetSocketAddress
 import java.net.UnknownHostException
 
 import com.google.common.base.Preconditions.checkNotNull
+import com.nchain.bitcoinkt.utils.Utils
 import com.nchain.params.MainNetParams
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.ProtocolException
@@ -131,7 +132,7 @@ class PeerAddress : ChildMessage {
             //TODO this appears to be dynamic because the client only ever sends out it's own address
             //so assumes itself to be up.  For a fuller implementation this needs to be dynamic only if
             //the address refers to this client.
-            val secs = System.currentTimeMillis() / 1000
+            val secs = Utils.currentTimeSeconds()
             uint32ToByteStreamLE(secs.toLong(), stream)
         }
         uint64ToByteStreamLE(services!!, stream)  // nServices.
