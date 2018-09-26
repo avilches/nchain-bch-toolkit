@@ -36,6 +36,7 @@ import java.util.Arrays
 import java.util.TreeMap
 
 import com.google.common.base.Preconditions.*
+import com.nchain.bitcoinkt.pow.rule.GenesisBlock
 import com.nchain.bitcoinkt.store.BlockStoreException
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.ProtocolException
@@ -186,14 +187,15 @@ constructor(params: NetworkParameters, inputStream: InputStream?) {
      */
 
     // TODO: vilches
-/*
+
     fun getCheckpointBefore(time: Long): StoredBlock {
         try {
-            checkArgument(time > params.genesisBlock!!.timeSeconds)
+            val genesisBlock = GenesisBlock.of(params)
+            checkArgument(time > genesisBlock.timeSeconds)
             // This is thread safe because the map never changes after creation.
             val entry = checkpoints.floorEntry(time)
             if (entry != null) return entry.value
-            val genesis = params.genesisBlock!!.cloneAsHeader()
+            val genesis = genesisBlock.cloneAsHeader()
             return StoredBlock(genesis, genesis.work, 0)
         } catch (e: VerificationException) {
             throw RuntimeException(e)  // Cannot happen.
@@ -201,7 +203,7 @@ constructor(params: NetworkParameters, inputStream: InputStream?) {
 
     }
 
-*/
+
     /** Returns the number of checkpoints that were loaded.  */
     fun numCheckpoints(): Int {
         return checkpoints.size

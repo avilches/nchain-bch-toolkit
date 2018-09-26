@@ -17,7 +17,9 @@
 package com.nchain.bitcoinkt.core.listeners
 
 import com.nchain.bitcoinkt.core.*
-import com.nchain.bitcoinkt.exception.VerificationException
+import com.nchain.shared.Sha256Hash
+import com.nchain.shared.VerificationException
+import com.nchain.tx.Transaction
 
 /**
  * Listener interface for when we receive a new block that contains a relevant

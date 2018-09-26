@@ -16,8 +16,6 @@
 
 package com.nchain.bitcoinkt.core.listeners
 
-import com.nchain.bitcoinkt.core.Transaction
-import com.nchain.bitcoinkt.wallet.Wallet
 
 /**
  *
@@ -52,5 +50,5 @@ interface TransactionConfidenceEventListener {
      * received (because the depth has changed). **If you want to update a UI view from the contents of the wallet
      * it is more efficient to use onWalletChanged instead.**
      */
-    fun onTransactionConfidenceChanged(wallet: Wallet, tx: Transaction)
+//    fun onTransactionConfidenceChanged(wallet: Wallet, tx: Transaction)
 }

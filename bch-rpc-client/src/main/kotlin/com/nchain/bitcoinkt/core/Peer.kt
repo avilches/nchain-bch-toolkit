@@ -23,10 +23,8 @@ package com.nchain.bitcoinkt.core
 import com.google.common.base.*
 import com.google.common.base.Objects
 import com.nchain.bitcoinkt.core.listeners.*
-import com.nchain.bitcoinkt.exception.BlockStoreException
 import com.nchain.bitcoinkt.utils.ListenerRegistration
 import com.nchain.bitcoinkt.utils.Threading
-import com.nchain.bitcoinkt.wallet.Wallet
 
 import com.google.common.collect.Lists
 import com.google.common.util.concurrent.FutureCallback
@@ -43,11 +41,16 @@ import java.util.concurrent.locks.ReentrantLock
 
 import com.google.common.base.Preconditions.checkNotNull
 import com.google.common.base.Preconditions.checkState
+import com.nchain.bitcoinkt.pow.rule.GenesisBlock
+import com.nchain.bitcoinkt.store.BlockStoreException
+import com.nchain.bitcoinkt.utils.Utils
 import com.nchain.params.NetworkParameters
 import com.nchain.shared.ProtocolException
 import com.nchain.shared.Sha256Hash
 import com.nchain.shared.VerificationException
 import com.nchain.tx.Transaction
+import com.nchain.tx.TransactionOutPoint
+import net.jcip.annotations.GuardedBy
 
 /**
  *
@@ -93,7 +96,7 @@ constructor(
         this.isDownloadData = blockChain != null
         this.getDataFutures = CopyOnWriteArrayList()
         this.getAddrFutures = LinkedList()
-        this.fastCatchupTimeSecs = params.genesisBlock!!.timeSeconds
+        this.fastCatchupTimeSecs = GenesisBlock.of(params).timeSeconds
         this.pendingPings = CopyOnWriteArrayList()
         this.vMinProtocolVersion = params.getProtocolVersionNum(NetworkParameters.ProtocolVersion.PONG)
         this.wallets = CopyOnWriteArrayList()
@@ -333,7 +336,8 @@ constructor(
         get() {
             checkNotNull<AbstractBlockChain>(blockChain, "No block chain configured")
             val chainHeight = bestHeight.toInt()
-            checkState(params.allowEmptyPeerChain() || chainHeight > 0, "Connected to peer with zero/negative chain height", chainHeight)
+            // TODO VILCHES
+//            checkState(params.allowEmptyPeerChain() || chainHeight > 0, "Connected to peer with zero/negative chain height", chainHeight)
             return chainHeight - blockChain!!.bestChainHeight
         }
 
@@ -550,10 +554,10 @@ constructor(
 
         // If we are in the middle of receiving transactions as part of a filtered block push from the remote node,
         // and we receive something that's not a transaction, then we're done.
-        if (currentFilteredBlock != null && m !is Transaction) {
-            endFilteredBlock(currentFilteredBlock!!)
-            currentFilteredBlock = null
-        }
+//        if (currentFilteredBlock != null && m !is Transaction) {
+//            endFilteredBlock(currentFilteredBlock!!)
+//            currentFilteredBlock = null
+//        }
 
         // No further communication is possible until version handshake is complete.
         if (!(m is VersionMessage || m is VersionAck
@@ -572,14 +576,14 @@ constructor(
             processNotFoundMessage(m)
         } else if (m is InventoryMessage) {
             processInv(m)
-        } else if (m is Block) {
-            processBlock(m)
-        } else if (m is FilteredBlock) {
-            startFilteredBlock(m)
-        } else if (m is Transaction) {
-            processTransaction(m)
-        } else if (m is GetDataMessage) {
-            processGetData(m)
+//        } else if (m is Block) {
+//            processBlock(m)
+//        } else if (m is FilteredBlock) {
+//            startFilteredBlock(m)
+//        } else if (m is Transaction) {
+//            processTransaction(m)
+//        } else if (m is GetDataMessage) {
+//            processGetData(m)
         } else if (m is AddressMessage) {
             // We don't care about addresses of the network right now. But in future,
             // we should save them in the wallet so we don't put too much load on the seed nodes and can
@@ -644,7 +648,9 @@ constructor(
         // mode nodes because we can't download the data from them we need to find/verify transactions. Some bogus
         // implementations claim to have a block chain in their services field but then report a height of zero, filter
         // them out here.
-        if (!peerVersionMessage!!.hasBlockChain() || !params.allowEmptyPeerChain() && peerVersionMessage!!.bestHeight == 0L) {
+        // TODO VILCHES
+//        if (!peerVersionMessage!!.hasBlockChain() || !params.allowEmptyPeerChain() && peerVersionMessage!!.bestHeight == 0L) {
+        if (!peerVersionMessage!!.hasBlockChain() || /*!params.allowEmptyPeerChain() &&*/ peerVersionMessage!!.bestHeight == 0L) {
             // Shut down the channel gracefully.
             log.info("{}: Peer does not have a copy of the block chain.", this)
             close()
@@ -939,6 +945,7 @@ constructor(
      *
      * Note that dependencies downloaded this way will not trigger the onTransaction method of event listeners.
      */
+/*
     fun downloadDependencies(tx: Transaction): ListenableFuture<List<Transaction>> {
         val txConfidence = tx.getConfidence().getConfidenceType()
         Preconditions.checkArgument(txConfidence != TransactionConfidence.ConfidenceType.BUILDING)
@@ -959,6 +966,7 @@ constructor(
         })
         return resultFuture
     }
+*/
 
     // The marker object in the future returned is the same as the parameter. It is arbitrary and can be anything.
     protected fun downloadDependenciesInternal(maxDepth: Int, depth: Int,
@@ -1409,7 +1417,7 @@ constructor(
         lock.lock()
         try {
             if (secondsSinceEpoch == 0L) {
-                fastCatchupTimeSecs = params.genesisBlock!!.timeSeconds
+                fastCatchupTimeSecs = GenesisBlock.of(params).timeSeconds
                 downloadBlockBodies = true
             } else {
                 fastCatchupTimeSecs = secondsSinceEpoch
@@ -1512,7 +1520,7 @@ constructor(
         }
         // Only add the locator if we didn't already do so. If the chain is < 50 blocks we already reached it.
         if (cursor != null)
-            blockLocator.add(params.genesisBlock!!.hash!!)
+            blockLocator.add(GenesisBlock.of(params).hash!!)
 
         // Record that we requested this range of blocks so we can filter out duplicate requests in the event of a
         // block being solved during chain download.

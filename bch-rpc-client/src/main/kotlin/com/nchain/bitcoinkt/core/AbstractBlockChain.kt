@@ -494,10 +494,9 @@ constructor(context: Context, wallets: List<Wallet>,
                     height = Block.BLOCK_HEIGHT_UNKNOWN
                 }
 
-                // TODO vilches
-//                flags = params.getBlockVerificationFlags(block, versionTally, height)
-//                if (shouldVerifyTransactions())
-//                    block.verifyTransactions(height, flags)
+                flags = getBlockVerificationFlags(block, versionTally, height)
+                if (shouldVerifyTransactions())
+                    block.verifyTransactions(height, flags)
             } catch (e: VerificationException) {
                 log.error("Failed to verify block: ", e)
                 log.error(block.hashAsString)
@@ -531,6 +530,27 @@ constructor(context: Context, wallets: List<Wallet>,
     }
 
     /**
+     * The flags indicating which block validation tests should be applied to
+     * the given block. Enables support for alternative blockchains which enable
+     * tests based on different criteria.
+     *
+     * @param block block to determine flags for.
+     * @param height height of the block, if known, null otherwise. Returned
+     * tests should be a safe subset if block height is unknown.
+     */
+    fun getBlockVerificationFlags(block: Block, tally: VersionTally, height: Int): EnumSet<Block.VerifyFlag> {
+        val flags = EnumSet.noneOf<Block.VerifyFlag>(Block.VerifyFlag::class.java)
+
+        if (block.isBIP34) {
+            val count = tally.getCountAtOrAbove(Block.BLOCK_VERSION_BIP34)
+            if (null != count && count >= params.majorityEnforceBlockUpgrade) {
+                flags.add(Block.VerifyFlag.HEIGHT_IN_COINBASE)
+            }
+        }
+        return flags
+    }
+
+    /**
      * Returns the hashes of the currently stored orphan blocks and then deletes them from this objects storage.
      * Used by Peer when a filter exhaustion event has occurred and thus any orphan blocks that have been downloaded
      * might be inaccurate/incomplete.
@@ -557,9 +577,8 @@ constructor(context: Context, wallets: List<Wallet>,
         val filtered = filteredTxHashList != null && filteredTxn != null
         // Check that we aren't connecting a block that fails a checkpoint check
 
-        // TODO vilches
-//        if (!params.passesCheckpoint(storedPrev.height + 1, block.hash!!))
-//            throw VerificationException("Block failed checkpoint lockin at " + (storedPrev.height + 1))
+        if (!passesCheckpoint(storedPrev.height + 1, block.hash!!))
+            throw VerificationException("Block failed checkpoint lockin at " + (storedPrev.height + 1))
 
 
         // TODO vilches
@@ -586,11 +605,9 @@ constructor(context: Context, wallets: List<Wallet>,
             // stopping addition of new v2/3 blocks to the tip of the chain.
             if (block.version == Block.BLOCK_VERSION_BIP34 || block.version == Block.BLOCK_VERSION_BIP66) {
                 val count = versionTally.getCountAtOrAbove(block.version + 1)
-
-                // TODO vilches
-//                if (count != null && count >= params.majorityRejectBlockOutdated) {
-//                    throw VerificationException.BlockVersionOutOfDate(block.version)
-//                }
+                if (count != null && count >= params.majorityRejectBlockOutdated) {
+                    throw VerificationException.BlockVersionOutOfDate(block.version)
+                }
             }
 
             // This block connects to the best known block, it is a normal continuation of the system.
@@ -647,6 +664,16 @@ constructor(context: Context, wallets: List<Wallet>,
             if (haveNewBestChain)
                 handleNewBestChain(storedPrev, newBlock, block, expensiveChecks)
         }
+    }
+
+    /**
+     * Returns true if the block height is either not a checkpoint, or is a checkpoint and the hash matches.
+     */
+    fun passesCheckpoint(height: Int, hash: Sha256Hash): Boolean {
+        // TODO VILCHES
+//        val checkpointHash = checkpoints[height]
+//        return checkpointHash == null || checkpointHash == hash
+        return true
     }
 
     @Throws(VerificationException::class)
@@ -1089,10 +1116,8 @@ constructor(context: Context, wallets: List<Wallet>,
                 try {
                     falsePositives.remove(tx.hash)
                     if (clone) {
-                        // TODO vilches
-//                        val tx1= tx.params!!.defaultSerializer!!.makeTransaction(tx.bitcoinSerialize())
-//                        listener.receiveFromBlock(tx1, block, blockType, relativityOffset++)
-                    }else{
+                        listener.receiveFromBlock(tx.clone(), block, blockType, relativityOffset++)
+                    } else{
                         listener.receiveFromBlock(tx, block, blockType, relativityOffset++)
                     }
 

@@ -24,5 +24,5 @@ import com.nchain.tx.Transaction
  */
 interface TransactionBroadcaster {
     /** Broadcast the given transaction on the network  */
-    fun broadcastTransaction(tx: Transaction): TransactionBroadcast
+//    fun broadcastTransaction(tx: Transaction): TransactionBroadcast
 }

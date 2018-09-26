@@ -66,7 +66,7 @@ class LastNonMinimalDifficultyRuleChecker(networkParameters: NetworkParameters) 
     private fun findLastNotEasiestPowBlock(storedPrev: StoredBlock, blockStore: BlockStore): Block {
         var cursor: StoredBlock? = storedPrev
         val easiestDifficulty = networkParameters.maxTarget!!
-        while (cursor!!.header != networkParameters.genesisBlock &&
+        while (cursor!!.header != GenesisBlock.of(networkParameters) &&
                 cursor.height % networkParameters.interval != 0 &&
                 hasEqualDifficulty(cursor.header.getDifficultyTarget(), easiestDifficulty)) {
             cursor = cursor.getPrev(blockStore)

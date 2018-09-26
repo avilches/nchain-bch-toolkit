@@ -17,7 +17,7 @@
 package com.nchain.bitcoinkt.core.listeners
 
 import com.nchain.bitcoinkt.core.StoredBlock
-import com.nchain.bitcoinkt.exception.VerificationException
+import com.nchain.shared.VerificationException
 
 /**
  * Listener interface for when a new block on the best chain is seen.

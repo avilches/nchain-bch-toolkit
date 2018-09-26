@@ -27,11 +27,6 @@ import net.jcip.annotations.*
 import com.nchain.bitcoinkt.core.listeners.*
 import com.nchain.bitcoinkt.net.*
 import com.nchain.bitcoinkt.net.discovery.*
-import com.nchain.bitcoinkt.utils.Threading
-import com.nchain.bitcoinkt.wallet.Wallet
-import com.nchain.bitcoinkt.wallet.listeners.KeyChainEventListener
-import com.nchain.bitcoinkt.wallet.listeners.ScriptsChangeEventListener
-import com.nchain.bitcoinkt.wallet.listeners.WalletCoinsReceivedEventListener
 import org.slf4j.*
 
 import java.io.*
@@ -40,14 +35,11 @@ import java.util.*
 import java.util.concurrent.*
 
 import com.google.common.base.Preconditions.*
-import com.nchain.bitcoinkt.exception.PeerDiscoveryException
-import com.nchain.bitcoinkt.exception.VerificationException
+import com.nchain.bitcoinkt.pow.rule.GenesisBlock
+import com.nchain.bitcoinkt.utils.*
 
-import com.nchain.bitcoinkt.script.Script
-
-import com.nchain.bitcoinkt.params.NetworkParameters
-import com.nchain.bitcoinkt.utils.ExponentialBackoff
 import com.nchain.params.NetworkParameters
+import com.nchain.tx.Transaction
 
 
 /**
@@ -177,6 +169,8 @@ open class PeerGroup
     private val peerListener = PeerListener()
 
     private var minBroadcastConnections = 0
+
+/*
     private val walletScriptEventListener = object:ScriptsChangeEventListener {
         override fun onScriptsChanged(wallet: Wallet, scripts: List<Script>, isAddingScripts: Boolean) {
             recalculateFastCatchupAndFilter(FilterRecalculateMode.SEND_IF_CHANGED)
@@ -224,6 +218,7 @@ open class PeerGroup
             }
         }
     }
+*/
 
     // Exponential backoff for peers starts at 1 second and maxes at 10 minutes.
     private val peerBackoffParams = ExponentialBackoff.Params(1000, 1.5f, (10 * 60 * 1000).toLong())
@@ -431,7 +426,7 @@ open class PeerGroup
     init {
         checkNotNull(context)
         this.params = context.params
-        fastCatchupTimeSecs = params.genesisBlock!!.timeSeconds
+        fastCatchupTimeSecs = GenesisBlock.of(params).timeSeconds
         wallets = CopyOnWriteArrayList()
         peerFilterProviders = CopyOnWriteArrayList()
 
@@ -548,8 +543,11 @@ open class PeerGroup
                 val item = it.next()
                 // Check the wallets.
                 for (w in wallets) {
+                    // TODO VILCHES
+/*
                     val tx = w.getTransaction(item.hash) ?: continue
                     transactions.add(tx)
+*/
                     it.remove()
                     break
                 }
@@ -1084,6 +1082,7 @@ open class PeerGroup
      * The Wallet will have an event listener registered on it, so to avoid leaks remember to use
      * [PeerGroup.removeWallet] on it if you wish to keep the Wallet but lose the PeerGroup.
      */
+/*
     fun addWallet(wallet: Wallet) {
         lock.lock()
         try {
@@ -1101,6 +1100,7 @@ open class PeerGroup
             lock.unlock()
         }
     }
+*/
 
     /**
      *
@@ -1162,6 +1162,7 @@ open class PeerGroup
     /**
      * Unlinks the given wallet so it no longer receives broadcast transactions or has its transactions announced.
      */
+/*
     fun removeWallet(wallet: Wallet) {
         wallets.remove(checkNotNull(wallet))
         peerFilterProviders.remove(wallet)
@@ -1173,6 +1174,7 @@ open class PeerGroup
             peer.removeWallet(wallet)
         }
     }
+*/
 
     enum class FilterRecalculateMode {
         SEND_IF_CHANGED,
@@ -1689,7 +1691,7 @@ open class PeerGroup
 
         private fun countAndMeasureSize(transactions: Collection<Transaction>): Int {
             for (transaction in transactions)
-                bytesInLastSecond += transaction.messageSize.toLong()
+                bytesInLastSecond += transaction.length
             return transactions.size
         }
 
@@ -1932,7 +1934,7 @@ open class PeerGroup
      * Calls [PeerGroup.broadcastTransaction] with getMinBroadcastConnections() as the number
      * of connections to wait for before commencing broadcast.
      */
-    override fun broadcastTransaction(tx: Transaction): TransactionBroadcast {
+    /*override*/ fun broadcastTransaction(tx: Transaction): TransactionBroadcast {
         return broadcastTransaction(tx, Math.max(1, getMinBroadcastConnections()))
     }
 
@@ -1961,11 +1963,12 @@ open class PeerGroup
     fun broadcastTransaction(tx: Transaction, minConnections: Int): TransactionBroadcast {
         // If we don't have a record of where this tx came from already, set it to be ourselves so Peer doesn't end up
         // redownloading it from the network redundantly.
+        val broadcast = TransactionBroadcast(this, tx)
+/*
         if (tx.getConfidence().source == TransactionConfidence.Source.UNKNOWN) {
             log.info("Transaction source unknown, setting to SELF: {}", tx.hashAsString)
             tx.getConfidence().source = TransactionConfidence.Source.SELF
         }
-        val broadcast = TransactionBroadcast(this, tx)
         broadcast.setMinConnections(minConnections)
         // Send the TX to the wallet once we have a successful broadcast.
         Futures.addCallback(broadcast.future(), object : FutureCallback<Transaction> {
@@ -2000,6 +2003,7 @@ open class PeerGroup
         // at all.
         runningBroadcasts.add(broadcast)
         broadcast.broadcast()
+*/
         return broadcast
     }
 

@@ -15,6 +15,7 @@
 package com.nchain.bitcoinkt.core.listeners
 
 import com.nchain.bitcoinkt.core.*
+import com.nchain.tx.Transaction
 
 /**
  * Called when a new transaction is broadcast over the network.
