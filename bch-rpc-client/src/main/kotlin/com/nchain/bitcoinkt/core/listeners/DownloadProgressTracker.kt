@@ -20,9 +20,9 @@ package com.nchain.bitcoinkt.core.listeners
 import com.nchain.bitcoinkt.core.Block
 import com.nchain.bitcoinkt.core.FilteredBlock
 import com.nchain.bitcoinkt.core.Peer
-import com.nchain.bitcoinkt.core.Utils
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
+import com.nchain.bitcoinkt.utils.Utils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

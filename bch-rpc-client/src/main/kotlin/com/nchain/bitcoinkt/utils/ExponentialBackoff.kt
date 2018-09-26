@@ -73,12 +73,12 @@ class ExponentialBackoff(private val params: Params) : Comparable<ExponentialBac
     /** Track a success - reset back off interval to the initial value  */
     fun trackSuccess() {
         backoff = params.initial
-        retryTime = System.currentTimeMillis()
+        retryTime = Utils.currentTimeMillis()
     }
 
     /** Track a failure - multiply the back off interval by the multiplier  */
     fun trackFailure() {
-        retryTime = System.currentTimeMillis() + backoff.toLong()
+        retryTime = Utils.currentTimeMillis() + backoff.toLong()
         backoff = Math.min(backoff * params.multiplier, params.maximum)
     }
 

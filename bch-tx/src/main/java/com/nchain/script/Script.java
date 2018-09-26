@@ -155,7 +155,8 @@ public class Script {
     // Used from ScriptBuilder.
     Script(List<ScriptChunk> chunks) {
         this.chunks = Collections.unmodifiableList(new ArrayList<ScriptChunk>(chunks));
-        creationTimeSeconds = System.currentTimeMillis();
+        // TODO VILCHES: Utils.currentTimeSeconds()
+        creationTimeSeconds = System.currentTimeMillis() / 1000;
     }
 
     /**

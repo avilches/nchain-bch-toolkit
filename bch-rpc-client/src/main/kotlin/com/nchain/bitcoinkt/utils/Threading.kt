@@ -158,10 +158,9 @@ object Threading {
 
 
     fun lock(name: String): ReentrantLock {
-        // TODO vilches
-//        return if (Utils.isAndroidRuntime)
-//            ReentrantLock(true)
-//        else
+        return if (Utils.isAndroidRuntime)
+            ReentrantLock(true)
+        else
             return factory.newReentrantLock(name)
     }
 
