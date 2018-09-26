@@ -37,8 +37,8 @@ object RegTestParams : NetworkParameters(
         bip32HeaderPriv = 0x04358394, //The 4 byte header that serializes in base58 to "xprv"
 
         maxTarget = BigInteger("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
-//        majorityEnforceBlockUpgrade = 750,
-//        majorityRejectBlockOutdated = 950,
+        majorityEnforceBlockUpgrade = 750,
+        majorityRejectBlockOutdated = 950,
         majorityWindow = 1000,
 //        subsidyDecreaseBlockCount = 150,
 //        spendableCoinbaseDepth = 100,
@@ -54,14 +54,6 @@ object RegTestParams : NetworkParameters(
 //        addrSeeds = emptyArray()
 )
 {
-
-    init {
-//        genesisBlock.setNonce(2)
-//        genesisBlock.setDifficultyTarget(0x207fFFFFL)
-//        genesisBlock.setTime(1296688602L)
-//        if (genesisBlock.hashAsString.toLowerCase() != "0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")
-//            throw RuntimeException("genesis block hash is incorrect")
-    }
 
 //    override fun allowEmptyPeerChain(): Boolean {
 //        return true

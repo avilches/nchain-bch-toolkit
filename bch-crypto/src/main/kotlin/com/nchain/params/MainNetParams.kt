@@ -41,8 +41,8 @@ object MainNetParams : NetworkParameters(
         bip32HeaderPriv = 0x0488ADE4, //The 4 byte header that serializes in base58 to "xprv"
 
         maxTarget = ByteUtils.decodeCompactBits(0x1d00ffffL),
-//        majorityEnforceBlockUpgrade = 750,
-//        majorityRejectBlockOutdated = 950,
+        majorityEnforceBlockUpgrade = 750,
+        majorityRejectBlockOutdated = 950,
         majorityWindow = 1000,
 //        subsidyDecreaseBlockCount = 210000,
 //        spendableCoinbaseDepth = 100,
@@ -65,13 +65,6 @@ object MainNetParams : NetworkParameters(
 ) {
 
     init {
-//        genesisBlock.setDifficultyTarget(0x1d00ffffL)
-//        genesisBlock.setTime(1231006505L)
-//        genesisBlock.setNonce(2083236893)
-
-//        if (genesisBlock.hashAsString != "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f")
-//                throw RuntimeException("genesis block hash incorrect")
-
         // This contains (at a minimum) the blocks which are not BIP30 compliant. BIP30 changed how duplicate
         // transactions are handled. Duplicated transactions could occur in the case where a coinbase had the same
         // extraNonce and the same outputs but appeared at different heights, and greatly complicated re-org handling.

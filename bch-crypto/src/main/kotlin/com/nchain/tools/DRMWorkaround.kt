@@ -14,6 +14,8 @@
 
 package com.nchain.tools
 
+import com.nchain.bitcoinkt.utils.Utils
+
 object DRMWorkaround {
 //    private val log = LoggerFactory.getLogger(DRMWorkaround::class.java)
 
@@ -28,9 +30,9 @@ object DRMWorkaround {
         if (done) return
         done = true
 
-//        if (Utils.isAndroidRuntime)
-//            return
-//        try {
+        if (Utils.isAndroidRuntime)
+            return
+        try {
             val gate = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted")
             gate.isAccessible = true
             gate.setBoolean(null, false)
@@ -46,9 +48,11 @@ object DRMWorkaround {
             val defaultPolicy = Class.forName("javax.crypto.JceSecurity").getDeclaredField("defaultPolicy")
             defaultPolicy.isAccessible = true
             defaultPolicy.set(null, coll)
-//        } catch (e: Exception) {
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // TODO vilches
 //            log.warn("Failed to deactivate AES-256 barrier logic, Tor mode/BIP38 decryption may crash if this JVM requires it: " + e.message)
-//        }
+        }
 
     }
 }

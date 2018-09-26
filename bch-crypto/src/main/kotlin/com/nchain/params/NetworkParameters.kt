@@ -77,14 +77,14 @@ abstract class NetworkParameters protected constructor(
          * at which to trigger a notice to the user to upgrade their client, where
          * the client does not understand those blocks.
          */
-//        val majorityEnforceBlockUpgrade: Int,
+        val majorityEnforceBlockUpgrade: Int,
 
         /**
          * The number of blocks in the last [] blocks
          * at which to enforce the requirement that all new blocks are of the
          * newer type (i.e. outdated blocks are rejected).
          */
-//        val majorityRejectBlockOutdated: Int,
+        val majorityRejectBlockOutdated: Int,
 
         /**
          * The sampling window from which the version numbers of blocks are taken
@@ -109,7 +109,7 @@ abstract class NetworkParameters protected constructor(
          * significantly different from this value, the network difficulty formula will produce a different value. Both
          * test and main Bitcoin networks use 2 weeks (1209600 seconds).
          */
-//        val targetTimespan: Int = TARGET_TIMESPAN,
+        val targetTimespan: Int = TARGET_TIMESPAN,
 
 
         /**
@@ -134,22 +134,6 @@ abstract class NetworkParameters protected constructor(
         /** Returns IP address of known seed peers. */
 //        val addrSeeds: Array<Int>
 ) {
-
-    /**
-     *
-     * Genesis block for this chain.
-     *
-     * The first block in every chain is a well known constant shared between all Bitcoin implemenetations. For a
-     * block to be valid, it must be eventually possible to work backwards to the genesis block by following the
-     * prevBlockHash pointers in the block headers.
-     *
-     * The genesis blocks for both test and main networks contain the timestamp of when they were created,
-     * and a message in the coinbase transaction. It says, *"The Times 03/Jan/2009 Chancellor on brink of second
-     * bailout for banks"*.
-     */
-//    val genesisBlock: Block = createGenesis(this)
-
-//    protected var checkpoints: MutableMap<Int, Sha256Hash> = HashMap()
 
 
     @Transient
@@ -187,13 +171,6 @@ abstract class NetworkParameters protected constructor(
         return id.hashCode()
     }
 
-    /**
-     * Returns true if the block height is either not a checkpoint, or is a checkpoint and the hash matches.
-     */
-//    fun passesCheckpoint(height: Int, hash: Sha256Hash): Boolean {
-//        val checkpointHash = checkpoints[height]
-//        return checkpointHash == null || checkpointHash == hash
-//    }
 
     /**
      * Returns true if the given height has a recorded checkpoint.
@@ -208,28 +185,6 @@ abstract class NetworkParameters protected constructor(
      */
 //    open fun allowEmptyPeerChain(): Boolean {
 //        return true
-//    }
-
-    /**
-     * The flags indicating which block validation tests should be applied to
-     * the given block. Enables support for alternative blockchains which enable
-     * tests based on different criteria.
-     *
-     * @param block block to determine flags for.
-     * @param height height of the block, if known, null otherwise. Returned
-     * tests should be a safe subset if block height is unknown.
-     */
-//    fun getBlockVerificationFlags(block: Block,
-//                                  tally: VersionTally, height: Int?): EnumSet<Block.VerifyFlag> {
-//        val flags = EnumSet.noneOf<Block.VerifyFlag>(Block.VerifyFlag::class.java)
-//
-//        if (block.isBIP34) {
-//            val count = tally.getCountAtOrAbove(Block.BLOCK_VERSION_BIP34)
-//            if (null != count && count >= majorityEnforceBlockUpgrade) {
-//                flags.add(Block.VerifyFlag.HEIGHT_IN_COINBASE)
-//            }
-//        }
-//        return flags
 //    }
 
     enum class ProtocolVersion private constructor(val bitcoinProtocolVersion: Int) {
@@ -356,23 +311,5 @@ abstract class NetworkParameters protected constructor(
                 null
             }
         }
-/*
-
-        private fun createGenesis(n: NetworkParameters): Block {
-            val genesisBlock = Block(n, Block.BLOCK_VERSION_GENESIS)
-            val t = Transaction(n)
-            // A script containing the difficulty bits and the following message:
-            //   "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
-            val bytes = Utils.HEX.decode("04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73")
-            t.addInput(TransactionInput(n, t, bytes))
-            val scriptPubKeyBytes = ByteArrayOutputStream()
-            Script.writeBytes(scriptPubKeyBytes, Utils.HEX.decode("04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f"))
-            scriptPubKeyBytes.write(ScriptOpCodes.OP_CHECKSIG)
-            t.addOutput(TransactionOutput(n, t, Coin.FIFTY_COINS, scriptPubKeyBytes.toByteArray()))
-            genesisBlock.addTransaction(t)
-            return genesisBlock
-        }
-*/
-
     }
 }

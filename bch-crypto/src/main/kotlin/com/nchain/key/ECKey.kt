@@ -24,6 +24,7 @@
 package com.nchain.key
 
 import com.nchain.address.CashAddress
+import com.nchain.bitcoinkt.utils.Utils
 import com.nchain.params.NetworkParameters
 import com.nchain.keycrypter.KeyCrypterException
 import com.nchain.shared.Randomizer
@@ -423,9 +424,6 @@ class ECKey constructor(val priv: BigInteger?, val pub: LazyECPoint) {
         @JvmStatic val HALF_CURVE_ORDER: BigInteger
 
         init {
-            // Init proper random number generator, as some old Android installations have bugs that make it unsecure.
-//            if (Utils.isAndroidRuntime)
-//                LinuxSecureRandom()
 
             // Tell Bouncy Castle to precompute data that's needed during secp256k1 calculations. Increasing the width
             // number makes calculations faster, but at a cost of extra memory usage and with decreasing returns. 12 was

@@ -42,8 +42,8 @@ object TestNet3Params : NetworkParameters(
         bip32HeaderPriv = 0x04358394,
 
         maxTarget = ByteUtils.decodeCompactBits(0x1d00ffffL),
-//        majorityEnforceBlockUpgrade = 51,
-//        majorityRejectBlockOutdated = 75,
+        majorityEnforceBlockUpgrade = 51,
+        majorityRejectBlockOutdated = 75,
         majorityWindow = 100,
 //        subsidyDecreaseBlockCount = 210000,
 //        spendableCoinbaseDepth = 100,
@@ -67,16 +67,6 @@ object TestNet3Params : NetworkParameters(
 
     // February 16th 2012
     private val testnetDiffDate = Date(1329264000000L)
-/*
-
-    init {
-        genesisBlock.setTime(1296688602L)
-        genesisBlock.setDifficultyTarget(0x1d00ffffL)
-        genesisBlock.setNonce(414098458)
-        if (genesisBlock.hashAsString != "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943")
-            throw RuntimeException("genesis block hash incorrect")
-    }
-*/
 
     fun isValidTestnetDateBlock(blockTime: Date): Boolean {
         return blockTime.after(testnetDiffDate)

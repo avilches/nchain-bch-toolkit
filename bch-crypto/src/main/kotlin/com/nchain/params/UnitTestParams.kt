@@ -40,13 +40,13 @@ object UnitTestParams : NetworkParameters(
         bip32HeaderPriv = 0x04358394,
 
         maxTarget = BigInteger("00ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16),
-//        majorityEnforceBlockUpgrade = 3,
-//        majorityRejectBlockOutdated = 4,
+        majorityEnforceBlockUpgrade = 3,
+        majorityRejectBlockOutdated = 4,
         majorityWindow = 7,
 //        subsidyDecreaseBlockCount = 100,
 //        spendableCoinbaseDepth = 5,
 //        interval = 10,
-//        targetTimespan = 200000000,
+        targetTimespan = 200000000,
 //
         uahfHeight = 0,
         daaUpdateHeight = 1000,
@@ -57,13 +57,3 @@ object UnitTestParams : NetworkParameters(
         dnsSeeds = emptyArray()
 //        addrSeeds = emptyArray()
 )
-{
-
-/*
-    init {
-        genesisBlock.setTime(System.currentTimeMillis() / 1000)
-        genesisBlock.setDifficultyTarget(Block.EASIEST_DIFFICULTY_TARGET)
-        genesisBlock.solve()
-    }
-*/
-}
