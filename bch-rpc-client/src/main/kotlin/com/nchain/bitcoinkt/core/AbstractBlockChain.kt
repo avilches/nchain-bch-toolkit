@@ -188,7 +188,7 @@ constructor(context: Context, wallets: List<Wallet>,
 
     init {
         blockStore = _blockStore
-        chainHead = blockStore!!.chainHead
+        chainHead = blockStore.chainHead
         log.info("chain head is at height {}:\n{}", chainHead?.height, chainHead?.header)
 
         this.newBestBlockListeners = CopyOnWriteArrayList()

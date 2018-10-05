@@ -314,14 +314,15 @@ class TransactionBuilder
     }
 */
     companion object {
-        private val log = LoggerFactory.getLogger(TransactionBuilder::class.java!!)
+        private val log = LoggerFactory.getLogger(TransactionBuilder::class.java)
 
-        @JvmOverloads
+        @JvmStatic
         fun parse(rawHex: String):TransactionBuilder {
             return parse(rawHex.hexStringToByteArray())
         }
 
         @JvmOverloads
+        @JvmStatic
         fun parse(payload: ByteArray, offset:Int = 0):TransactionBuilder {
             val reader = MessageReader(payload, offset)
 
@@ -345,7 +346,7 @@ class TransactionBuilder
             for (i in 0 until numOutputs) {
                 val output = TransactionOutput.parse(reader)
                 outputs.add(output)
-                val scriptLen = output.scriptBytes?.size?.toLong()?:0L
+                val scriptLen = output.scriptBytes.size.toLong()
                 optimalEncodingMessageSize += (8 + VarInt.sizeOf(scriptLen).toLong() + scriptLen).toInt()
             }
             val lockTime = reader.readUint32()
