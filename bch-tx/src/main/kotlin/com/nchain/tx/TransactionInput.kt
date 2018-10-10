@@ -115,6 +115,7 @@ open class TransactionInput
         /**
          * Creates an UNSIGNED input that links to the given output
          */
+        @JvmStatic
         fun create(fromTx:Transaction, outputIndex: Long): TransactionInput {
             val outpoint = TransactionOutPoint.create(outputIndex, fromTx)
             val input = TransactionInput(ByteUtils.EMPTY_BYTE_ARRAY, outpoint, NO_SEQUENCE)
@@ -132,13 +133,16 @@ open class TransactionInput
 */
 
 
+        @JvmOverloads
+        @JvmStatic
         @Throws(ProtocolException::class)
-        fun parse(payload:ByteArray, offset:Int = 0):TransactionInput {
+        fun parse(payload: ByteArray, offset:Int = 0):TransactionInput {
             return parse(MessageReader(payload, offset))
         }
 
+        @JvmStatic
         @Throws(ProtocolException::class)
-        fun parse(reader:MessageReader):TransactionInput {
+        fun parse(reader: MessageReader):TransactionInput {
             val offset = reader.cursor
 
             val outpoint = TransactionOutPoint.parse(reader)

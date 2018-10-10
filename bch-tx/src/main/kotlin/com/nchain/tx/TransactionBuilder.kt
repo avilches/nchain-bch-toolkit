@@ -26,6 +26,7 @@ import com.nchain.tools.hexStringToByteArray
 import com.nchain.script.Script
 import com.nchain.script.ScriptBuilder
 import com.nchain.script.ScriptException
+import com.nchain.shared.ProtocolException
 import org.slf4j.LoggerFactory
 
 /**
@@ -317,15 +318,22 @@ class TransactionBuilder
         private val log = LoggerFactory.getLogger(TransactionBuilder::class.java)
 
         @JvmStatic
+        @Throws(ProtocolException::class)
         fun parse(rawHex: String):TransactionBuilder {
             return parse(rawHex.hexStringToByteArray())
         }
 
         @JvmOverloads
         @JvmStatic
-        fun parse(payload: ByteArray, offset:Int = 0):TransactionBuilder {
-            val reader = MessageReader(payload, offset)
+        fun parse(payload:ByteArray, offset:Int = 0):TransactionBuilder {
+            return parse(MessageReader(payload, offset))
+        }
 
+        @JvmOverloads
+        @JvmStatic
+        @Throws(ProtocolException::class)
+        fun parse(reader:MessageReader):TransactionBuilder {
+            val offset = reader.cursor
             val version = reader.readUint32()
             var optimalEncodingMessageSize = 4
 

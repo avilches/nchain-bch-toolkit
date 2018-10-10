@@ -20,14 +20,14 @@ package com.nchain.tx
 import com.nchain.address.CashAddress
 import com.nchain.key.ECKey
 import com.nchain.params.NetworkParameters
+import com.nchain.script.Script
+import com.nchain.script.ScriptBuilder
+import com.nchain.script.ScriptException
+import com.nchain.shared.ProtocolException
 import com.nchain.shared.VarInt
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.MessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
-import com.nchain.shared.ProtocolException
-import com.nchain.script.Script
-import com.nchain.script.ScriptBuilder
-import com.nchain.script.ScriptException
 import java.io.IOException
 import java.io.OutputStream
 import java.util.*
@@ -62,10 +62,10 @@ class TransactionOutput(val value: Coin = Coin.ZERO,
 //        private set
 
     val length: Int
+
     init {
         length = 8 + VarInt.sizeOf(scriptBytes.size.toLong()) + scriptBytes.size
     }
-
 
 
     /**
@@ -194,7 +194,7 @@ class TransactionOutput(val value: Coin = Coin.ZERO,
 */
 
     private var _scriptPubKey: Script? = null
-    
+
     val scriptPubKey: Script
         @Throws(ScriptException::class)
         get() {
@@ -241,7 +241,7 @@ class TransactionOutput(val value: Coin = Coin.ZERO,
     }
 
     @Throws(IOException::class)
-    fun bitcoinSerialize():ByteArray {
+    fun bitcoinSerialize(): ByteArray {
         val stream = UnsafeByteArrayOutputStream()
         bitcoinSerializeToStream(stream)
         stream.close()
@@ -410,14 +410,16 @@ class TransactionOutput(val value: Coin = Coin.ZERO,
     }
 
     companion object {
+        @JvmOverloads
+        @JvmStatic
         @Throws(ProtocolException::class)
-        fun parse(payload:ByteArray, offset:Int = 0):TransactionOutput {
+        fun parse(payload: ByteArray, offset: Int = 0): TransactionOutput {
             return parse(MessageReader(payload, offset))
         }
 
+        @JvmStatic
         @Throws(ProtocolException::class)
-        @JvmOverloads
-        fun parse(reader:MessageReader):TransactionOutput {
+        fun parse(reader: MessageReader): TransactionOutput {
             val value = reader.readInt64()
             val scriptLen = reader.readVarInt().toInt()
             val scriptBytes = reader.readBytes(scriptLen)

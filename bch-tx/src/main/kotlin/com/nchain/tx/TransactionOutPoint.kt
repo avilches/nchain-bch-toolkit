@@ -49,17 +49,21 @@ class TransactionOutPoint
         @JvmStatic
         val UNCONNECTED = TransactionOutPoint(UNCONNECTED_INDEX, Sha256Hash.ZERO_HASH)
 
-        @JvmStatic fun create(index:Long, fromTx: Transaction): TransactionOutPoint {
+        @JvmStatic
+        fun create(index:Long, fromTx: Transaction): TransactionOutPoint {
             return TransactionOutPoint(index, fromTx.hash, fromTx.getOutput(index))
         }
 
+        @JvmOverloads
+        @JvmStatic
         @Throws(ProtocolException::class)
-        @JvmStatic fun parse(payload: ByteArray, offset: Int = 0): TransactionOutPoint {
+        fun parse(payload: ByteArray, offset: Int = 0): TransactionOutPoint {
             return parse(MessageReader(payload, offset))
         }
 
+        @JvmStatic
         @Throws(ProtocolException::class)
-        @JvmStatic fun parse(reader: MessageReader): TransactionOutPoint {
+        fun parse(reader: MessageReader): TransactionOutPoint {
             val offset = reader.cursor
             val hash = reader.readHash()
             val index = reader.readUint32()
