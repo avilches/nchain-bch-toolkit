@@ -325,7 +325,6 @@ object TransactionSignatureService {
      * @param type Should be SigHash.ALL
      * @param anyoneCanPay should be false.
      */
-    @Synchronized
     fun hashForSignatureWitness(
             tx: Transaction,
             inputIndex: Int,
@@ -338,7 +337,6 @@ object TransactionSignatureService {
         return hashForSignatureWitness(tx, inputIndex, connectedScript, prevValue, type, anyoneCanPay, verifyFlags)
     }
 
-    @Synchronized
     fun hashForSignatureWitness(
             tx: Transaction,
             inputIndex: Int,
