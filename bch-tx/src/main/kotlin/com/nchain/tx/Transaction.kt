@@ -29,6 +29,7 @@ import com.nchain.script.Script
 import com.nchain.script.ScriptException
 import org.slf4j.LoggerFactory
 import java.io.IOException
+import java.io.InputStream
 import java.io.OutputStream
 import java.math.BigInteger
 import java.text.SimpleDateFormat
@@ -871,6 +872,11 @@ class Transaction(val version: Long = 0L,
         @JvmOverloads
         fun parse(bytes:ByteArray, offset: Int = 0): Transaction {
             return TransactionBuilder.parse(bytes, offset).build()
+        }
+
+        @JvmStatic
+        fun parse(inputStream: InputStream): Transaction {
+            return TransactionBuilder.parse(inputStream).build()
         }
 
         @JvmStatic

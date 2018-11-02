@@ -14,7 +14,8 @@
 
 package com.nchain.tools
 
-import com.nchain.bitcoinkt.utils.Utils
+import com.nchain.shared.Randomizer
+
 
 object DRMWorkaround {
 //    private val log = LoggerFactory.getLogger(DRMWorkaround::class.java)
@@ -30,7 +31,7 @@ object DRMWorkaround {
         if (done) return
         done = true
 
-        if (Utils.isAndroidRuntime)
+        if (Randomizer.isAndroidRuntime)
             return
         try {
             val gate = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted")

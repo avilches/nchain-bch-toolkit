@@ -16,7 +16,8 @@ class VarIntSpec extends Specification {
         then:
         1 == a.sizeInBytes
         1 == a.encode().size()
-        10 == new VarInt(a.encode(), 0).value
+        10L == new VarInt(a.encode(), 0).value
+        10L == new VarInt(new ByteArrayInputStream(a.encode())).value
     }
 
     void testShorts() {
@@ -25,7 +26,8 @@ class VarIntSpec extends Specification {
         then:
         3 == a.sizeInBytes
         3 == a.encode().size()
-        64000 == new VarInt(a.encode(), 0).value
+        64000L == new VarInt(a.encode(), 0).value
+        64000L == new VarInt(new ByteArrayInputStream(a.encode())).value
     }
 
     void testShortFFFF() {
@@ -35,6 +37,7 @@ class VarIntSpec extends Specification {
         3 == a.sizeInBytes
         3 == a.encode().size()
         0xFFFFL == new VarInt(a.encode(), 0).value
+        0xFFFFL == new VarInt(new ByteArrayInputStream(a.encode())).value
     }
 
     void testInts() {
@@ -48,6 +51,7 @@ class VarIntSpec extends Specification {
         def bytes = a.encode()
         then:
         0xAABBCCDDL == (0xFFFFFFFFL & new VarInt(bytes, 0).value)
+        0xAABBCCDDL == (0xFFFFFFFFL & new VarInt(new ByteArrayInputStream(bytes)).value)
     }
 
     void testIntFFFFFFFF() {
@@ -61,6 +65,7 @@ class VarIntSpec extends Specification {
         def bytes = a.encode()
         then:
         0xFFFFFFFFL == (0xFFFFFFFFL & new VarInt(bytes, 0).value)
+        0xFFFFFFFFL == (0xFFFFFFFFL & new VarInt(new ByteArrayInputStream(bytes)).value)
     }
 
     void testLong() {
@@ -74,6 +79,7 @@ class VarIntSpec extends Specification {
         def bytes = a.encode()
         then:
         -0x3501454121524111L == new VarInt(bytes, 0).value
+        -0x3501454121524111L == new VarInt(new ByteArrayInputStream(bytes)).value
     }
 
     void testSizeOfNegativeInt() {

@@ -21,6 +21,7 @@ import com.nchain.shared.Sha256Hash
 import com.nchain.tools.ByteUtils
 import com.nchain.tools.MessageReader
 import com.nchain.shared.ProtocolException
+import com.nchain.tools.ByteArrayMessageReader
 import com.nchain.tools.UnsafeByteArrayOutputStream
 import java.io.IOException
 import java.io.OutputStream
@@ -58,16 +59,16 @@ class TransactionOutPoint
         @JvmStatic
         @Throws(ProtocolException::class)
         fun parse(payload: ByteArray, offset: Int = 0): TransactionOutPoint {
-            return parse(MessageReader(payload, offset))
+            return parse(ByteArrayMessageReader(payload, offset))
         }
 
         @JvmStatic
         @Throws(ProtocolException::class)
         fun parse(reader: MessageReader): TransactionOutPoint {
-            val offset = reader.cursor
+//            val offset = reader.cursor
             val hash = reader.readHash()
             val index = reader.readUint32()
-            check(MESSAGE_LENGTH == reader.cursor - offset)
+//            check(MESSAGE_LENGTH == reader.cursor - offset)
             return TransactionOutPoint(index, hash, null)
         }
     }

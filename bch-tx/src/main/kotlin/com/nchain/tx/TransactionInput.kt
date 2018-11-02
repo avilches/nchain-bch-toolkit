@@ -31,6 +31,7 @@ import com.nchain.tools.UnsafeByteArrayOutputStream
 import com.nchain.shared.ProtocolException
 import com.nchain.script.Script
 import com.nchain.script.ScriptException
+import com.nchain.tools.ByteArrayMessageReader
 import java.util.*
 
 /**
@@ -137,23 +138,23 @@ open class TransactionInput
         @JvmStatic
         @Throws(ProtocolException::class)
         fun parse(payload: ByteArray, offset:Int = 0):TransactionInput {
-            return parse(MessageReader(payload, offset))
+            return parse(ByteArrayMessageReader(payload, offset))
         }
 
         @JvmStatic
         @Throws(ProtocolException::class)
         fun parse(reader: MessageReader):TransactionInput {
-            val offset = reader.cursor
+//            val offset = reader.cursor
 
             val outpoint = TransactionOutPoint.parse(reader)
 
             val scriptLen = reader.readVarInt().toInt()
-            val length = reader.cursor - offset + scriptLen + 4
+//            val length = reader.cursor - offset + scriptLen + 4
             val scriptBytes = reader.readBytes(scriptLen)
             val sequence = reader.readUint32()
 
-            var otherLength = reader.cursor - offset
-            check(otherLength == length)
+//            var otherLength = reader.cursor - offset
+//            check(otherLength == length)
             // es igual a length?
             return TransactionInput(scriptBytes, outpoint, sequence)
         }

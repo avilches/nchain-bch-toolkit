@@ -177,12 +177,24 @@ object ByteUtils {
         return rev
     }
 
+    @JvmStatic fun readUint32(inputStream: InputStream): Long {
+        val bytes = ByteArray(4)
+        inputStream.read(bytes)
+        return readUint32(bytes, 0)
+    }
+
     /** Parse 4 bytes from the byte array (starting at the offset) as unsigned 32-bit integer in little endian format.  */
     @JvmStatic fun readUint32(bytes: ByteArray, offset: Int): Long {
         return  ((bytes[offset].toLong() and 0xffL)) or
                 ((bytes[offset + 1].toLong() and 0xffL) shl 8) or
                 ((bytes[offset + 2].toLong() and 0xffL) shl 16) or
                 ((bytes[offset + 3].toLong() and 0xffL) shl 24)
+    }
+
+    @JvmStatic fun readInt64(inputStream: InputStream): Long {
+        val bytes = ByteArray(8)
+        inputStream.read(bytes)
+        return readInt64(bytes, 0)
     }
 
     /** Parse 8 bytes from the byte array (starting at the offset) as signed 64-bit integer in little endian format.  */
@@ -197,6 +209,12 @@ object ByteUtils {
                 ((bytes[offset + 7].toLong() and 0xffL) shl 56)
     }
 
+    @JvmStatic fun readUint32BE(inputStream: InputStream): Long {
+        val bytes = ByteArray(4)
+        inputStream.read(bytes)
+        return readUint32BE(bytes, 0)
+    }
+
     /** Parse 4 bytes from the byte array (starting at the offset) as unsigned 32-bit integer in big endian format.  */
     @JvmStatic fun readUint32BE(bytes: ByteArray, offset: Int): Long {
         return  ((bytes[offset].toLong() and 0xffL) shl 24) or
@@ -205,9 +223,22 @@ object ByteUtils {
                 ((bytes[offset + 3].toLong() and 0xffL))
     }
 
+    @JvmStatic fun readUint16BE(inputStream: InputStream): Int {
+        val bytes = ByteArray(2)
+        inputStream.read(bytes)
+        return readUint16BE(bytes, 0)
+    }
+
     /** Parse 2 bytes from the byte array (starting at the offset) as unsigned 16-bit integer in big endian format.  */
     @JvmStatic fun readUint16BE(bytes: ByteArray, offset: Int): Int {
         return bytes[offset].toInt() and 0xff shl 8 or (bytes[offset + 1].toInt() and 0xff)
+    }
+
+
+    @JvmStatic fun sha256hash160(inputStream: InputStream, length: Int): ByteArray {
+        val bytes = ByteArray(length)
+        inputStream.read(bytes)
+        return sha256hash160(bytes)
     }
 
     /**

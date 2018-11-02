@@ -27,7 +27,11 @@ import com.nchain.script.Script
 import com.nchain.script.ScriptBuilder
 import com.nchain.script.ScriptException
 import com.nchain.shared.ProtocolException
+import com.nchain.tools.ByteArrayMessageReader
+import com.nchain.tools.InputStreamMessageReader
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 
 /**
  *
@@ -326,14 +330,18 @@ class TransactionBuilder
         @JvmOverloads
         @JvmStatic
         fun parse(payload:ByteArray, offset:Int = 0):TransactionBuilder {
-            return parse(MessageReader(payload, offset))
+            return parse(ByteArrayMessageReader(payload, offset))
         }
 
-        @JvmOverloads
+        @JvmStatic
+        fun parse(inputStream: InputStream):TransactionBuilder {
+            return parse(InputStreamMessageReader(inputStream))
+        }
+
         @JvmStatic
         @Throws(ProtocolException::class)
         fun parse(reader:MessageReader):TransactionBuilder {
-            val offset = reader.cursor
+//            val offset = reader.cursor
             val version = reader.readUint32()
             var optimalEncodingMessageSize = 4
 
@@ -359,8 +367,8 @@ class TransactionBuilder
             }
             val lockTime = reader.readUint32()
             optimalEncodingMessageSize += 4
-            var length = reader.cursor - offset
-            check(length == optimalEncodingMessageSize)
+//            var length = reader.cursor - offset
+//            check(length == optimalEncodingMessageSize)
             return TransactionBuilder(version, lockTime, inputs, outputs)
         }
 
