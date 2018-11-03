@@ -17,6 +17,7 @@
 package com.nchain.shared
 
 import com.nchain.tools.ByteUtils
+import java.io.InputStream
 
 /**
  * A variable-length encoded unsigned integer using Satoshi's encoding (a.k.a. "CompactSize").
@@ -64,6 +65,23 @@ class VarInt {
             originalSizeInBytes = 5 // 1 marker + 4 data bytes (32 bits)
         } else {
             value = ByteUtils.readInt64(buf, offset + 1)
+            originalSizeInBytes = 9 // 1 marker + 8 data bytes (64 bits)
+        }
+    }
+
+    constructor(inputStream: InputStream) {
+        val first = 0xFF and inputStream.read()
+        if (first < 253) {
+            value = first.toLong()
+            originalSizeInBytes = 1 // 1 data byte (8 bits)
+        } else if (first == 253) {
+            value = (0xFF and inputStream.read() or (0xFF and inputStream.read() shl 8)).toLong()
+            originalSizeInBytes = 3 // 1 marker + 2 data bytes (16 bits)
+        } else if (first == 254) {
+            value = ByteUtils.readUint32(inputStream)
+            originalSizeInBytes = 5 // 1 marker + 4 data bytes (32 bits)
+        } else {
+            value = ByteUtils.readInt64(inputStream)
             originalSizeInBytes = 9 // 1 marker + 8 data bytes (64 bits)
         }
     }
