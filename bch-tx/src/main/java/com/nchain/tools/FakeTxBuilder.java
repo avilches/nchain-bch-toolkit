@@ -24,7 +24,6 @@ import com.nchain.shared.Randomizer;
 import com.nchain.tx.*;
 
 import java.security.SecureRandom;
-import java.util.Random;
 
 import static com.nchain.tools.Preconditions.checkState;
 
@@ -106,7 +105,7 @@ public class FakeTxBuilder {
     public static TransactionBuilder createFakeTxWithoutChangeAddress(NetworkParameters params, Coin value, CashAddress to) {
 
         // Make a random split in the output value so we get a distinct hash when we call this multiple times with same args
-        long split = (long)Math.random() * value.getValue();
+        long split = (long) Math.random() * value.getValue();
 
         // Make a previous tx simply to send us sufficient coins. This prev tx is not really valid but it doesn't
         // matter for our purposes.
